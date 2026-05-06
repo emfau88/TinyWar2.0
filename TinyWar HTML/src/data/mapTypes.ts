@@ -23,6 +23,14 @@ export interface TiledLayerData {
   width: number;
   height: number;
   data: readonly number[];
+  tileFlags: Record<number, TiledTileFlags>;
+}
+
+export interface TiledTileFlags {
+  horizontal: boolean;
+  vertical: boolean;
+  diagonal: boolean;
+  hexagonal120: boolean;
 }
 
 export interface TiledMapData {

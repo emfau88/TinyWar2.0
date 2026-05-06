@@ -6,6 +6,14 @@ const tmxPath = resolve(projectRoot, "public/assets/tinywar/map/map.tmx");
 const outputPath = resolve(projectRoot, "src/data/generated/mapData.ts");
 
 const xml = readFileSync(tmxPath, "utf8");
+const FLIP_FLAGS = {
+  horizontal: 0x80000000,
+  vertical: 0x40000000,
+  diagonal: 0x20000000,
+  hexagonal120: 0x10000000
+};
+const ALL_FLIP_FLAGS =
+  FLIP_FLAGS.horizontal | FLIP_FLAGS.vertical | FLIP_FLAGS.diagonal | FLIP_FLAGS.hexagonal120;
 
 function attrs(tag) {
   return Object.fromEntries(
@@ -62,15 +70,32 @@ const tilesets = tilesetMatches.map(([, attrText, body], index) => {
 const layers = [...xml.matchAll(/<layer\b([^>]*)>\s*<data encoding="csv">([\s\S]*?)<\/data>\s*<\/layer>/g)].map(
   ([, attrText, csv]) => {
     const layerAttrs = attrs(`<layer ${attrText}>`);
+    const tileFlags = {};
+    const data = csv
+      .trim()
+      .split(",")
+      .map((value, index) => {
+        const rawGid = Number(value.trim());
+        const unsignedGid = rawGid >>> 0;
+        const cleanGid = unsignedGid & ~ALL_FLIP_FLAGS;
+        const flags = Object.fromEntries(
+          Object.entries(FLIP_FLAGS).map(([name, flag]) => [name, (unsignedGid & flag) !== 0])
+        );
+
+        if (Object.values(flags).some(Boolean)) {
+          tileFlags[index] = flags;
+        }
+
+        return cleanGid;
+      });
+
     return {
       id: Number(layerAttrs.id),
       name: layerAttrs.name,
       width: Number(layerAttrs.width),
       height: Number(layerAttrs.height),
-      data: csv
-        .trim()
-        .split(",")
-        .map((value) => Number(value.trim()))
+      data,
+      tileFlags
     };
   }
 );

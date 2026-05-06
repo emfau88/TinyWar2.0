@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "generate:map": "node scripts/generate-map-data.mjs",
+    "diagnose:map": "node scripts/diagnose-map.mjs",
     "dev": "vite --host 0.0.0.0",
     "build": "npm run generate:map && tsc && vite build",
     "preview": "vite preview --host 0.0.0.0",

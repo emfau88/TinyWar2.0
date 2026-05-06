@@ -53,6 +53,13 @@ Assets liegen unter `assets`:
 - Layer: `foam`, `Tile Layer 3`, `obj3`, `Tile Layer 2`, `obj2`, `Tile Layer 1`, `obj`
 - Tilesets: Terrain, Foam, Rocks, Bushes, Trees, Stumps, Sheep.
 
+Map-Rendering-Diagnose 2026-05-06:
+- `scripts/diagnose-map.mjs` prueft TMX/TSX-Struktur gegen generiertes `mapData.ts`.
+- Diagnose-Befund: 15 animierte Tilesets sind vorhanden; echte Tile-Animationen bleiben noch offen.
+- Diagnose-Befund: 2 TMX-GIDs haben Tiled-Flip-Flags: Layer `obj` an `(6,11)` und `(23,12)`, jeweils `Sheep_Idle` horizontal gespiegelt.
+- HTML-Fix 2026-05-06: `generate-map-data.mjs` maskiert Tiled-Flip-/Rotation-Bits aus den GIDs und speichert Flags separat in `tileFlags`; `MapRenderer` wendet horizontal/vertical Flip auf die betroffenen Tiles an. Diagonal/Hex-Rotation wird bewusst nur gewarnt, weil aktuell keine solchen Tiles in der Map vorkommen.
+- Diagnose-Befund: 87 Non-64x64-Placements, vor allem Foam/Trees/Bushes. Diese duerfen erst nach gesonderter Anchor-/Offset-Diagnose geaendert werden.
+
 ## Units
 
 Unit-Typen:

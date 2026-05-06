@@ -1533,7 +1533,8 @@ export const MAP_DATA = {
         0,
         0,
         0
-      ]
+      ],
+      "tileFlags": {}
     },
     {
       "id": 3,
@@ -2021,7 +2022,8 @@ export const MAP_DATA = {
         0,
         0,
         0
-      ]
+      ],
+      "tileFlags": {}
     },
     {
       "id": 10,
@@ -2509,7 +2511,8 @@ export const MAP_DATA = {
         0,
         0,
         0
-      ]
+      ],
+      "tileFlags": {}
     },
     {
       "id": 2,
@@ -2997,7 +3000,8 @@ export const MAP_DATA = {
         0,
         0,
         0
-      ]
+      ],
+      "tileFlags": {}
     },
     {
       "id": 9,
@@ -3485,7 +3489,8 @@ export const MAP_DATA = {
         0,
         0,
         0
-      ]
+      ],
+      "tileFlags": {}
     },
     {
       "id": 1,
@@ -3973,7 +3978,8 @@ export const MAP_DATA = {
         0,
         0,
         0
-      ]
+      ],
+      "tileFlags": {}
     },
     {
       "id": 7,
@@ -4317,7 +4323,7 @@ export const MAP_DATA = {
         0,
         0,
         0,
-        2147483893,
+        245,
         0,
         0,
         0,
@@ -4364,7 +4370,7 @@ export const MAP_DATA = {
         0,
         0,
         279,
-        2147483893,
+        245,
         0,
         0,
         0,
@@ -4461,7 +4467,21 @@ export const MAP_DATA = {
         0,
         0,
         287
-      ]
+      ],
+      "tileFlags": {
+        "336": {
+          "horizontal": true,
+          "vertical": false,
+          "diagonal": false,
+          "hexagonal120": false
+        },
+        "383": {
+          "horizontal": true,
+          "vertical": false,
+          "diagonal": false,
+          "hexagonal120": false
+        }
+      }
     }
   ]
 } as const satisfies TiledMapData;

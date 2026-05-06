@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { MAP_DATA } from "../../data/generated/mapData";
-import type { TiledTilesetData } from "../../data/mapTypes";
+import type { TiledLayerData, TiledTilesetData } from "../../data/mapTypes";
 
 const WATER_COLOR = 0x47aba9;
 
@@ -41,6 +41,13 @@ export class MapRenderer {
         const tile = this.scene.add.image(x, y, tileset.key, localId);
 
         tile.setOrigin(0, 1);
+        const flags = (layer as TiledLayerData).tileFlags[index];
+        if (flags) {
+          tile.setFlip(flags.horizontal, flags.vertical);
+          if (flags.diagonal || flags.hexagonal120) {
+            console.warn(`Unsupported Tiled rotation flag at ${layer.name}[${index}].`);
+          }
+        }
         layerContainer.add(tile);
       });
 
