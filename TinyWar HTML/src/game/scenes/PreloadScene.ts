@@ -1,0 +1,61 @@
+import Phaser from "phaser";
+import { ASSETS } from "../../data/assetManifest";
+import { BASIC_UNIT_ANIMATIONS } from "../../data/animationManifest";
+import { MAP_DATA } from "../../data/generated/mapData";
+
+export class PreloadScene extends Phaser.Scene {
+  constructor() {
+    super("PreloadScene");
+  }
+
+  preload(): void {
+    this.load.image(ASSETS.background.cover.key, ASSETS.background.cover.path);
+    this.load.image(ASSETS.background.scenery1.key, ASSETS.background.scenery1.path);
+    this.load.image(ASSETS.ui.banner.key, ASSETS.ui.banner.path);
+    this.load.image(ASSETS.buildings.blueBarracks.key, ASSETS.buildings.blueBarracks.path);
+    this.load.image(ASSETS.buildings.redBarracks.key, ASSETS.buildings.redBarracks.path);
+    this.load.image(ASSETS.units.blueWarrior.key, ASSETS.units.blueWarrior.path);
+    this.load.image(ASSETS.units.blueLancer.key, ASSETS.units.blueLancer.path);
+    this.load.image(ASSETS.units.blueArcher.key, ASSETS.units.blueArcher.path);
+    this.load.image(ASSETS.units.bluePriest.key, ASSETS.units.bluePriest.path);
+    this.load.image(ASSETS.units.redWarrior.key, ASSETS.units.redWarrior.path);
+    this.load.image(ASSETS.units.redLancer.key, ASSETS.units.redLancer.path);
+    this.load.image(ASSETS.units.redArcher.key, ASSETS.units.redArcher.path);
+    this.load.image(ASSETS.units.redPriest.key, ASSETS.units.redPriest.path);
+    this.load.image(ASSETS.projectiles.arrow.key, ASSETS.projectiles.arrow.path);
+
+    for (const animation of BASIC_UNIT_ANIMATIONS) {
+      this.load.spritesheet(animation.key, animation.path, {
+        frameWidth: animation.frameWidth,
+        frameHeight: animation.frameHeight
+      });
+    }
+
+    for (const tileset of MAP_DATA.tilesets) {
+      this.load.spritesheet(tileset.key, tileset.image, {
+        frameWidth: tileset.tileWidth,
+        frameHeight: tileset.tileHeight
+      });
+    }
+  }
+
+  create(): void {
+    for (const animation of BASIC_UNIT_ANIMATIONS) {
+      if (this.anims.exists(animation.key)) {
+        continue;
+      }
+
+      this.anims.create({
+        key: animation.key,
+        frames: this.anims.generateFrameNumbers(animation.key, {
+          start: 0,
+          end: animation.frames - 1
+        }),
+        frameRate: animation.frameRate,
+        repeat: -1
+      });
+    }
+
+    this.scene.start("GameScene");
+  }
+}
