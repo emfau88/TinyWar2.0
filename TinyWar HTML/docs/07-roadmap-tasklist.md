@@ -272,7 +272,7 @@ Status 2026-05-07:
 - `March`-Effekt umgesetzt: Blue-Units laufen mit 150% Speed und ignorieren Unit-vs-Unit-Combat; Building-/Base-Angriffe bleiben wie im Original moeglich. Tests sichern March-Speed, Unit-Ignore und Building-Angriff ab.
 - `Berserk`-Effekt umgesetzt: Attack-Cycles laufen mit 130% Geschwindigkeit, Priest-Heal bleibt normal, und Berserk-Defender ohne Building-Slot haben halbierte Armor/Magic-Resist. Tests sichern Attack-Speed, Heal-Ausnahme, Defense-Malus und Building-Slot-Ausnahme ab.
 - Top-Advance-Banner umgesetzt: `large ribbons` werden geladen, Blue/Red-Banner zeigen Anteil, Power und Strategieicon. Fortschritt/Power werden aus aktuellen Solo-Units berechnet; Red bleibt vorerst auf `Attack`.
-- Top-Advance-Banner verfeinert: Abschluss-/Mittelstuecke aus `large ribbons` nach Originalframes zusammengesetzt und Zahlen weiss gesetzt.
+- Top-Advance-Banner verfeinert: Abschluss-/Mittelstuecke aus `large ribbons` nach Originalframes in linearer Original-Reihenfolge zusammengesetzt und Zahlen weiss gesetzt.
 - Restabweichung: `Guard` ist noch nicht aktiv; Red-AI bleibt vorerst auf `Attack`.
 - Offen fuer Milestone 6: Guard-Effekt, Boosts, Unit-Info, Speed/Pause und Mobile-Screenshot-QA.
 

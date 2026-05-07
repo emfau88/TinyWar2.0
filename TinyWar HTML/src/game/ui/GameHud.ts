@@ -238,31 +238,41 @@ export class GameHud {
     this.lastAdvanceState = state;
     const width = Math.min(this.scene.scale.width * 0.68, 560);
     const capWidth = 32;
-    const minHalfWidth = 42;
-    const blueWidth = Math.max(minHalfWidth, width * Phaser.Math.Clamp(state.blueShare, 0.08, 0.92));
-    const redWidth = Math.max(minHalfWidth, width - blueWidth);
+    const fixedWidth = capWidth * 4;
+    const flexibleWidth = Math.max(80, width - fixedWidth);
+    const minBodyWidth = 18;
+    const blueBodyWidth = Math.max(
+      minBodyWidth,
+      flexibleWidth * Phaser.Math.Clamp(state.blueShare, 0.08, 0.92)
+    );
+    const redBodyWidth = Math.max(minBodyWidth, flexibleWidth - blueBodyWidth);
     const centerX = this.scene.scale.width / 2;
-    const leftX = centerX - width / 2;
-    const blueBodyWidth = Math.max(18, blueWidth - capWidth * 2);
-    const redBodyWidth = Math.max(18, redWidth - capWidth * 2);
+    const actualWidth = fixedWidth + blueBodyWidth + redBodyWidth;
+    const leftX = centerX - actualWidth / 2;
+    const blueStartX = leftX + capWidth / 2;
+    const blueJoinX = leftX + capWidth + capWidth / 2;
+    const blueBodyX = leftX + capWidth * 2 + blueBodyWidth / 2;
+    const redBodyX = leftX + capWidth * 2 + blueBodyWidth + redBodyWidth / 2;
+    const redJoinX = leftX + capWidth * 2 + blueBodyWidth + redBodyWidth + capWidth / 2;
+    const redEndX = leftX + capWidth * 3 + blueBodyWidth + redBodyWidth + capWidth / 2;
 
-    this.blueAdvanceStart.setDisplaySize(capWidth, 44).setPosition(leftX + capWidth / 2, this.blueAdvanceStart.y);
-    this.blueAdvanceJoin.setDisplaySize(capWidth, 44).setPosition(leftX + capWidth + blueBodyWidth + capWidth / 2, this.blueAdvanceJoin.y);
+    this.blueAdvanceStart.setDisplaySize(capWidth, 44).setPosition(blueStartX, this.blueAdvanceStart.y);
+    this.blueAdvanceJoin.setDisplaySize(capWidth, 44).setPosition(blueJoinX, this.blueAdvanceJoin.y);
     this.blueAdvanceFill.setDisplaySize(blueBodyWidth, 44);
     this.redAdvanceFill.setDisplaySize(redBodyWidth, 44);
-    this.blueAdvanceFill.setX(leftX + capWidth + blueBodyWidth / 2);
-    this.redAdvanceFill.setX(leftX + blueWidth + redBodyWidth / 2);
-    this.redAdvanceJoin.setDisplaySize(capWidth, 44).setPosition(leftX + blueWidth - capWidth / 2, this.redAdvanceJoin.y);
-    this.redAdvanceEnd.setDisplaySize(capWidth, 44).setPosition(leftX + width - capWidth / 2, this.redAdvanceEnd.y);
+    this.blueAdvanceFill.setX(blueBodyX);
+    this.redAdvanceFill.setX(redBodyX);
+    this.redAdvanceJoin.setDisplaySize(capWidth, 44).setPosition(redJoinX, this.redAdvanceJoin.y);
+    this.redAdvanceEnd.setDisplaySize(capWidth, 44).setPosition(redEndX, this.redAdvanceEnd.y);
 
     this.blueAdvanceText.setText(this.advanceLabel(state.blueShare, state.bluePower));
     this.redAdvanceText.setText(this.advanceLabel(state.redShare, state.redPower));
-    this.blueAdvanceText.setX(this.scene.scale.width / 2 - width * 0.22);
-    this.redAdvanceText.setX(this.scene.scale.width / 2 + width * 0.22);
+    this.blueAdvanceText.setX(blueBodyX);
+    this.redAdvanceText.setX(redBodyX);
     this.blueAdvanceStrategyIcon.setTexture(STRATEGY_ASSET_KEYS[state.blueStrategy]);
     this.redAdvanceStrategyIcon.setTexture(STRATEGY_ASSET_KEYS[state.redStrategy]);
-    this.blueAdvanceStrategyIcon.setX(this.scene.scale.width / 2 - width * 0.39);
-    this.redAdvanceStrategyIcon.setX(this.scene.scale.width / 2 + width * 0.39);
+    this.blueAdvanceStrategyIcon.setX(leftX + capWidth * 2 + Math.min(24, blueBodyWidth * 0.18));
+    this.redAdvanceStrategyIcon.setX(leftX + capWidth * 2 + blueBodyWidth + redBodyWidth - Math.min(24, redBodyWidth * 0.18));
   }
 
   layout(width: number, height: number): void {
