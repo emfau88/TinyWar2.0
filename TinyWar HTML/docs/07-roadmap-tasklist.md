@@ -84,7 +84,7 @@ Exit-Kriterien:
 Status 2026-05-06:
 - `scripts/generate-map-data.mjs` konvertiert `public/assets/tinywar/map/map.tmx` in `src/data/generated/mapData.ts`.
 - Phaser rendert die Original-Layer in TMX-Reihenfolge mit Original-Tileset-Bildern.
-- Animierte Tiles nutzen vorerst den ersten Animationsframe; echte Tile-Animation ist ein Folgeschritt.
+- Animierte Tiles werden aus den TSX-Animationsdaten mit Original-Frame-Dauern abgespielt.
 - Map-Diagnose-Tooling ergaenzt: `npm run diagnose:map` meldet animierte Tilesets, Tiled-Flip-Flags und Non-64x64-Placements.
 - Tiled-GID-Flip-Flags werden beim Generieren maskiert und als `tileFlags` separat gespeichert; Renderer wendet horizontal/vertical Flip an. Aktuell betrifft das zwei `Sheep_Idle` Tiles im Layer `obj`.
 - Kamera ist zentriert, Touch/Mouse-Drag, WASD und Scroll-Zoom sind eingebaut.

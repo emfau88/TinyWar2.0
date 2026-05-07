@@ -30,6 +30,7 @@ export class GameScene extends Phaser.Scene {
   private projectiles: ProjectileInstance[] = [];
   private selectedDirection: PlayerDirection = "Any";
   private hud?: GameHud;
+  private mapRenderer?: MapRenderer;
   private projectileRenderer!: ProjectileRenderer;
   private queue: UnitQueue = createQueue();
   private enemyQueue: EnemyQueueState = createEnemyQueue();
@@ -40,8 +41,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
-    const mapRenderer = new MapRenderer(this);
-    mapRenderer.render();
+    this.mapRenderer = new MapRenderer(this);
+    this.mapRenderer.render();
     const state = createInitialGameState();
     this.buildings = [...state.buildings];
     this.buildingSprites = new BuildingRenderer(this).render(this.buildings);
@@ -49,7 +50,7 @@ export class GameScene extends Phaser.Scene {
     unitRenderer.render(state.units);
     this.projectileRenderer = new ProjectileRenderer(this);
 
-    const mapSize = mapRenderer.getWorldSize();
+    const mapSize = this.mapRenderer.getWorldSize();
     this.cameras.main.setBounds(0, 0, mapSize.x, mapSize.y);
     this.fitMapToViewport(mapSize);
     this.cameraDrag = new CameraDragController(this);
@@ -62,6 +63,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    this.mapRenderer?.update(delta);
+
     if (this.hud?.isWinnerVisible) {
       return;
     }
