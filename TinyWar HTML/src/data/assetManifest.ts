@@ -73,6 +73,14 @@ export const ASSETS = {
     berserk: {
       key: "icon-berserk",
       path: `${ROOT}/images/icons/berserk.png`
+    },
+    sound: {
+      key: "icon-sound",
+      path: `${ROOT}/images/icons/sound.png`
+    },
+    mute: {
+      key: "icon-mute",
+      path: `${ROOT}/images/icons/mute.png`
     }
   },
   buildings: {

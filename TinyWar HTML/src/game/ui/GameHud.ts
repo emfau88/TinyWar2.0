@@ -40,6 +40,7 @@ export interface GameHudCallbacks {
   onCycleDirection: () => void;
   onQueueUnit: (unit: UnitName) => void;
   onSelectStrategy: (strategy: PlayerStrategy) => void;
+  onToggleAudio: () => void;
 }
 
 interface UnitShopButton {
@@ -70,6 +71,8 @@ export class GameHud {
   private readonly directionPanel: Phaser.GameObjects.Rectangle;
   private readonly directionIcon: Phaser.GameObjects.Image;
   private readonly directionText: Phaser.GameObjects.Text;
+  private readonly audioPanel: Phaser.GameObjects.Rectangle;
+  private readonly audioIcon: Phaser.GameObjects.Image;
   private readonly queueText: Phaser.GameObjects.Text;
   private readonly winnerText: Phaser.GameObjects.Text;
   private readonly queueStart: Phaser.GameObjects.Image;
@@ -140,6 +143,22 @@ export class GameHud {
       .setScrollFactor(0)
       .setDepth(100);
 
+    this.audioPanel = this.scene.add
+      .rectangle(this.scene.scale.width - 34, 92, 44, 44, 0x111827, 0.62)
+      .setStrokeStyle(1, 0xf8fafc, 0.42)
+      .setScrollFactor(0)
+      .setDepth(100)
+      .setInteractive({ useHandCursor: true })
+      .on("pointerdown", callbacks.onToggleAudio);
+
+    this.audioIcon = this.scene.add
+      .image(this.scene.scale.width - 34, 92, ASSETS.icons.sound.key)
+      .setDisplaySize(30, 30)
+      .setScrollFactor(0)
+      .setDepth(101)
+      .setInteractive({ useHandCursor: true });
+    this.audioIcon.on("pointerdown", callbacks.onToggleAudio);
+
     this.queueText = this.scene.add
       .text(12, 42, this.queueLabel(queue), {
         fontFamily: "TinyWar Fira Sans",
@@ -197,6 +216,8 @@ export class GameHud {
       this.directionPanel,
       this.directionIcon,
       this.directionText,
+      this.audioPanel,
+      this.audioIcon,
       this.queueText,
       this.winnerText,
       this.queueStart,
@@ -240,6 +261,11 @@ export class GameHud {
       button.progress.setVisible(active && cooldownFraction > 0);
       button.progress.displayWidth = Math.max(1, (button.progressBg.displayWidth - 4) * cooldownFraction);
     }
+  }
+
+  updateAudioMuted(muted: boolean): void {
+    this.audioIcon.setTexture(muted ? ASSETS.icons.mute.key : ASSETS.icons.sound.key);
+    this.audioPanel.setStrokeStyle(1, muted ? 0xfca5a5 : 0xf8fafc, muted ? 0.72 : 0.42);
   }
 
   updateAdvanceBanner(state: AdvanceBannerState): void {
@@ -286,6 +312,7 @@ export class GameHud {
   layout(width: number, height: number): void {
     this.layoutAdvanceBanner(width);
     this.layoutDirection();
+    this.layoutAudio(width);
     this.layoutShopButtons(height);
     this.layoutStrategyButtons(width, height);
     this.layoutQueue(width, height);
@@ -310,6 +337,7 @@ export class GameHud {
     this.scene.input.keyboard?.on("keydown-Y", () => callbacks.onSelectStrategy("Guard"));
     this.scene.input.keyboard?.on("keydown-U", () => callbacks.onSelectStrategy("March"));
     this.scene.input.keyboard?.on("keydown-I", () => callbacks.onSelectStrategy("Berserk"));
+    this.scene.input.keyboard?.on("keydown-Q", callbacks.onToggleAudio);
   }
 
   private createShopButtons(callbacks: GameHudCallbacks): void {
@@ -580,6 +608,11 @@ export class GameHud {
     this.directionPanel.setPosition(34, 92);
     this.directionIcon.setPosition(34, 92);
     this.directionText.setPosition(66, 74);
+  }
+
+  private layoutAudio(width: number): void {
+    this.audioPanel.setPosition(width - 34, 92);
+    this.audioIcon.setPosition(width - 34, 92);
   }
 
   private layoutShopButtons(height: number): void {

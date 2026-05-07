@@ -29,12 +29,17 @@ const VOLUME: Record<AudioEvent, number> = {
 
 export class GameAudio {
   private unlocked = false;
+  private muted = false;
 
   constructor(private readonly scene: Phaser.Scene) {
     this.unlockOnFirstGesture();
   }
 
   play(event: AudioEvent): void {
+    if (this.muted) {
+      return;
+    }
+
     const key = AUDIO_KEYS[event];
     if (!this.scene.cache.audio.exists(key)) {
       return;
@@ -43,6 +48,11 @@ export class GameAudio {
     this.scene.sound.play(key, {
       volume: VOLUME[event]
     });
+  }
+
+  setMuted(muted: boolean): void {
+    this.muted = muted;
+    this.scene.sound.mute = muted;
   }
 
   private unlockOnFirstGesture(): void {

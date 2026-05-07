@@ -35,6 +35,8 @@ export class PreloadScene extends Phaser.Scene {
     this.load.image(ASSETS.icons.guard.key, ASSETS.icons.guard.path);
     this.load.image(ASSETS.icons.march.key, ASSETS.icons.march.path);
     this.load.image(ASSETS.icons.berserk.key, ASSETS.icons.berserk.path);
+    this.load.image(ASSETS.icons.sound.key, ASSETS.icons.sound.path);
+    this.load.image(ASSETS.icons.mute.key, ASSETS.icons.mute.path);
     this.load.image(ASSETS.buildings.blueBarracks.key, ASSETS.buildings.blueBarracks.path);
     this.load.image(ASSETS.buildings.redBarracks.key, ASSETS.buildings.redBarracks.path);
     this.load.image(ASSETS.units.blueWarrior.key, ASSETS.units.blueWarrior.path);

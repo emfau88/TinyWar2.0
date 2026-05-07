@@ -46,6 +46,7 @@ export class GameScene extends Phaser.Scene {
   private mapRenderer?: MapRenderer;
   private projectileRenderer!: ProjectileRenderer;
   private audio?: GameAudio;
+  private audioMuted = false;
   private queue: UnitQueue = createQueue();
   private enemyQueue: EnemyQueueState = createEnemyQueue();
   private spawnCounter = 0;
@@ -73,8 +74,10 @@ export class GameScene extends Phaser.Scene {
     this.hud = new GameHud(this, this.selectedDirection, this.strategy, this.queue, {
       onCycleDirection: () => this.cycleDirection(),
       onQueueUnit: (unit) => this.queueUnit(unit),
-      onSelectStrategy: (strategy) => this.selectStrategy(strategy)
+      onSelectStrategy: (strategy) => this.selectStrategy(strategy),
+      onToggleAudio: () => this.toggleAudio()
     });
+    this.hud.updateAudioMuted(this.audioMuted);
     this.updateAdvanceBanner();
     this.mapDebugOverlay = new MapDebugOverlay(this);
     this.setupHudCamera();
@@ -211,6 +214,15 @@ export class GameScene extends Phaser.Scene {
     this.strategy = result.state;
     this.hud?.updateStrategy(this.strategy);
     this.updateAdvanceBanner();
+  }
+
+  private toggleAudio(): void {
+    this.audioMuted = !this.audioMuted;
+    this.audio?.setMuted(this.audioMuted);
+    this.hud?.updateAudioMuted(this.audioMuted);
+    if (!this.audioMuted) {
+      this.audio?.play("click");
+    }
   }
 
   private strategyForUnit(unit: MovingUnit): PlayerStrategy {

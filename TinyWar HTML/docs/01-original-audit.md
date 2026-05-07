@@ -178,7 +178,8 @@ Originalquelle: `src/core/map/ui/systems.rs` und `src/core/assets.rs`.
 - HTML-Stand 2026-05-07: Strategy-State mit Original-Strategien, Hotkeys und 5s-Cooldown im Core umgesetzt und rechts als Icon-Leiste im HUD angebunden.
 - HTML-Stand 2026-05-07: `March`-Effekt umgesetzt: Blue-Units laufen mit `1.5x` Speed und ignorieren Unit-vs-Unit-Combat. Wie im Original bleibt Building-Combat davon unberuehrt, d.h. March-Units greifen gegnerische Buildings/Bases weiter an.
 - HTML-Stand 2026-05-07: `Berserk`-Effekt umgesetzt: Attack-Cycles laufen mit `1.3x` Geschwindigkeit; Priest-Heal bleibt unveraendert, weil Original nur `Action::Attack` beschleunigt. Verteidigende Berserk-Units ohne Building-Slot erhalten halbierte Armor/Magic-Resist; Units auf Buildings und Buildings selbst sind davon ausgenommen. Restabweichung: Red-AI nutzt vorerst weiter `Attack`; Guard fehlt.
-- HTML-Stand 2026-05-07: Erster Audio-Slice umgesetzt: kleine Original-SFX werden in Phaser preloadet und nach erstem Nutzerinput entsperrt. Verdrahtet sind `button`, `click`, `error`, `explosion`, `victory` und `defeat` an die belegten Original-Events. `horn`, `message` und `warning` sind vorgeladen fuer Boost-/Info-Slices. `music.ogg` bleibt wegen Groesse und Autoplay-Regeln bis zum Audio-Toggle/Mobile-Unlock-Slice ausgelassen.
+- HTML-Stand 2026-05-07: Erster Audio-Slice umgesetzt: kleine Original-SFX werden in Phaser preloadet und nach erstem Nutzerinput entsperrt. Verdrahtet sind `button`, `click`, `error`, `explosion`, `victory` und `defeat` an die belegten Original-Events. `horn`, `message` und `warning` sind vorgeladen fuer Boost-/Info-Slices. `music.ogg` bleibt wegen Groesse und Autoplay-Regeln bis zum Musik-Slice ausgelassen.
+- HTML-Stand 2026-05-07: SFX-Toggle mit Original-Icons `sound`/`mute` oben rechts umgesetzt; Taste `Q` schaltet wie im Original-Audio-Shortcut. Aktuell toggelt der Button nur SFX stumm/an, weil Musik noch nicht geladen ist.
 
 ## Bekannte Audit-Luecken
 
