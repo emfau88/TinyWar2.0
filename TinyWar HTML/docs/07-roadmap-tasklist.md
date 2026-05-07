@@ -90,6 +90,7 @@ Status 2026-05-06:
 - Foam-Anker im Debug-Overlay mit `F` markiert, um weitere manuelle Foam-Korrekturen eindeutig zu machen.
 - Debug-Overlay rendert Foam zusaetzlich als halbtransparente Preview ueber allen Layern, damit verdeckte Foam-Daten von echter Spielsichbarkeit unterscheidbar sind.
 - Foam-Asset-Padding analysiert; Debug-Overlay markiert neben dem Anker auch die erwartete sichtbare Foam-Zone.
+- Foam-Render-Offset ergaenzt, damit sichtbare Foam-Pixel trotz Asset-Padding an der `F`-Ankerzelle liegen.
 - Erste manuelle Map-Korrektur: zwei visuell gepruefte Baum-Anker verschoben; Foam-Korrektur bewusst zurueckgestellt, bis die Ziel-Anker eindeutig sind.
 - Weitere manuelle Map-Korrektur: Tree3-Anker links unten ein Feld nach unten verschoben.
 - Foam-Testkorrektur: Foam-Anker `(1,10)` nach `(1,8)` verschoben, um die sichtbare Beanstandung bei `(2,9)` Richtung `(2,7)` zu pruefen.

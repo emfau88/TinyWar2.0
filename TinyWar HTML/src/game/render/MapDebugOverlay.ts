@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { MAP_DATA } from "../../data/generated/mapData";
 import type { TiledTilesetData } from "../../data/mapTypes";
+import { visualOffsetForTileset } from "./mapTileVisualOffset";
 
 const GRID_COLOR = 0xffffff;
 const FOAM_COLOR = 0x38bdf8;
@@ -11,8 +12,6 @@ const FOOTPRINT_ALPHA = 0.8;
 const ANCHOR_LABEL_DEPTH = 10_002;
 const PREVIEW_DEPTH = 10_001;
 const PREVIEW_ALPHA = 0.55;
-const FOAM_VISIBLE_OFFSET_X = 1;
-const FOAM_VISIBLE_OFFSET_Y = -1;
 
 export class MapDebugOverlay {
   private readonly container: Phaser.GameObjects.Container;
@@ -110,7 +109,12 @@ export class MapDebugOverlay {
     const frames = tileset.animations[String(gid - tileset.firstGid)];
     const frame = frames?.[0]?.tileId ?? gid - tileset.firstGid;
     const preview = this.scene.add
-      .image(column * MAP_DATA.tileWidth, (row + 1) * MAP_DATA.tileHeight, tileset.key, frame)
+      .image(
+        column * MAP_DATA.tileWidth + visualOffsetForTileset(tileset).x,
+        (row + 1) * MAP_DATA.tileHeight + visualOffsetForTileset(tileset).y,
+        tileset.key,
+        frame
+      )
       .setOrigin(0, 1)
       .setAlpha(PREVIEW_ALPHA)
       .setTint(FOAM_COLOR)
@@ -120,8 +124,8 @@ export class MapDebugOverlay {
   }
 
   private drawFoamVisibleHint(column: number, row: number): void {
-    const x = (column + FOAM_VISIBLE_OFFSET_X) * MAP_DATA.tileWidth + MAP_DATA.tileWidth / 2;
-    const y = (row + FOAM_VISIBLE_OFFSET_Y) * MAP_DATA.tileHeight + MAP_DATA.tileHeight / 2;
+    const x = column * MAP_DATA.tileWidth + MAP_DATA.tileWidth / 2;
+    const y = row * MAP_DATA.tileHeight + MAP_DATA.tileHeight / 2;
     if (x < 0 || y < 0 || x >= MAP_DATA.width * MAP_DATA.tileWidth || y >= MAP_DATA.height * MAP_DATA.tileHeight) {
       return;
     }

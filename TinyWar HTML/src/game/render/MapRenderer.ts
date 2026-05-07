@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { MAP_DATA } from "../../data/generated/mapData";
 import type { TiledAnimationFrame, TiledLayerData, TiledTilesetData } from "../../data/mapTypes";
+import { visualOffsetForTileset } from "./mapTileVisualOffset";
 
 const WATER_COLOR = 0x47aba9;
 
@@ -49,7 +50,8 @@ export class MapRenderer {
         const row = Math.floor(index / layer.width);
         const x = column * MAP_DATA.tileWidth;
         const y = (row + 1) * MAP_DATA.tileHeight;
-        const tile = this.scene.add.image(x, y, tileset.key, localId);
+        const offset = visualOffsetForTileset(tileset);
+        const tile = this.scene.add.image(x + offset.x, y + offset.y, tileset.key, localId);
 
         tile.setOrigin(0, 1);
         const flags = (layer as TiledLayerData).tileFlags[index];
