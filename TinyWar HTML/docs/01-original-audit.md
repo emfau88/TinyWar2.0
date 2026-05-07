@@ -161,10 +161,13 @@ Originalquelle: `src/core/map/ui/systems.rs` und `src/core/assets.rs`.
 - Die Original-Queue liegt unten als horizontale UI-Leiste: links `swords1` aus einem 105x128-Atlas mit Spielerfarben-Index, zehn `swords2`-Slots, rechts `swords3`.
 - Queue-Slots zeigen das Unit-Icon und nur fuer den aktiven ersten Queue-Eintrag eine Progress-Anzeige.
 - Die Direction-Anzeige ist ein klickbares Icon oben links. `PlayerDirection::image()` mappt `Any` auf `any arrow`, `Top/Bot` auf `top arrow`, `TopMid/MidBot` auf `top-mid arrow`, `Mid` auf `mid arrow` und `TopBot` auf `top bot arrow`; `Bot` und `MidBot` werden vertikal gespiegelt.
+- Original-Strategien: `Attack`, `Guard`, `March`, `Berserk`. Hotkeys sind `T`, `Y`, `U`, `I`. Der Player startet mit `Attack`; der 5s-Strategy-Timer ist initial finished, damit der erste Wechsel sofort moeglich ist.
+- Strategy-Wechsel im UI ist nur erlaubt, wenn die neue Strategie nicht bereits aktiv ist und der 5s-Timer fertig ist; danach wird der Timer zurueckgesetzt.
 - Die Shop-/Unit-Buttons links und Strategiebuttons nutzen `small ribbons`; Top-Banner und Advance-Anzeigen nutzen `large ribbons`.
-- Boosts, Strategieauswahl, Unit-Info, Direction-Icon und Speed-Indikator sind im Original eigene UI-Bereiche und bleiben fuer UI-Parity separat zu auditieren/portieren.
+- Boosts, Unit-Info, Top-Banner und Speed-Indikator sind im Original eigene UI-Bereiche und bleiben fuer UI-Parity separat zu auditieren/portieren.
 - HTML-Stand 2026-05-07: Erster HUD-Parity-Schritt umgesetzt: `swords1/2/3` werden geladen, die Player-Queue wird unten mit 10 Original-Sword-Slots angezeigt, der erste Slot zeigt Spawn-Progress, und Basic-Unit-Queue-Buttons wurden als kompakte linke Icon-Leiste statt Textbuttons umgesetzt. Vollstaendige UI-Parity ist damit nicht abgeschlossen.
 - HTML-Stand 2026-05-07: Direction-Icon aus Original-Assets umgesetzt inklusive Original-Mapping und vertikalem Flip fuer `Bot`/`MidBot`; Klick auf Icon/Panel cycled weiter wie Taste `L`.
+- HTML-Stand 2026-05-07: Strategy-State mit Original-Strategien, Hotkeys und 5s-Cooldown im Core umgesetzt und rechts als Icon-Leiste im HUD angebunden. Restabweichung: Strategy-Effekte in Movement/Combat sind noch nicht aktiv; aktuell ist es nur Auswahl, Anzeige und Cooldown.
 
 ## Bekannte Audit-Luecken
 

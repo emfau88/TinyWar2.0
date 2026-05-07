@@ -1,7 +1,9 @@
 import Phaser from "phaser";
+import { PLAYER_STRATEGIES, strategyHotkey } from "../../core/player/playerStrategy";
 import { UNITS as UNIT_DEFINITIONS } from "../../core/units/unitData";
 import { ASSETS } from "../../data/assetManifest";
 import type { PlayerDirection } from "../../core/player/playerDirection";
+import type { PlayerStrategy, StrategyState } from "../../core/player/playerStrategy";
 import type { UnitQueue } from "../../core/queue/unitQueue";
 import type { UnitName } from "../../core/units/unitData";
 
@@ -13,10 +15,17 @@ const UNIT_ASSET_KEYS: Record<UnitName, string> = {
   Archer: ASSETS.units.blueArcher.key,
   Priest: ASSETS.units.bluePriest.key
 };
+const STRATEGY_ASSET_KEYS: Record<PlayerStrategy, string> = {
+  Attack: ASSETS.icons.attack.key,
+  Guard: ASSETS.icons.guard.key,
+  March: ASSETS.icons.march.key,
+  Berserk: ASSETS.icons.berserk.key
+};
 
 export interface GameHudCallbacks {
   onCycleDirection: () => void;
   onQueueUnit: (unit: UnitName) => void;
+  onSelectStrategy: (strategy: PlayerStrategy) => void;
 }
 
 export class GameHud {
@@ -27,10 +36,14 @@ export class GameHud {
   private readonly queueIcons: Phaser.GameObjects.Image[] = [];
   private readonly queueProgressBackgrounds: Phaser.GameObjects.Rectangle[] = [];
   private readonly queueProgressBars: Phaser.GameObjects.Rectangle[] = [];
+  private readonly strategyButtons = new Map<PlayerStrategy, Phaser.GameObjects.Rectangle>();
+  private readonly strategyProgressBackgrounds = new Map<PlayerStrategy, Phaser.GameObjects.Rectangle>();
+  private readonly strategyProgressBars = new Map<PlayerStrategy, Phaser.GameObjects.Rectangle>();
 
   constructor(
     private readonly scene: Phaser.Scene,
     direction: PlayerDirection,
+    strategy: StrategyState,
     queue: UnitQueue,
     callbacks: GameHudCallbacks
   ) {
@@ -88,7 +101,9 @@ export class GameHud {
 
     this.bindKeyboard(callbacks);
     this.createShopButtons(callbacks);
+    this.createStrategyButtons(callbacks);
     this.createQueueDisplay();
+    this.updateStrategy(strategy);
     this.updateQueue(queue);
   }
 
@@ -106,6 +121,25 @@ export class GameHud {
     this.updateQueueDisplay(queue);
   }
 
+  updateStrategy(strategy: StrategyState): void {
+    const cooldownFraction = Phaser.Math.Clamp(strategy.remainingCooldownMs / 5000, 0, 1);
+
+    for (const item of PLAYER_STRATEGIES) {
+      const button = this.strategyButtons.get(item);
+      const progressBg = this.strategyProgressBackgrounds.get(item);
+      const progress = this.strategyProgressBars.get(item);
+      if (!button || !progressBg || !progress) {
+        continue;
+      }
+
+      const active = item === strategy.current;
+      button.setStrokeStyle(active ? 2 : 1, active ? 0x4795a7 : 0xf8fafc, active ? 0.95 : 0.38);
+      progressBg.setVisible(active && cooldownFraction > 0);
+      progress.setVisible(active && cooldownFraction > 0);
+      progress.displayWidth = Math.max(1, (progressBg.displayWidth - 4) * cooldownFraction);
+    }
+  }
+
   showWinner(winner: string): void {
     this.winnerText.setText(`${winner} wins`).setVisible(true);
   }
@@ -116,6 +150,10 @@ export class GameHud {
     this.scene.input.keyboard?.on("keydown-X", () => callbacks.onQueueUnit("Lancer"));
     this.scene.input.keyboard?.on("keydown-C", () => callbacks.onQueueUnit("Archer"));
     this.scene.input.keyboard?.on("keydown-V", () => callbacks.onQueueUnit("Priest"));
+    this.scene.input.keyboard?.on("keydown-T", () => callbacks.onSelectStrategy("Attack"));
+    this.scene.input.keyboard?.on("keydown-Y", () => callbacks.onSelectStrategy("Guard"));
+    this.scene.input.keyboard?.on("keydown-U", () => callbacks.onSelectStrategy("March"));
+    this.scene.input.keyboard?.on("keydown-I", () => callbacks.onSelectStrategy("Berserk"));
   }
 
   private createShopButtons(callbacks: GameHudCallbacks): void {
@@ -211,6 +249,58 @@ export class GameHud {
       .setDisplaySize(slotWidth, slotHeight)
       .setScrollFactor(0)
       .setDepth(98);
+  }
+
+  private createStrategyButtons(callbacks: GameHudCallbacks): void {
+    const buttonSize = 44;
+    const gap = 7;
+    const totalHeight = PLAYER_STRATEGIES.length * buttonSize + (PLAYER_STRATEGIES.length - 1) * gap;
+    const startY = this.scene.scale.height / 2 - totalHeight / 2;
+    const x = this.scene.scale.width - 30;
+
+    PLAYER_STRATEGIES.forEach((strategy, index) => {
+      const y = startY + index * (buttonSize + gap) + buttonSize / 2;
+      const rect = this.scene.add
+        .rectangle(x, y, buttonSize, buttonSize, 0x111827, 0.72)
+        .setStrokeStyle(1, 0xf8fafc, 0.38)
+        .setScrollFactor(0)
+        .setDepth(100)
+        .setInteractive({ useHandCursor: true });
+      rect.on("pointerdown", () => callbacks.onSelectStrategy(strategy));
+      this.strategyButtons.set(strategy, rect);
+
+      this.scene.add
+        .image(x, y - 2, STRATEGY_ASSET_KEYS[strategy])
+        .setDisplaySize(32, 32)
+        .setScrollFactor(0)
+        .setDepth(101);
+
+      this.scene.add
+        .text(x + 14, y + 12, strategyHotkey(strategy), {
+          fontFamily: "TinyWar Fira Sans",
+          fontSize: "11px",
+          color: "#f8fafc",
+          backgroundColor: "rgba(15, 23, 42, 0.78)",
+          padding: { x: 2, y: 0 }
+        })
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(102);
+
+      const progressBg = this.scene.add
+        .rectangle(x, y + buttonSize * 0.32, buttonSize * 0.68, 5, 0x020617, 0.82)
+        .setScrollFactor(0)
+        .setDepth(102)
+        .setVisible(false);
+      const progress = this.scene.add
+        .rectangle(x - (buttonSize * 0.68) / 2, y + buttonSize * 0.32, buttonSize * 0.62, 3, 0x4795a7, 0.95)
+        .setOrigin(0, 0.5)
+        .setScrollFactor(0)
+        .setDepth(103)
+        .setVisible(false);
+      this.strategyProgressBackgrounds.set(strategy, progressBg);
+      this.strategyProgressBars.set(strategy, progress);
+    });
   }
 
   private directionLabel(direction: PlayerDirection): string {

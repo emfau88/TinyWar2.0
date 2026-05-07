@@ -9,6 +9,13 @@ import {
   type MovingUnit
 } from "../../core/movement/movementSystem";
 import { lanesForDirection, nextDirection, type PlayerDirection } from "../../core/player/playerDirection";
+import {
+  createStrategyState,
+  selectStrategy,
+  tickStrategyCooldown,
+  type PlayerStrategy,
+  type StrategyState
+} from "../../core/player/playerStrategy";
 import { enqueueUnit, createQueue, tickQueue, type UnitQueue } from "../../core/queue/unitQueue";
 import type { UnitName } from "../../core/units/unitData";
 import { CameraDragController } from "../input/CameraDragController";
@@ -30,6 +37,7 @@ export class GameScene extends Phaser.Scene {
   private buildings: BuildingInstance[] = [];
   private projectiles: ProjectileInstance[] = [];
   private selectedDirection: PlayerDirection = "Any";
+  private strategy: StrategyState = createStrategyState();
   private hud?: GameHud;
   private mapDebugOverlay?: MapDebugOverlay;
   private mapRenderer?: MapRenderer;
@@ -56,9 +64,10 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, mapSize.x, mapSize.y);
     this.fitMapToViewport(mapSize);
     this.cameraDrag = new CameraDragController(this);
-    this.hud = new GameHud(this, this.selectedDirection, this.queue, {
+    this.hud = new GameHud(this, this.selectedDirection, this.strategy, this.queue, {
       onCycleDirection: () => this.cycleDirection(),
-      onQueueUnit: (unit) => this.queueUnit(unit)
+      onQueueUnit: (unit) => this.queueUnit(unit),
+      onSelectStrategy: (strategy) => this.selectStrategy(strategy)
     });
     this.mapDebugOverlay = new MapDebugOverlay(this);
     this.input.keyboard?.on("keydown-M", () => this.mapDebugOverlay?.toggle());
@@ -79,6 +88,8 @@ export class GameScene extends Phaser.Scene {
       this.spawnQueuedUnit(unitName, "Blue");
     }
     this.hud?.updateQueue(this.queue);
+    this.strategy = tickStrategyCooldown(this.strategy, delta);
+    this.hud?.updateStrategy(this.strategy);
 
     const enemyResult = tickEnemyQueue(this.enemyQueue, delta);
     this.enemyQueue = enemyResult.state;
@@ -163,5 +174,11 @@ export class GameScene extends Phaser.Scene {
   private cycleDirection(): void {
     this.selectedDirection = nextDirection(this.selectedDirection);
     this.hud?.updateDirection(this.selectedDirection);
+  }
+
+  private selectStrategy(strategy: PlayerStrategy): void {
+    const result = selectStrategy(this.strategy, strategy);
+    this.strategy = result.state;
+    this.hud?.updateStrategy(this.strategy);
   }
 }

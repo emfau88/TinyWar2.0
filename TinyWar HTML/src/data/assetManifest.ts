@@ -49,6 +49,22 @@ export const ASSETS = {
     topBotArrow: {
       key: "icon-top-bot-arrow",
       path: `${ROOT}/images/icons/top bot arrow.png`
+    },
+    attack: {
+      key: "icon-attack",
+      path: `${ROOT}/images/icons/attack.png`
+    },
+    guard: {
+      key: "icon-guard",
+      path: `${ROOT}/images/icons/guard.png`
+    },
+    march: {
+      key: "icon-march",
+      path: `${ROOT}/images/icons/march.png`
+    },
+    berserk: {
+      key: "icon-berserk",
+      path: `${ROOT}/images/icons/berserk.png`
     }
   },
   buildings: {
