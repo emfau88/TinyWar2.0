@@ -269,8 +269,9 @@ Status 2026-05-07:
 - Direction-Icon umgesetzt: Original-Icon-Mapping aus `PlayerDirection::image()` inklusive vertikalem Flip fuer `Bot`/`MidBot`.
 - Strategy-Auswahl-Slice umgesetzt: Core-State fuer `Attack`, `Guard`, `March`, `Berserk`, Original-Hotkeys `T/Y/U/I`, initial fertiger 5s-Cooldown und rechte HUD-Icon-Leiste mit Cooldown-Anzeige.
 - `March`-Effekt umgesetzt: Blue-Units laufen mit 150% Speed und ignorieren Unit-vs-Unit-Combat; Building-/Base-Angriffe bleiben wie im Original moeglich. Tests sichern March-Speed, Unit-Ignore und Building-Angriff ab.
-- Restabweichung: `Guard` und `Berserk` sind noch nicht aktiv; Red-AI bleibt vorerst auf `Attack`.
-- Offen fuer Milestone 6: Guard/Berserk-Effekte, Top-Banner, Boosts, Unit-Info, Speed/Pause und Mobile-Screenshot-QA.
+- `Berserk`-Effekt umgesetzt: Attack-Cycles laufen mit 130% Geschwindigkeit, Priest-Heal bleibt normal, und Berserk-Defender ohne Building-Slot haben halbierte Armor/Magic-Resist. Tests sichern Attack-Speed, Heal-Ausnahme, Defense-Malus und Building-Slot-Ausnahme ab.
+- Restabweichung: `Guard` ist noch nicht aktiv; Red-AI bleibt vorerst auf `Attack`.
+- Offen fuer Milestone 6: Guard-Effekt, Top-Banner, Boosts, Unit-Info, Speed/Pause und Mobile-Screenshot-QA.
 
 ## Milestone 7: Boost System in Groups
 

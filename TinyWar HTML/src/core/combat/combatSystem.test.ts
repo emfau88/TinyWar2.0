@@ -37,6 +37,41 @@ describe("resolveCombat", () => {
     expect(attackingBlue?.attackCooldownMs).toBe(ATTACK_DURATION_MS.Warrior);
   });
 
+  it("shortens attack cycles by 30 percent while Berserk is active", () => {
+    const blue = combatUnit(createUnit("blue-warrior", "Warrior", "Blue", { x: 100, y: 100 }));
+    const red = combatUnit(createUnit("red-lancer", "Lancer", "Red", { x: 128, y: 100 }));
+    const state = resolveCombat(
+      {
+        units: [blue, red],
+        buildings: [],
+        strategies: { Blue: "Berserk" }
+      },
+      16
+    );
+    const attackingBlue = state.units.find((unit) => unit.id === "blue-warrior");
+
+    expect(attackingBlue?.attackCooldownMs).toBeCloseTo(ATTACK_DURATION_MS.Warrior / 1.3, 5);
+  });
+
+  it("does not speed up priest heal cycles while Berserk is active", () => {
+    const priest = combatUnit(createUnit("blue-priest", "Priest", "Blue", { x: 100, y: 100 }));
+    const warrior = {
+      ...combatUnit(createUnit("blue-warrior", "Warrior", "Blue", { x: 128, y: 100 })),
+      health: 80
+    };
+    const state = resolveCombat(
+      {
+        units: [priest, warrior],
+        buildings: [],
+        strategies: { Blue: "Berserk" }
+      },
+      16
+    );
+    const priestAfter = state.units.find((unit) => unit.id === "blue-priest");
+
+    expect(priestAfter?.attackCooldownMs).toBe(ATTACK_DURATION_MS.Priest);
+  });
+
   it("damages enemy buildings at the end of the attack cycle", () => {
     const blue = combatUnit(createUnit("blue-warrior", "Warrior", "Blue", { x: 100, y: 100 }));
     const redBase = createBuilding("red-base", "Barracks", "Red", true, { x: 140, y: 100 });
@@ -149,6 +184,45 @@ describe("resolveCombat", () => {
       kind: "Arrow",
       destination: red.position
     });
+  });
+
+  it("halves armor and magic resist for Berserk defenders that are not on buildings", () => {
+    const blue = combatUnit(createUnit("blue-archer", "Archer", "Blue", { x: 100, y: 100 }));
+    const red = combatUnit(createUnit("red-warrior", "Warrior", "Red", { x: 180, y: 100 }));
+    const normalWindup = resolveCombat({ units: [blue, red], buildings: [] }, 16);
+    const normal = resolveCombat(normalWindup, ATTACK_DURATION_MS.Archer);
+    const berserkWindup = resolveCombat(
+      {
+        units: [blue, red],
+        buildings: [],
+        strategies: { Red: "Berserk" }
+      },
+      16
+    );
+    const berserk = resolveCombat(berserkWindup, ATTACK_DURATION_MS.Archer);
+
+    expect(berserk.projectiles?.[0].damage).toBeGreaterThan(normal.projectiles?.[0].damage ?? 0);
+  });
+
+  it("does not halve Berserk defender armor while the target is on a building", () => {
+    const blue = combatUnit(createUnit("blue-archer", "Archer", "Blue", { x: 100, y: 100 }));
+    const red = {
+      ...combatUnit(createUnit("red-warrior", "Warrior", "Red", { x: 180, y: 100 }, "red-base")),
+      onBuildingId: "red-base"
+    };
+    const normalWindup = resolveCombat({ units: [blue, red], buildings: [] }, 16);
+    const normal = resolveCombat(normalWindup, ATTACK_DURATION_MS.Archer);
+    const berserkWindup = resolveCombat(
+      {
+        units: [blue, red],
+        buildings: [],
+        strategies: { Red: "Berserk" }
+      },
+      16
+    );
+    const berserk = resolveCombat(berserkWindup, ATTACK_DURATION_MS.Archer);
+
+    expect(berserk.projectiles?.[0].damage).toBeCloseTo(normal.projectiles?.[0].damage ?? 0, 5);
   });
 
   it("applies archer damage when the arrow collides with the target", () => {

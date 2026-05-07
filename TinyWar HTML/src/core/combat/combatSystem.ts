@@ -72,7 +72,7 @@ export function resolveCombat(state: CombatState, deltaMs: number): CombatState 
       if (unit.targetKind === "unit" && unit.targetId === healTarget.id) {
         units = healUnit(units, healTarget.id, unit);
       }
-      units = resetAttackCycle(units, unit.id, healTarget.id, "unit");
+      units = resetAttackCycle(units, unit.id, healTarget.id, "unit", ATTACK_DURATION_MS[unit.name]);
       continue;
     }
 
@@ -84,12 +84,12 @@ export function resolveCombat(state: CombatState, deltaMs: number): CombatState 
       }
 
       if (unit.targetKind === "unit" && unit.targetId === targetUnit.id) {
-        const result = resolveCompletedAttack({ units, buildings, projectiles }, unit, targetUnit);
+        const result = resolveCompletedAttack({ units, buildings, projectiles, strategies: state.strategies }, unit, targetUnit);
         units = result.units;
         buildings = result.buildings;
         projectiles = result.projectiles;
       }
-      units = resetAttackCycle(units, unit.id, targetUnit.id, "unit");
+      units = resetAttackCycle(units, unit.id, targetUnit.id, "unit", attackDurationForUnit(state, unit));
       continue;
     }
 
@@ -101,12 +101,12 @@ export function resolveCombat(state: CombatState, deltaMs: number): CombatState 
       }
 
       if (unit.targetKind === "building" && unit.targetId === targetBuilding.id) {
-        const result = resolveCompletedAttack({ units, buildings, projectiles }, unit, targetBuilding);
+        const result = resolveCompletedAttack({ units, buildings, projectiles, strategies: state.strategies }, unit, targetBuilding);
         units = result.units;
         buildings = result.buildings;
         projectiles = result.projectiles;
       }
-      units = resetAttackCycle(units, unit.id, targetBuilding.id, "building");
+      units = resetAttackCycle(units, unit.id, targetBuilding.id, "building", attackDurationForUnit(state, unit));
       const destroyedBase = buildings.find((building) => building.id === targetBuilding.id);
       if (destroyedBase?.isBase && destroyedBase.health <= 0) {
         winner = unit.color === "Blue" ? "Blue" : "Red";
@@ -118,6 +118,7 @@ export function resolveCombat(state: CombatState, deltaMs: number): CombatState 
     units: clearInvalidTargets(units.filter((unit) => unit.health > 0), buildings),
     buildings,
     projectiles,
+    strategies: state.strategies,
     winner
   };
 }
@@ -127,6 +128,7 @@ function resolveCompletedAttack(
     units: readonly CombatUnit[];
     buildings: readonly BuildingInstance[];
     projectiles: readonly ProjectileInstance[];
+    strategies?: Partial<Record<PlayerColor, PlayerStrategy>>;
   },
   attacker: CombatUnit,
   target: CombatUnit | BuildingInstance
@@ -136,7 +138,7 @@ function resolveCompletedAttack(
   projectiles: ProjectileInstance[];
 } {
   if (attacker.name === "Archer") {
-    const damage = damageForTarget(attacker, target);
+    const damage = damageForTarget(attacker, target, state.strategies);
     const direction = target.position.x < attacker.position.x ? -1 : 1;
     return {
       units: [...state.units],
@@ -165,13 +167,17 @@ function resolveCompletedAttack(
   }
 
   return {
-    units: damageUnit(state.units, target.id, attacker),
+    units: damageUnit(state.units, target.id, attacker, state.strategies),
     buildings: [...state.buildings],
     projectiles: [...state.projectiles]
   };
 }
 
-function damageForTarget(attacker: CombatUnit, target: CombatUnit | BuildingInstance): number {
+function damageForTarget(
+  attacker: CombatUnit,
+  target: CombatUnit | BuildingInstance,
+  strategies?: Partial<Record<PlayerColor, PlayerStrategy>>
+): number {
   if ("isBase" in target) {
     return calculateDamage(toDamageStats(attacker), {
       physicalDamage: 0,
@@ -186,12 +192,17 @@ function damageForTarget(attacker: CombatUnit, target: CombatUnit | BuildingInst
   const definition = UNITS[target.name];
   return calculateDamage(toDamageStats(attacker), {
     ...toDamageStats(target),
-    armor: definition.armor,
-    magicResist: definition.magicResist
+    armor: adjustedArmor(definition.armor, target, strategies),
+    magicResist: adjustedMagicResist(definition.magicResist, target, strategies)
   });
 }
 
-function damageUnit(units: readonly CombatUnit[], targetId: string, attacker: CombatUnit): CombatUnit[] {
+function damageUnit(
+  units: readonly CombatUnit[],
+  targetId: string,
+  attacker: CombatUnit,
+  strategies?: Partial<Record<PlayerColor, PlayerStrategy>>
+): CombatUnit[] {
   return units.map((unit) => {
     if (unit.id !== targetId) {
       return unit;
@@ -202,8 +213,8 @@ function damageUnit(units: readonly CombatUnit[], targetId: string, attacker: Co
       toDamageStats(attacker),
       {
         ...toDamageStats(unit),
-        armor: definition.armor,
-        magicResist: definition.magicResist
+        armor: adjustedArmor(definition.armor, unit, strategies),
+        magicResist: adjustedMagicResist(definition.magicResist, unit, strategies)
       }
     );
 
@@ -257,13 +268,14 @@ function resetAttackCycle(
   units: readonly CombatUnit[],
   unitId: string,
   targetId: string,
-  targetKind: "unit" | "building"
+  targetKind: "unit" | "building",
+  durationMs: number
 ): CombatUnit[] {
   return units.map((unit) =>
     unit.id === unitId
       ? {
           ...unit,
-          attackCooldownMs: ATTACK_DURATION_MS[unit.name],
+          attackCooldownMs: durationMs,
           moving: false,
           targetId,
           targetKind
@@ -313,6 +325,38 @@ function unitCanHeal(unit: CombatUnit): boolean {
 
 function strategyForUnit(state: CombatState, unit: CombatUnit): PlayerStrategy {
   return state.strategies?.[unit.color] ?? "Attack";
+}
+
+function strategyForColor(
+  strategies: Partial<Record<PlayerColor, PlayerStrategy>> | undefined,
+  color: PlayerColor
+): PlayerStrategy {
+  return strategies?.[color] ?? "Attack";
+}
+
+function attackDurationForUnit(state: CombatState, unit: CombatUnit): number {
+  const duration = ATTACK_DURATION_MS[unit.name];
+  return strategyForUnit(state, unit) === "Berserk" && unit.name !== "Priest" ? duration / 1.3 : duration;
+}
+
+function adjustedArmor(
+  armor: number,
+  defender: CombatUnit,
+  strategies?: Partial<Record<PlayerColor, PlayerStrategy>>
+): number {
+  return strategyForColor(strategies, defender.color) === "Berserk" && !defender.onBuildingId
+    ? armor / 2
+    : armor;
+}
+
+function adjustedMagicResist(
+  magicResist: number,
+  defender: CombatUnit,
+  strategies?: Partial<Record<PlayerColor, PlayerStrategy>>
+): number {
+  return strategyForColor(strategies, defender.color) === "Berserk" && !defender.onBuildingId
+    ? magicResist / 2
+    : magicResist;
 }
 
 export { MELEE_BUILDING_RANGE, MELEE_UNIT_RANGE, ORIGINAL_RADIUS } from "./combatRange";
