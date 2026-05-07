@@ -1,0 +1,84 @@
+[package]
+name = "tinywar"
+version = "0.1.0"
+edition = "2021"
+authors = ["Mavs"]
+
+[dependencies]
+bevy = { version = "0.18.0", default-features = false, features = [
+    "bevy_asset",
+    "bevy_color",
+    "bevy_core_pipeline",
+    "bevy_gilrs",
+    "bevy_gizmos",
+    "bevy_gltf",
+    "bevy_pbr",
+    "bevy_picking",
+    "bevy_render",
+    "bevy_scene",
+    "bevy_sprite",
+    "bevy_state",
+    "bevy_text",
+    "bevy_ui",
+    "bevy_ui_render",
+    "bevy_window",
+    "bevy_winit",
+    "custom_cursor",
+    "debug",
+    "default_font",
+    "gltf_animation",
+    "hdr",
+    "mesh_picking",
+    "png",
+    "serialize",
+    "smaa_luts",
+    "sprite_picking",
+    "sysinfo_plugin",
+    "tonemapping_luts",
+    "ui_picking",
+    "vorbis",
+    "webgl2",
+    "x11",
+    "zstd_rust",
+]}
+bevy_ecs_tiled = "0.11.2"
+bevy_kira_audio = "0.25.0"
+bevy_tweening = "0.15.0"
+itertools = "0.14.0"
+pathfinding = "4.14.0"
+rand = "0.10.0"
+regex = "1.12.2"
+serde = "1.0.228"
+strum = "0.27.2"
+strum_macros = "0.27.2"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+image = "0.25.9"
+winit = "0.30.12"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+bevy = { version = "0.18", default-features = false, features = ["multi_threaded"] }
+bevy_renet = "4.0.0"
+bimap = "0.6.3"
+bincode = { version = "2.0.1", features = ["serde"] }
+rfd = "0.17.2"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+bevy_ecs_tiled = "0.11.2"
+# Used by many dependencies and require feature flag for wasm
+# https://docs.rs/getrandom/latest/getrandom/#webassembly-support
+getrandom_v2 = { package = "getrandom", version = "0.2.17", features = ["js"] }
+getrandom_v4 = { package = "getrandom", version = "0.4.1", features = ["wasm_js"] }
+
+# Enable a small amount of optimization in the dev profile.
+[profile.dev]
+opt-level = 1
+
+# Enable a large amount of optimization in the dev profile for dependencies.
+[profile.dev.package."*"]
+opt-level = 3
+
+[lints.clippy]
+module_inception = "allow"
+too_many_arguments = "allow"
+type_complexity = "allow"
