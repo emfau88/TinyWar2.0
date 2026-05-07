@@ -250,7 +250,7 @@ Tasks:
 - [ ] Strategie-Core: Attack, Guard, March, Berserk.
 - [ ] 5s Strategy-Cooldown.
 - [ ] Top-Banner/Strategieanzeige aus `large ribbons`.
-- [ ] Lane-Icon oben links mit Original-Direction-Icons.
+- [x] Lane-Icon oben links mit Original-Direction-Icons.
 - [ ] Pause und Game-Speed fuer Solo.
 - [ ] Unit-Info-Panel.
 - [ ] Boost-Leiste und Boost-Aktivstatus vorbereiten.
@@ -266,7 +266,8 @@ Exit-Kriterien:
 Status 2026-05-07:
 - Original-UI-Audit begonnen: Queue-Struktur aus `src/core/map/ui/systems.rs` geprueft.
 - Erster sichtbarer HUD-Schritt umgesetzt: Original-Sword-Queue unten und linke Basic-Unit-Icon-Leiste.
-- Offen fuer Milestone 6: Strategien, Top-Banner, Direction-Icon, Boosts, Unit-Info, Speed/Pause und Mobile-Screenshot-QA.
+- Direction-Icon umgesetzt: Original-Icon-Mapping aus `PlayerDirection::image()` inklusive vertikalem Flip fuer `Bot`/`MidBot`.
+- Offen fuer Milestone 6: Strategien, Top-Banner, Boosts, Unit-Info, Speed/Pause und Mobile-Screenshot-QA.
 
 ## Milestone 7: Boost System in Groups
 

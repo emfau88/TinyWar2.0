@@ -29,6 +29,28 @@ export const ASSETS = {
       path: `${ROOT}/images/ui/swords3.png`
     }
   },
+  icons: {
+    anyArrow: {
+      key: "icon-any-arrow",
+      path: `${ROOT}/images/icons/any arrow.png`
+    },
+    topArrow: {
+      key: "icon-top-arrow",
+      path: `${ROOT}/images/icons/top arrow.png`
+    },
+    topMidArrow: {
+      key: "icon-top-mid-arrow",
+      path: `${ROOT}/images/icons/top-mid arrow.png`
+    },
+    midArrow: {
+      key: "icon-mid-arrow",
+      path: `${ROOT}/images/icons/mid arrow.png`
+    },
+    topBotArrow: {
+      key: "icon-top-bot-arrow",
+      path: `${ROOT}/images/icons/top bot arrow.png`
+    }
+  },
   buildings: {
     blueBarracks: {
       key: "building-blue-barracks",

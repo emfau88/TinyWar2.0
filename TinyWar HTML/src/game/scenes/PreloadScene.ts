@@ -18,6 +18,11 @@ export class PreloadScene extends Phaser.Scene {
     });
     this.load.image(ASSETS.ui.swords2.key, ASSETS.ui.swords2.path);
     this.load.image(ASSETS.ui.swords3.key, ASSETS.ui.swords3.path);
+    this.load.image(ASSETS.icons.anyArrow.key, ASSETS.icons.anyArrow.path);
+    this.load.image(ASSETS.icons.topArrow.key, ASSETS.icons.topArrow.path);
+    this.load.image(ASSETS.icons.topMidArrow.key, ASSETS.icons.topMidArrow.path);
+    this.load.image(ASSETS.icons.midArrow.key, ASSETS.icons.midArrow.path);
+    this.load.image(ASSETS.icons.topBotArrow.key, ASSETS.icons.topBotArrow.path);
     this.load.image(ASSETS.buildings.blueBarracks.key, ASSETS.buildings.blueBarracks.path);
     this.load.image(ASSETS.buildings.redBarracks.key, ASSETS.buildings.redBarracks.path);
     this.load.image(ASSETS.units.blueWarrior.key, ASSETS.units.blueWarrior.path);

@@ -20,6 +20,7 @@ export interface GameHudCallbacks {
 }
 
 export class GameHud {
+  private readonly directionIcon: Phaser.GameObjects.Image;
   private readonly directionText: Phaser.GameObjects.Text;
   private readonly queueText: Phaser.GameObjects.Text;
   private readonly winnerText: Phaser.GameObjects.Text;
@@ -33,8 +34,25 @@ export class GameHud {
     queue: UnitQueue,
     callbacks: GameHudCallbacks
   ) {
+    this.scene.add
+      .rectangle(34, 34, 48, 44, 0x111827, 0.62)
+      .setStrokeStyle(1, 0xf8fafc, 0.42)
+      .setScrollFactor(0)
+      .setDepth(100)
+      .setInteractive({ useHandCursor: true })
+      .on("pointerdown", callbacks.onCycleDirection);
+
+    this.directionIcon = this.scene.add
+      .image(34, 34, this.directionIconKey(direction))
+      .setDisplaySize(38, 38)
+      .setFlipY(this.directionFlipsY(direction))
+      .setScrollFactor(0)
+      .setDepth(101)
+      .setInteractive({ useHandCursor: true });
+    this.directionIcon.on("pointerdown", callbacks.onCycleDirection);
+
     this.directionText = this.scene.add
-      .text(12, 12, this.directionLabel(direction), {
+      .text(66, 16, this.directionLabel(direction), {
         fontFamily: "TinyWar Fira Sans",
         fontSize: "14px",
         color: "#f8fafc",
@@ -80,6 +98,7 @@ export class GameHud {
 
   updateDirection(direction: PlayerDirection): void {
     this.directionText.setText(this.directionLabel(direction));
+    this.directionIcon.setTexture(this.directionIconKey(direction)).setFlipY(this.directionFlipsY(direction));
   }
 
   updateQueue(queue: UnitQueue): void {
@@ -195,7 +214,7 @@ export class GameHud {
   }
 
   private directionLabel(direction: PlayerDirection): string {
-    return `Lanes: ${direction}  |  L: cycle`;
+    return `${direction}  |  L`;
   }
 
   private queueLabel(queue: UnitQueue): string {
@@ -231,5 +250,26 @@ export class GameHud {
       Archer: "C",
       Priest: "V"
     }[unit];
+  }
+
+  private directionIconKey(direction: PlayerDirection): string {
+    switch (direction) {
+      case "Any":
+        return ASSETS.icons.anyArrow.key;
+      case "Top":
+      case "Bot":
+        return ASSETS.icons.topArrow.key;
+      case "TopMid":
+      case "MidBot":
+        return ASSETS.icons.topMidArrow.key;
+      case "Mid":
+        return ASSETS.icons.midArrow.key;
+      case "TopBot":
+        return ASSETS.icons.topBotArrow.key;
+    }
+  }
+
+  private directionFlipsY(direction: PlayerDirection): boolean {
+    return direction === "Bot" || direction === "MidBot";
   }
 }
