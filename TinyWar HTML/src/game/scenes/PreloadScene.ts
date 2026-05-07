@@ -12,6 +12,12 @@ export class PreloadScene extends Phaser.Scene {
     this.load.image(ASSETS.background.cover.key, ASSETS.background.cover.path);
     this.load.image(ASSETS.background.scenery1.key, ASSETS.background.scenery1.path);
     this.load.image(ASSETS.ui.banner.key, ASSETS.ui.banner.path);
+    this.load.spritesheet(ASSETS.ui.swords1.key, ASSETS.ui.swords1.path, {
+      frameWidth: 105,
+      frameHeight: 128
+    });
+    this.load.image(ASSETS.ui.swords2.key, ASSETS.ui.swords2.path);
+    this.load.image(ASSETS.ui.swords3.key, ASSETS.ui.swords3.path);
     this.load.image(ASSETS.buildings.blueBarracks.key, ASSETS.buildings.blueBarracks.path);
     this.load.image(ASSETS.buildings.redBarracks.key, ASSETS.buildings.redBarracks.path);
     this.load.image(ASSETS.units.blueWarrior.key, ASSETS.units.blueWarrior.path);

@@ -189,6 +189,7 @@ Status 2026-05-06:
 - Basic-Unit-Stats fuer Warrior, Lancer, Archer und Priest aus Originaldaten uebertragen.
 - Desktop-Hotkeys aktiv: `Z` Warrior, `X` Lancer, `C` Archer, `V` Priest.
 - Mobile Queue-Buttons am unteren Bildschirmrand.
+- Erster UI-Parity-Pass 2026-05-07: Queue nutzt unten die Original-Assets `swords1/2/3` mit zehn Slots und Progress-Anzeige fuer den aktiven Slot; Basic-Unit-Buttons sitzen als kompakte Icon-Leiste links. Vollstaendige UI-Parity bleibt Milestone 6.
 - Queue-Spawns erzeugen bewegende Units auf den aktuell gewaehlten Lanes.
 - Tests erfolgreich: 25 Tests.
 - Build erfolgreich.
@@ -248,10 +249,11 @@ Ziel: originale Spielerentscheidungen sichtbar machen.
 Tasks:
 - [ ] Strategie-Core: Attack, Guard, March, Berserk.
 - [ ] 5s Strategy-Cooldown.
-- [ ] Top-Banner/Strategieanzeige.
-- [ ] Lane-Icon oben links.
+- [ ] Top-Banner/Strategieanzeige aus `large ribbons`.
+- [ ] Lane-Icon oben links mit Original-Direction-Icons.
 - [ ] Pause und Game-Speed fuer Solo.
 - [ ] Unit-Info-Panel.
+- [ ] Boost-Leiste und Boost-Aktivstatus vorbereiten.
 - [ ] Audio-Toggle und Mobile-Audio-Unlock.
 
 Build-Ergebnis:
@@ -260,6 +262,11 @@ Build-Ergebnis:
 Exit-Kriterien:
 - Strategieeffekte getestet.
 - UI-Screenshots fuer Mobile/Desktop.
+
+Status 2026-05-07:
+- Original-UI-Audit begonnen: Queue-Struktur aus `src/core/map/ui/systems.rs` geprueft.
+- Erster sichtbarer HUD-Schritt umgesetzt: Original-Sword-Queue unten und linke Basic-Unit-Icon-Leiste.
+- Offen fuer Milestone 6: Strategien, Top-Banner, Direction-Icon, Boosts, Unit-Info, Speed/Pause und Mobile-Screenshot-QA.
 
 ## Milestone 7: Boost System in Groups
 

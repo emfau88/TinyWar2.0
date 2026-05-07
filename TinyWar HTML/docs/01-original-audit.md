@@ -154,10 +154,20 @@ Priest-Heal-Details aus `movement.rs`, `combat.rs`, `units.rs`, `units/systems.r
 - Heal-Action bleibt nur gueltig, solange das Ziel existiert, in Range ist und weiterhin unter Max-Health liegt.
 - HTML-Stand 2026-05-06: Priest-Heal ist im Core umgesetzt: verletzte Allies werden gelockt, Self-Heal/Enemy-Attack/Full-Health-Heal sind ausgeschlossen, Heal wird nach 1100ms Cycle angewendet und auf Max-Health geklemmt. Meditation-Boost-Verstaerkung bleibt bis Boost-System offen.
 
+## UI
+
+Originalquelle: `src/core/map/ui/systems.rs` und `src/core/assets.rs`.
+
+- Die Original-Queue liegt unten als horizontale UI-Leiste: links `swords1` aus einem 105x128-Atlas mit Spielerfarben-Index, zehn `swords2`-Slots, rechts `swords3`.
+- Queue-Slots zeigen das Unit-Icon und nur fuer den aktiven ersten Queue-Eintrag eine Progress-Anzeige.
+- Die Shop-/Unit-Buttons links und Strategiebuttons nutzen `small ribbons`; Top-Banner und Advance-Anzeigen nutzen `large ribbons`.
+- Boosts, Strategieauswahl, Unit-Info, Direction-Icon und Speed-Indikator sind im Original eigene UI-Bereiche und bleiben fuer UI-Parity separat zu auditieren/portieren.
+- HTML-Stand 2026-05-07: Erster HUD-Parity-Schritt umgesetzt: `swords1/2/3` werden geladen, die Player-Queue wird unten mit 10 Original-Sword-Slots angezeigt, der erste Slot zeigt Spawn-Progress, und Basic-Unit-Queue-Buttons wurden als kompakte linke Icon-Leiste statt Textbuttons umgesetzt. Vollstaendige UI-Parity ist damit nicht abgeschlossen.
+
 ## Bekannte Audit-Luecken
 
 Vor Coding muessen noch final verifiziert werden:
-- UI-Positionen und Zustandslogik aus `src/core/map/ui/systems.rs`;
+- UI-Positionen und Zustandslogik aus `src/core/map/ui/systems.rs` fuer Top-Banner, Boosts, Strategien, Unit-Info und Speed-Indikator;
 - KI/Solo-Verhalten;
 - Solo-/AI-Verhalten, da Multiplayer fuer den HTML-Rebuild bewusst nicht im Scope ist;
 - genaue Animation-Slicing-Daten pro Spritesheet;
