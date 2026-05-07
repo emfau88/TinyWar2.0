@@ -11,6 +11,8 @@ const FOOTPRINT_ALPHA = 0.8;
 const ANCHOR_LABEL_DEPTH = 10_002;
 const PREVIEW_DEPTH = 10_001;
 const PREVIEW_ALPHA = 0.55;
+const FOAM_VISIBLE_OFFSET_X = 1;
+const FOAM_VISIBLE_OFFSET_Y = -1;
 
 export class MapDebugOverlay {
   private readonly container: Phaser.GameObjects.Container;
@@ -93,6 +95,7 @@ export class MapDebugOverlay {
         if (tileset.name.toLowerCase() === "foam") {
           this.drawFoamPreview(column, row, gid, tileset);
           this.drawAnchorLabel(column, row, color);
+          this.drawFoamVisibleHint(column, row);
         }
       });
     }
@@ -115,6 +118,21 @@ export class MapDebugOverlay {
 
     this.container.add(preview);
   }
+
+  private drawFoamVisibleHint(column: number, row: number): void {
+    const x = (column + FOAM_VISIBLE_OFFSET_X) * MAP_DATA.tileWidth + MAP_DATA.tileWidth / 2;
+    const y = (row + FOAM_VISIBLE_OFFSET_Y) * MAP_DATA.tileHeight + MAP_DATA.tileHeight / 2;
+    if (x < 0 || y < 0 || x >= MAP_DATA.width * MAP_DATA.tileWidth || y >= MAP_DATA.height * MAP_DATA.tileHeight) {
+      return;
+    }
+
+    const marker = this.scene.add
+      .circle(x, y, 6, FOAM_COLOR, 0.95)
+      .setStrokeStyle(2, 0xffffff, 0.9)
+      .setDepth(ANCHOR_LABEL_DEPTH);
+    this.container.add(marker);
+  }
+
 
   private drawAnchorLabel(column: number, row: number, color: number): void {
     const x = column * MAP_DATA.tileWidth + 4;
