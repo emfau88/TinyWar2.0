@@ -8,6 +8,7 @@ const NON_FOAM_COLOR = 0xfacc15;
 const CLIPPED_COLOR = 0xef4444;
 const GRID_ALPHA = 0.22;
 const FOOTPRINT_ALPHA = 0.8;
+const ANCHOR_LABEL_DEPTH = 10_002;
 
 export class MapDebugOverlay {
   private readonly container: Phaser.GameObjects.Container;
@@ -86,8 +87,29 @@ export class MapDebugOverlay {
         graphics.strokeRect(footprint.x, footprint.y, footprint.width, footprint.height);
         graphics.fillStyle(color, 0.16);
         graphics.fillRect(footprint.x, footprint.y, footprint.width, footprint.height);
+
+        if (tileset.name.toLowerCase() === "foam") {
+          this.drawAnchorLabel(column, row, color);
+        }
       });
     }
+  }
+
+  private drawAnchorLabel(column: number, row: number, color: number): void {
+    const x = column * MAP_DATA.tileWidth + 4;
+    const y = (row + 1) * MAP_DATA.tileHeight - 18;
+    const label = this.scene.add
+      .text(x, y, "F", {
+        backgroundColor: "#082f49",
+        color: "#e0f2fe",
+        fontFamily: "monospace",
+        fontSize: "14px",
+        padding: { x: 3, y: 1 }
+      })
+      .setDepth(ANCHOR_LABEL_DEPTH);
+    const dot = this.scene.add.circle(x - 1, y + 15, 3, color, 0.95).setDepth(ANCHOR_LABEL_DEPTH);
+
+    this.container.add([dot, label]);
   }
 
   private footprint(column: number, row: number, tileset: TiledTilesetData) {
