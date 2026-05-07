@@ -88,6 +88,7 @@ Status 2026-05-06:
 - Map-Diagnose-Tooling ergaenzt: `npm run diagnose:map` meldet animierte Tilesets, Tiled-Flip-Flags und Non-64x64-Placements inklusive Layer-/Tileset-Gruppierung, Tiled-Bottom-Left-Footprints und Map-Grenz-Clipping.
 - Debug-Overlay per Taste `M` ergaenzt: Grid-Koordinaten und Non-64x64-Footprints sichtbar, geclippte Placements rot markiert.
 - Foam-Anker im Debug-Overlay mit `F` markiert, um weitere manuelle Foam-Korrekturen eindeutig zu machen.
+- Debug-Overlay rendert Foam zusaetzlich als halbtransparente Preview ueber allen Layern, damit verdeckte Foam-Daten von echter Spielsichbarkeit unterscheidbar sind.
 - Erste manuelle Map-Korrektur: zwei visuell gepruefte Baum-Anker verschoben; Foam-Korrektur bewusst zurueckgestellt, bis die Ziel-Anker eindeutig sind.
 - Weitere manuelle Map-Korrektur: Tree3-Anker links unten ein Feld nach unten verschoben.
 - Foam-Testkorrektur: Foam-Anker `(1,10)` nach `(1,8)` verschoben, um die sichtbare Beanstandung bei `(2,9)` Richtung `(2,7)` zu pruefen.
