@@ -180,6 +180,41 @@ describe("resolveCombat", () => {
     expect(blueAfter?.moving).toBe(true);
   });
 
+  it("makes March units ignore enemy units instead of starting combat", () => {
+    const blue = combatUnit(createUnit("blue-warrior", "Warrior", "Blue", { x: 100, y: 100 }));
+    const red = combatUnit(createUnit("red-warrior", "Warrior", "Red", { x: 128, y: 100 }));
+    const state = resolveCombat(
+      {
+        units: [blue, red],
+        buildings: [],
+        strategies: { Blue: "March", Red: "March" }
+      },
+      16
+    );
+
+    expect(state.units.find((unit) => unit.id === "blue-warrior")?.targetId).toBeUndefined();
+    expect(state.units.find((unit) => unit.id === "blue-warrior")?.moving).toBe(true);
+    expect(state.units.find((unit) => unit.id === "red-warrior")?.targetId).toBeUndefined();
+  });
+
+  it("still lets March units attack enemy buildings like the original movement system", () => {
+    const blue = combatUnit(createUnit("blue-warrior", "Warrior", "Blue", { x: 100, y: 100 }));
+    const redBase = createBuilding("red-base", "Barracks", "Red", true, { x: 140, y: 100 });
+    const state = resolveCombat(
+      {
+        units: [blue],
+        buildings: [redBase],
+        strategies: { Blue: "March" }
+      },
+      16
+    );
+    const blueAfter = state.units.find((unit) => unit.id === "blue-warrior");
+
+    expect(blueAfter?.targetId).toBe("red-base");
+    expect(blueAfter?.targetKind).toBe("building");
+    expect(blueAfter?.moving).toBe(false);
+  });
+
   it("starts a priest heal cycle for an injured ally in original range", () => {
     const priest = combatUnit(createUnit("blue-priest", "Priest", "Blue", { x: 100, y: 100 }));
     const warrior = {

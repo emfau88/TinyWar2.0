@@ -1,5 +1,6 @@
 import { getLaneWorldPath, type LaneName } from "../map/pathfinding";
 import type { PlayerColor } from "../buildings/buildingData";
+import type { PlayerStrategy } from "../player/playerStrategy";
 import { createUnit, UNITS, type UnitInstance, type UnitName } from "../units/unitData";
 
 const ARRIVAL_DISTANCE = 2;
@@ -47,7 +48,11 @@ export function createDebugMidLaneUnit(): MovingUnit {
   return createDebugLaneUnit("Mid");
 }
 
-export function updateMovingUnit(unit: MovingUnit, deltaSeconds: number): MovingUnit {
+export function updateMovingUnit(
+  unit: MovingUnit,
+  deltaSeconds: number,
+  strategy: PlayerStrategy = "Attack"
+): MovingUnit {
   const sourcePath = getLaneWorldPath(unit.lane);
   const path = unit.direction === "RightToLeft" ? [...sourcePath].reverse() : sourcePath;
   const targetIndex = Math.min(unit.pathIndex, path.length - 1);
@@ -74,7 +79,11 @@ export function updateMovingUnit(unit: MovingUnit, deltaSeconds: number): Moving
     };
   }
 
-  const step = Math.min(distance, UNITS[unit.name].speed * Math.min(deltaSeconds, 0.05));
+  const strategySpeedMultiplier = strategy === "March" ? 1.5 : 1;
+  const step = Math.min(
+    distance,
+    UNITS[unit.name].speed * strategySpeedMultiplier * Math.min(deltaSeconds, 0.05)
+  );
   const nextPosition = {
     x: unit.position.x + (dx / distance) * step,
     y: unit.position.y + (dy / distance) * step

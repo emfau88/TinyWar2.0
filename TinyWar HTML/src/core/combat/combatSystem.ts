@@ -1,5 +1,7 @@
 import type { BuildingInstance } from "../buildings/buildingData";
 import { calculateDamage } from "./damage";
+import type { PlayerColor } from "../buildings/buildingData";
+import type { PlayerStrategy } from "../player/playerStrategy";
 import { UNITS, type UnitInstance } from "../units/unitData";
 import { distance, ORIGINAL_RADIUS, unitAttackRange } from "./combatRange";
 import {
@@ -33,6 +35,7 @@ export interface CombatState {
   units: readonly CombatUnit[];
   buildings: readonly BuildingInstance[];
   projectiles?: readonly ProjectileInstance[];
+  strategies?: Partial<Record<PlayerColor, PlayerStrategy>>;
   winner?: "Blue" | "Red";
 }
 
@@ -73,7 +76,7 @@ export function resolveCombat(state: CombatState, deltaMs: number): CombatState 
       continue;
     }
 
-    const targetUnit = lockedOrNearestEnemyUnit(unit, units);
+    const targetUnit = strategyForUnit(state, unit) === "March" ? undefined : lockedOrNearestEnemyUnit(unit, units);
     if (targetUnit && unitCanAttack(unit) && distance(unit.position, targetUnit.position) <= unitAttackRange(unit, "unit")) {
       if (unit.attackCooldownMs > 0) {
         units = holdAttack(units, unit.id, targetUnit.id, "unit");
@@ -306,6 +309,10 @@ function unitCanAttack(unit: CombatUnit): boolean {
 
 function unitCanHeal(unit: CombatUnit): boolean {
   return unit.name === "Priest";
+}
+
+function strategyForUnit(state: CombatState, unit: CombatUnit): PlayerStrategy {
+  return state.strategies?.[unit.color] ?? "Attack";
 }
 
 export { MELEE_BUILDING_RANGE, MELEE_UNIT_RANGE, ORIGINAL_RADIUS } from "./combatRange";

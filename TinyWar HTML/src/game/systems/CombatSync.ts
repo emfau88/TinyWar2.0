@@ -2,6 +2,7 @@ import { resolveCombat } from "../../core/combat/combatSystem";
 import type { ProjectileInstance } from "../../core/combat/projectileSystem";
 import type { BuildingInstance } from "../../core/buildings/buildingData";
 import type { MovingUnit } from "../../core/movement/movementSystem";
+import type { PlayerStrategy } from "../../core/player/playerStrategy";
 import { BuildingRenderer, type BuildingRenderHandle } from "../render/BuildingRenderer";
 import { ProjectileRenderer, type ProjectileRenderHandle } from "../render/ProjectileRenderer";
 import { UnitRenderer, type UnitRenderHandle } from "../render/UnitRenderer";
@@ -14,6 +15,10 @@ export interface CombatSyncState {
   buildingHandles: Map<string, BuildingRenderHandle>;
   projectileHandles: Map<string, ProjectileRenderHandle>;
   projectileRenderer: ProjectileRenderer;
+  strategies?: {
+    Blue?: PlayerStrategy;
+    Red?: PlayerStrategy;
+  };
   winner?: "Blue" | "Red";
 }
 
@@ -22,7 +27,8 @@ export function resolveAndSyncCombat(state: CombatSyncState, deltaMs: number): C
     {
       units: state.units,
       buildings: state.buildings,
-      projectiles: state.projectiles
+      projectiles: state.projectiles,
+      strategies: state.strategies
     },
     deltaMs
   );

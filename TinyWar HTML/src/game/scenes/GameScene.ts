@@ -99,7 +99,7 @@ export class GameScene extends Phaser.Scene {
 
     this.debugUnits = this.debugUnits.map((unit) => {
       const previousX = unit.position.x;
-      const moved = unit.moving ? updateMovingUnit(unit, delta / 1000) : unit;
+      const moved = unit.moving ? updateMovingUnit(unit, delta / 1000, this.strategyForUnit(unit)) : unit;
       const handle = this.debugUnitSprites.get(unit.id);
       if (handle) {
         UnitRenderer.updateHandle(handle, moved, UnitRenderer.actionForUnit(moved));
@@ -118,7 +118,11 @@ export class GameScene extends Phaser.Scene {
         unitHandles: this.debugUnitSprites,
         buildingHandles: this.buildingSprites,
         projectileHandles: this.projectileSprites,
-        projectileRenderer: this.projectileRenderer
+        projectileRenderer: this.projectileRenderer,
+        strategies: {
+          Blue: this.strategy.current,
+          Red: "Attack"
+        }
       },
       delta
     );
@@ -180,5 +184,9 @@ export class GameScene extends Phaser.Scene {
     const result = selectStrategy(this.strategy, strategy);
     this.strategy = result.state;
     this.hud?.updateStrategy(this.strategy);
+  }
+
+  private strategyForUnit(unit: MovingUnit): PlayerStrategy {
+    return unit.color === "Blue" ? this.strategy.current : "Attack";
   }
 }

@@ -10,6 +10,16 @@ describe("movementSystem", () => {
     expect(Math.hypot(moved.position.x - unit.position.x, moved.position.y - unit.position.y)).toBeGreaterThan(0);
   });
 
+  it("moves 50 percent faster while using the original March strategy", () => {
+    const unit = createDebugMidLaneUnit();
+    const normal = updateMovingUnit(unit, 1 / 60, "Attack");
+    const marching = updateMovingUnit(unit, 1 / 60, "March");
+    const normalDistance = Math.hypot(normal.position.x - unit.position.x, normal.position.y - unit.position.y);
+    const marchingDistance = Math.hypot(marching.position.x - unit.position.x, marching.position.y - unit.position.y);
+
+    expect(marchingDistance).toBeCloseTo(normalDistance * 1.5, 5);
+  });
+
   it("can create debug units for each lane", () => {
     expect(createDebugLaneUnit("Top").lane).toBe("Top");
     expect(createDebugLaneUnit("Mid").lane).toBe("Mid");

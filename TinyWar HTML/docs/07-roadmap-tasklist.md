@@ -268,8 +268,9 @@ Status 2026-05-07:
 - Erster sichtbarer HUD-Schritt umgesetzt: Original-Sword-Queue unten und linke Basic-Unit-Icon-Leiste.
 - Direction-Icon umgesetzt: Original-Icon-Mapping aus `PlayerDirection::image()` inklusive vertikalem Flip fuer `Bot`/`MidBot`.
 - Strategy-Auswahl-Slice umgesetzt: Core-State fuer `Attack`, `Guard`, `March`, `Berserk`, Original-Hotkeys `T/Y/U/I`, initial fertiger 5s-Cooldown und rechte HUD-Icon-Leiste mit Cooldown-Anzeige.
-- Restabweichung: Strategy-Effekte sind noch nicht aktiv. `Attack` ist faktisch der aktuelle Default; `Guard`, `March` und `Berserk` muessen als naechstes in Movement/Combat umgesetzt und getestet werden.
-- Offen fuer Milestone 6: Strategy-Effekte, Top-Banner, Boosts, Unit-Info, Speed/Pause und Mobile-Screenshot-QA.
+- `March`-Effekt umgesetzt: Blue-Units laufen mit 150% Speed und ignorieren Unit-vs-Unit-Combat; Building-/Base-Angriffe bleiben wie im Original moeglich. Tests sichern March-Speed, Unit-Ignore und Building-Angriff ab.
+- Restabweichung: `Guard` und `Berserk` sind noch nicht aktiv; Red-AI bleibt vorerst auf `Attack`.
+- Offen fuer Milestone 6: Guard/Berserk-Effekte, Top-Banner, Boosts, Unit-Info, Speed/Pause und Mobile-Screenshot-QA.
 
 ## Milestone 7: Boost System in Groups
 

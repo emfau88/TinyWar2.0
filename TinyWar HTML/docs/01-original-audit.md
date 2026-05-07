@@ -105,7 +105,7 @@ Gepruefte Originaldateien:
 
 Ergebnisse:
 - `map.rs`: Mapgroesse 30x16, Tilegroesse 64, Map-Position, Start-Tiles `(3,0)` und `(27,0)`, Walkability-Bitmask, 8-Wege-Nachbarn mit Corner-Cut-Verbot und Lane-Waypoints Top `(14,2)`, Mid `(14,6)`, Bot `(14,10)` sind die Quelle fuer den HTML-Core.
-- `movement.rs`: Originalbewegung folgt der Lane bis zum naechsten Ziel-Tile, reversed den Pfad fuer die rechte Seite, stoppt am Lane-Ende, prueft Einheiten/Gebaeude in umliegenden Tiles, setzt Attack/Heal statt Bewegung und nutzt Separation gegen Kollisionen. Im HTML-Slice umgesetzt sind Pfadfolge, rechte-Seite-Reversal, Stop am Lane-Ende, Attack-Stop und Priest-Heal-Stop. Noch offen sind vollstaendige Separation, March/Frozen/NoCollision und Strategieeffekte.
+- `movement.rs`: Originalbewegung folgt der Lane bis zum naechsten Ziel-Tile, reversed den Pfad fuer die rechte Seite, stoppt am Lane-Ende, prueft Einheiten/Gebaeude in umliegenden Tiles, setzt Attack/Heal statt Bewegung und nutzt Separation gegen Kollisionen. Im HTML-Slice umgesetzt sind Pfadfolge, rechte-Seite-Reversal, Stop am Lane-Ende, Attack-Stop, Priest-Heal-Stop und March-Speed/Unit-Ignore. Noch offen sind vollstaendige Separation, Guard/Berserk/Frozen/NoCollision und weitere Strategieeffekte.
 - `spawn.rs`: Units spawnen ohne Positionsangabe an der Base-Tuer `base.y - 70`; Building-Units spawnen auf Building-Slots; Buildings erzeugen Healthbars; Despawn eines Buildings entfernt Units auf dem Building. Im HTML-Slice umgesetzt sind Base-Spawns, Building-Slots fuer Barracks, Healthbars und Unit-Despawn. Noch offen sind Dust/Click-Info, Projektile und Building-Despawn-Folgeeffekte.
 - `units.rs`: Basic-Unit-Werte Warrior, Lancer, Archer und Priest fuer Health, Damage, Armor, Magic Resist, Penetration, Speed, Range, Spawn-Dauer, Frames und Projektile wurden als Quelle genutzt. Bewusste HTML-Trennung: `renderSize` und `worldSize`, damit der Lancer optisch original gross bleibt, ohne seine Gameplay-Kollisionsgroesse zu verfaelschen.
 - `buildings.rs`: Barracks/Castle/Tower Groessen, Health und Unit-Slot-Offsets wurden uebernommen.
@@ -168,6 +168,7 @@ Originalquelle: `src/core/map/ui/systems.rs` und `src/core/assets.rs`.
 - HTML-Stand 2026-05-07: Erster HUD-Parity-Schritt umgesetzt: `swords1/2/3` werden geladen, die Player-Queue wird unten mit 10 Original-Sword-Slots angezeigt, der erste Slot zeigt Spawn-Progress, und Basic-Unit-Queue-Buttons wurden als kompakte linke Icon-Leiste statt Textbuttons umgesetzt. Vollstaendige UI-Parity ist damit nicht abgeschlossen.
 - HTML-Stand 2026-05-07: Direction-Icon aus Original-Assets umgesetzt inklusive Original-Mapping und vertikalem Flip fuer `Bot`/`MidBot`; Klick auf Icon/Panel cycled weiter wie Taste `L`.
 - HTML-Stand 2026-05-07: Strategy-State mit Original-Strategien, Hotkeys und 5s-Cooldown im Core umgesetzt und rechts als Icon-Leiste im HUD angebunden. Restabweichung: Strategy-Effekte in Movement/Combat sind noch nicht aktiv; aktuell ist es nur Auswahl, Anzeige und Cooldown.
+- HTML-Stand 2026-05-07: `March`-Effekt umgesetzt: Blue-Units laufen mit `1.5x` Speed und ignorieren Unit-vs-Unit-Combat. Wie im Original bleibt Building-Combat davon unberuehrt, d.h. March-Units greifen gegnerische Buildings/Bases weiter an. Restabweichung: Red-AI nutzt vorerst weiter `Attack`; Guard/Berserk fehlen.
 
 ## Bekannte Audit-Luecken
 
