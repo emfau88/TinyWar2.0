@@ -62,6 +62,7 @@ Map-Rendering-Diagnose 2026-05-06:
 - Anchor-/Offset-Diagnose 2026-05-07: `diagnose-map` gruppiert Non-64x64-Placements nach Layer/Tileset und berechnet den sichtbaren Zell-Footprint nach Tiled-Bottom-Left-Anker. Befund: 87 Placements, davon 64 Foam und 23 Nicht-Foam; 9 Placements werden an Map-Grenzen geclippt. Es gibt keine `tileoffset`-Tags in der TMX/TSX-Quelle. Korrekturen duerfen deshalb nur gezielt nach visueller Pruefung der gemeldeten Footprints passieren, nicht pauschal.
 - HTML-Debug 2026-05-07: `MapDebugOverlay` kann per Taste `M` Grid-Koordinaten und Non-64x64-Footprints anzeigen. Rot markiert geclippte Placements, Gelb Nicht-Foam und Blau Foam. Das Overlay ist Diagnose-only und veraendert keine Mapdaten.
 - Map-Korrektur 2026-05-07: Zwei manuell gepruefte Baum-Anker wurden in `map.tmx` verschoben: `obj` Tree3 von `(27,7)` nach `(26,7)` und `obj2` Tree1 von `(19,2)` nach `(20,2)`. Foam wurde nicht geaendert, weil die gemeldeten Foam-Koordinaten bereits bestehende Anker/Footprints betreffen und erst als eindeutige Ankerliste bestaetigt werden muessen.
+- Map-Korrektur 2026-05-07: Tree3-Anker `obj` von `(1,13)` nach `(1,14)` verschoben, damit der sichtbare Baum bei `(2,13)` ein Feld tiefer sitzt.
 
 ## Units
 
