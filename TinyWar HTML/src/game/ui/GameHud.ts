@@ -24,6 +24,8 @@ const STRATEGY_ASSET_KEYS: Record<PlayerStrategy, string> = {
 const BLUE_RIBBON_INDEX = 0;
 const RED_RIBBON_INDEX = 1;
 const LARGE_RIBBON_FRAMES_PER_COLOR = 7;
+const SMALL_RIBBON_FRAMES_PER_COLOR = 10;
+const SIDE_RIBBON_FRAMES = [0, 2, 2, 2, 9] as const;
 
 export interface AdvanceBannerState {
   blueShare: number;
@@ -76,6 +78,8 @@ export class GameHud {
   private readonly queueIcons: Phaser.GameObjects.Image[] = [];
   private readonly queueProgressBackgrounds: Phaser.GameObjects.Rectangle[] = [];
   private readonly queueProgressBars: Phaser.GameObjects.Rectangle[] = [];
+  private readonly shopRibbonPieces: Phaser.GameObjects.Image[] = [];
+  private readonly strategyRibbonPieces: Phaser.GameObjects.Image[] = [];
   private readonly shopButtons: UnitShopButton[] = [];
   private readonly strategyButtons = new Map<PlayerStrategy, StrategyButton>();
   private lastAdvanceState?: AdvanceBannerState;
@@ -161,6 +165,8 @@ export class GameHud {
       .setVisible(false);
 
     this.bindKeyboard(callbacks);
+    this.shopRibbonPieces.push(...this.createSideRibbon());
+    this.strategyRibbonPieces.push(...this.createSideRibbon());
     this.createShopButtons(callbacks);
     this.createStrategyButtons(callbacks);
     const queueDisplay = this.createQueueDisplay();
@@ -199,6 +205,8 @@ export class GameHud {
       ...this.queueIcons,
       ...this.queueProgressBackgrounds,
       ...this.queueProgressBars,
+      ...this.shopRibbonPieces,
+      ...this.strategyRibbonPieces,
       ...this.shopButtons.flatMap((button) => [button.rect, button.icon, button.label]),
       ...PLAYER_STRATEGIES.flatMap((strategy) => {
         const button = this.strategyButtons.get(strategy);
@@ -315,7 +323,8 @@ export class GameHud {
       const y = startY + index * (buttonSize + gap) + buttonSize / 2;
       const rect = this.scene.add
         .rectangle(x, y, buttonSize, buttonSize, 0x111827, 0.72)
-        .setStrokeStyle(1, 0xf8fafc, 0.45)
+        .setFillStyle(0x111827, 0.12)
+        .setStrokeStyle(1, 0xf8fafc, 0.22)
         .setScrollFactor(0)
         .setDepth(100)
         .setInteractive({ useHandCursor: true });
@@ -510,6 +519,7 @@ export class GameHud {
       const y = startY + index * (buttonSize + gap) + buttonSize / 2;
       const rect = this.scene.add
         .rectangle(x, y, buttonSize, buttonSize, 0x111827, 0.72)
+        .setFillStyle(0x111827, 0.12)
         .setStrokeStyle(1, 0xf8fafc, 0.38)
         .setScrollFactor(0)
         .setDepth(100)
@@ -579,6 +589,7 @@ export class GameHud {
     const startY = height / 2 - totalHeight / 2;
     const x = 30;
 
+    this.layoutSideRibbon(this.shopRibbonPieces, x, height);
     this.shopButtons.forEach((button, index) => {
       const y = startY + index * (buttonSize + gap) + buttonSize / 2;
       button.rect.setPosition(x, y).setSize(buttonSize, buttonSize);
@@ -594,6 +605,7 @@ export class GameHud {
     const startY = height / 2 - totalHeight / 2;
     const x = width - 30;
 
+    this.layoutSideRibbon(this.strategyRibbonPieces, x, height);
     PLAYER_STRATEGIES.forEach((strategy, index) => {
       const button = this.strategyButtons.get(strategy);
       if (!button) {
@@ -625,6 +637,26 @@ export class GameHud {
     }
     this.queueEnd.setPosition(startX + slotWidth * (QUEUE_SLOT_COUNT + 1.5), y).setDisplaySize(slotWidth, slotHeight);
     this.queueText.setPosition(12, Math.max(12, y - slotHeight / 2 - 28));
+  }
+
+  private createSideRibbon(): Phaser.GameObjects.Image[] {
+    return SIDE_RIBBON_FRAMES.map((frame) =>
+      this.scene.add
+        .image(0, 0, ASSETS.ui.smallRibbons.key, BLUE_RIBBON_INDEX * SMALL_RIBBON_FRAMES_PER_COLOR + frame)
+        .setRotation(Math.PI / 2)
+        .setScrollFactor(0)
+        .setDepth(96)
+    );
+  }
+
+  private layoutSideRibbon(pieces: readonly Phaser.GameObjects.Image[], x: number, height: number): void {
+    const segmentSize = 56;
+    const totalHeight = pieces.length * segmentSize;
+    const startY = height / 2 - totalHeight / 2 + segmentSize / 2;
+
+    pieces.forEach((piece, index) => {
+      piece.setPosition(x, startY + index * segmentSize).setDisplaySize(segmentSize, segmentSize);
+    });
   }
 
   private directionLabel(direction: PlayerDirection): string {
