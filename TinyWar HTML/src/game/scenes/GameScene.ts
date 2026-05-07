@@ -17,7 +17,7 @@ import {
   type StrategyState
 } from "../../core/player/playerStrategy";
 import { enqueueUnit, createQueue, tickQueue, type UnitQueue } from "../../core/queue/unitQueue";
-import type { UnitName } from "../../core/units/unitData";
+import { UNITS as UNIT_DEFINITIONS, type UnitName } from "../../core/units/unitData";
 import { CameraDragController } from "../input/CameraDragController";
 import { BuildingRenderer } from "../render/BuildingRenderer";
 import type { BuildingRenderHandle } from "../render/BuildingRenderer";
@@ -38,6 +38,7 @@ export class GameScene extends Phaser.Scene {
   private projectiles: ProjectileInstance[] = [];
   private selectedDirection: PlayerDirection = "Any";
   private strategy: StrategyState = createStrategyState();
+  private mapWorldWidth = 0;
   private hud?: GameHud;
   private mapDebugOverlay?: MapDebugOverlay;
   private mapRenderer?: MapRenderer;
@@ -61,6 +62,7 @@ export class GameScene extends Phaser.Scene {
     this.projectileRenderer = new ProjectileRenderer(this);
 
     const mapSize = this.mapRenderer.getWorldSize();
+    this.mapWorldWidth = mapSize.x;
     this.cameras.main.setBounds(0, 0, mapSize.x, mapSize.y);
     this.fitMapToViewport(mapSize);
     this.cameraDrag = new CameraDragController(this);
@@ -69,6 +71,7 @@ export class GameScene extends Phaser.Scene {
       onQueueUnit: (unit) => this.queueUnit(unit),
       onSelectStrategy: (strategy) => this.selectStrategy(strategy)
     });
+    this.updateAdvanceBanner();
     this.mapDebugOverlay = new MapDebugOverlay(this);
     this.input.keyboard?.on("keydown-M", () => this.mapDebugOverlay?.toggle());
 
@@ -133,6 +136,7 @@ export class GameScene extends Phaser.Scene {
     if (combat.winner) {
       this.hud?.showWinner(combat.winner);
     }
+    this.updateAdvanceBanner();
   }
 
   shutdown(): void {
@@ -184,9 +188,51 @@ export class GameScene extends Phaser.Scene {
     const result = selectStrategy(this.strategy, strategy);
     this.strategy = result.state;
     this.hud?.updateStrategy(this.strategy);
+    this.updateAdvanceBanner();
   }
 
   private strategyForUnit(unit: MovingUnit): PlayerStrategy {
     return unit.color === "Blue" ? this.strategy.current : "Attack";
+  }
+
+  private updateAdvanceBanner(): void {
+    this.hud?.updateAdvanceBanner(this.calculateAdvanceBannerState());
+  }
+
+  private calculateAdvanceBannerState() {
+    let blue = 50;
+    let red = 50;
+    let bluePower = 0;
+    let redPower = 0;
+    const centerX = this.mapWorldWidth / 2;
+
+    for (const unit of this.debugUnits) {
+      const power = UNIT_DEFINITIONS[unit.name].spawnDurationMs * (unit.health / unit.maxHealth);
+      if (unit.color === "Blue") {
+        bluePower += power;
+        const x = (unit.position.x - centerX) / 64;
+        if (x > 0) {
+          blue += (1 / (1 + Math.exp(-1.5 * x)) - 0.5) * 20;
+        }
+      } else {
+        redPower += power;
+        const x = (centerX - unit.position.x) / 64;
+        if (x > 0) {
+          red += (1 / (1 + Math.exp(-1.5 * x)) - 0.5) * 20;
+        }
+      }
+    }
+
+    const total = blue + red;
+    const blueShare = total > 0 ? blue / total : 0.5;
+
+    return {
+      blueShare,
+      redShare: 1 - blueShare,
+      bluePower,
+      redPower,
+      blueStrategy: this.strategy.current,
+      redStrategy: "Attack" as const
+    };
   }
 }

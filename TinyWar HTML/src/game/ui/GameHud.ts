@@ -21,6 +21,18 @@ const STRATEGY_ASSET_KEYS: Record<PlayerStrategy, string> = {
   March: ASSETS.icons.march.key,
   Berserk: ASSETS.icons.berserk.key
 };
+const BLUE_RIBBON_INDEX = 0;
+const RED_RIBBON_INDEX = 1;
+const LARGE_RIBBON_FRAMES_PER_COLOR = 7;
+
+export interface AdvanceBannerState {
+  blueShare: number;
+  redShare: number;
+  bluePower: number;
+  redPower: number;
+  blueStrategy: PlayerStrategy;
+  redStrategy: PlayerStrategy;
+}
 
 export interface GameHudCallbacks {
   onCycleDirection: () => void;
@@ -29,6 +41,12 @@ export interface GameHudCallbacks {
 }
 
 export class GameHud {
+  private readonly blueAdvanceFill: Phaser.GameObjects.Image;
+  private readonly redAdvanceFill: Phaser.GameObjects.Image;
+  private readonly blueAdvanceText: Phaser.GameObjects.Text;
+  private readonly redAdvanceText: Phaser.GameObjects.Text;
+  private readonly blueAdvanceStrategyIcon: Phaser.GameObjects.Image;
+  private readonly redAdvanceStrategyIcon: Phaser.GameObjects.Image;
   private readonly directionIcon: Phaser.GameObjects.Image;
   private readonly directionText: Phaser.GameObjects.Text;
   private readonly queueText: Phaser.GameObjects.Text;
@@ -47,6 +65,23 @@ export class GameHud {
     queue: UnitQueue,
     callbacks: GameHudCallbacks
   ) {
+    const initialAdvance = {
+      blueShare: 0.5,
+      redShare: 0.5,
+      bluePower: 0,
+      redPower: 0,
+      blueStrategy: strategy.current,
+      redStrategy: "Attack" as const
+    };
+    const advance = this.createAdvanceBanner();
+    this.blueAdvanceFill = advance.blueFill;
+    this.redAdvanceFill = advance.redFill;
+    this.blueAdvanceText = advance.blueText;
+    this.redAdvanceText = advance.redText;
+    this.blueAdvanceStrategyIcon = advance.blueStrategyIcon;
+    this.redAdvanceStrategyIcon = advance.redStrategyIcon;
+    this.updateAdvanceBanner(initialAdvance);
+
     this.scene.add
       .rectangle(34, 34, 48, 44, 0x111827, 0.62)
       .setStrokeStyle(1, 0xf8fafc, 0.42)
@@ -138,6 +173,27 @@ export class GameHud {
       progress.setVisible(active && cooldownFraction > 0);
       progress.displayWidth = Math.max(1, (progressBg.displayWidth - 4) * cooldownFraction);
     }
+  }
+
+  updateAdvanceBanner(state: AdvanceBannerState): void {
+    const width = Math.min(this.scene.scale.width * 0.68, 560);
+    const minHalfWidth = 42;
+    const blueWidth = Math.max(minHalfWidth, width * Phaser.Math.Clamp(state.blueShare, 0.08, 0.92));
+    const redWidth = Math.max(minHalfWidth, width - blueWidth);
+
+    this.blueAdvanceFill.setDisplaySize(blueWidth, 44);
+    this.redAdvanceFill.setDisplaySize(redWidth, 44);
+    this.blueAdvanceFill.setX(this.scene.scale.width / 2 - redWidth / 2);
+    this.redAdvanceFill.setX(this.scene.scale.width / 2 + blueWidth / 2);
+
+    this.blueAdvanceText.setText(this.advanceLabel(state.blueShare, state.bluePower));
+    this.redAdvanceText.setText(this.advanceLabel(state.redShare, state.redPower));
+    this.blueAdvanceText.setX(this.scene.scale.width / 2 - width * 0.22);
+    this.redAdvanceText.setX(this.scene.scale.width / 2 + width * 0.22);
+    this.blueAdvanceStrategyIcon.setTexture(STRATEGY_ASSET_KEYS[state.blueStrategy]);
+    this.redAdvanceStrategyIcon.setTexture(STRATEGY_ASSET_KEYS[state.redStrategy]);
+    this.blueAdvanceStrategyIcon.setX(this.scene.scale.width / 2 - width * 0.39);
+    this.redAdvanceStrategyIcon.setX(this.scene.scale.width / 2 + width * 0.39);
   }
 
   showWinner(winner: string): void {
@@ -251,6 +307,70 @@ export class GameHud {
       .setDepth(98);
   }
 
+  private createAdvanceBanner(): {
+    blueFill: Phaser.GameObjects.Image;
+    redFill: Phaser.GameObjects.Image;
+    blueText: Phaser.GameObjects.Text;
+    redText: Phaser.GameObjects.Text;
+    blueStrategyIcon: Phaser.GameObjects.Image;
+    redStrategyIcon: Phaser.GameObjects.Image;
+  } {
+    const centerX = this.scene.scale.width / 2;
+    const y = 31;
+    const depth = 97;
+    const blueFrame = BLUE_RIBBON_INDEX * LARGE_RIBBON_FRAMES_PER_COLOR + 3;
+    const redFrame = RED_RIBBON_INDEX * LARGE_RIBBON_FRAMES_PER_COLOR + 3;
+
+    const blueFill = this.scene.add
+      .image(centerX - 140, y, ASSETS.ui.largeRibbons.key, blueFrame)
+      .setDisplaySize(280, 44)
+      .setScrollFactor(0)
+      .setDepth(depth);
+    const redFill = this.scene.add
+      .image(centerX + 140, y, ASSETS.ui.largeRibbons.key, redFrame)
+      .setDisplaySize(280, 44)
+      .setFlipX(true)
+      .setScrollFactor(0)
+      .setDepth(depth);
+
+    const blueStrategyIcon = this.scene.add
+      .image(centerX - 220, y, STRATEGY_ASSET_KEYS.Attack)
+      .setDisplaySize(25, 25)
+      .setScrollFactor(0)
+      .setDepth(depth + 2);
+    const redStrategyIcon = this.scene.add
+      .image(centerX + 220, y, STRATEGY_ASSET_KEYS.Attack)
+      .setDisplaySize(25, 25)
+      .setScrollFactor(0)
+      .setDepth(depth + 2);
+
+    const textStyle: Phaser.Types.GameObjects.Text.TextStyle = {
+      fontFamily: "TinyWar Fira Sans",
+      fontSize: "12px",
+      color: "#0f172a",
+      align: "center"
+    };
+    const blueText = this.scene.add
+      .text(centerX - 120, y, "", textStyle)
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(depth + 2);
+    const redText = this.scene.add
+      .text(centerX + 120, y, "", textStyle)
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(depth + 2);
+
+    return {
+      blueFill,
+      redFill,
+      blueText,
+      redText,
+      blueStrategyIcon,
+      redStrategyIcon
+    };
+  }
+
   private createStrategyButtons(callbacks: GameHudCallbacks): void {
     const buttonSize = 44;
     const gap = 7;
@@ -340,6 +460,10 @@ export class GameHud {
       Archer: "C",
       Priest: "V"
     }[unit];
+  }
+
+  private advanceLabel(share: number, power: number): string {
+    return `${Math.round(share * 100)}%\n${(power / 1000).toFixed(1)}k`;
   }
 
   private directionIconKey(direction: PlayerDirection): string {

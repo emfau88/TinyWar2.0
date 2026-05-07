@@ -249,7 +249,7 @@ Ziel: originale Spielerentscheidungen sichtbar machen.
 Tasks:
 - [ ] Strategie-Core: Attack, Guard, March, Berserk.
 - [x] 5s Strategy-Cooldown.
-- [ ] Top-Banner/Strategieanzeige aus `large ribbons`.
+- [x] Top-Banner/Strategieanzeige aus `large ribbons`.
 - [x] Lane-Icon oben links mit Original-Direction-Icons.
 - [ ] Pause und Game-Speed fuer Solo.
 - [ ] Unit-Info-Panel.
@@ -270,8 +270,9 @@ Status 2026-05-07:
 - Strategy-Auswahl-Slice umgesetzt: Core-State fuer `Attack`, `Guard`, `March`, `Berserk`, Original-Hotkeys `T/Y/U/I`, initial fertiger 5s-Cooldown und rechte HUD-Icon-Leiste mit Cooldown-Anzeige.
 - `March`-Effekt umgesetzt: Blue-Units laufen mit 150% Speed und ignorieren Unit-vs-Unit-Combat; Building-/Base-Angriffe bleiben wie im Original moeglich. Tests sichern March-Speed, Unit-Ignore und Building-Angriff ab.
 - `Berserk`-Effekt umgesetzt: Attack-Cycles laufen mit 130% Geschwindigkeit, Priest-Heal bleibt normal, und Berserk-Defender ohne Building-Slot haben halbierte Armor/Magic-Resist. Tests sichern Attack-Speed, Heal-Ausnahme, Defense-Malus und Building-Slot-Ausnahme ab.
+- Top-Advance-Banner umgesetzt: `large ribbons` werden geladen, Blue/Red-Banner zeigen Anteil, Power und Strategieicon. Fortschritt/Power werden aus aktuellen Solo-Units berechnet; Red bleibt vorerst auf `Attack`.
 - Restabweichung: `Guard` ist noch nicht aktiv; Red-AI bleibt vorerst auf `Attack`.
-- Offen fuer Milestone 6: Guard-Effekt, Top-Banner, Boosts, Unit-Info, Speed/Pause und Mobile-Screenshot-QA.
+- Offen fuer Milestone 6: Guard-Effekt, Boosts, Unit-Info, Speed/Pause und Mobile-Screenshot-QA.
 
 ## Milestone 7: Boost System in Groups
 

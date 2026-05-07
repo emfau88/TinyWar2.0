@@ -16,6 +16,10 @@ export const ASSETS = {
       key: "ui-banner",
       path: `${ROOT}/images/ui/banner.png`
     },
+    largeRibbons: {
+      key: "ui-large-ribbons",
+      path: `${ROOT}/images/ui/large ribbons.png`
+    },
     swords1: {
       key: "ui-swords-1",
       path: `${ROOT}/images/ui/swords1.png`

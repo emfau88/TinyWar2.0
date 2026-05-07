@@ -160,6 +160,8 @@ Originalquelle: `src/core/map/ui/systems.rs` und `src/core/assets.rs`.
 
 - Die Original-Queue liegt unten als horizontale UI-Leiste: links `swords1` aus einem 105x128-Atlas mit Spielerfarben-Index, zehn `swords2`-Slots, rechts `swords3`.
 - Queue-Slots zeigen das Unit-Icon und nur fuer den aktiven ersten Queue-Eintrag eine Progress-Anzeige.
+- Der Original-Top-Banner nutzt `large ribbons` als 64x128-Atlas mit 7 Frames pro Spielerfarbe. Er zeigt links/rechts Fortschritt, aktive Strategieicons und Power-Text.
+- Original-Update fuer den Banner startet bei 50/50, addiert Fortschritt aus Unit-X-Positionen und berechnet Power als Summe `spawn_duration * current_health / max_health`.
 - Die Direction-Anzeige ist ein klickbares Icon oben links. `PlayerDirection::image()` mappt `Any` auf `any arrow`, `Top/Bot` auf `top arrow`, `TopMid/MidBot` auf `top-mid arrow`, `Mid` auf `mid arrow` und `TopBot` auf `top bot arrow`; `Bot` und `MidBot` werden vertikal gespiegelt.
 - Original-Strategien: `Attack`, `Guard`, `March`, `Berserk`. Hotkeys sind `T`, `Y`, `U`, `I`. Der Player startet mit `Attack`; der 5s-Strategy-Timer ist initial finished, damit der erste Wechsel sofort moeglich ist.
 - Strategy-Wechsel im UI ist nur erlaubt, wenn die neue Strategie nicht bereits aktiv ist und der 5s-Timer fertig ist; danach wird der Timer zurueckgesetzt.
@@ -167,6 +169,7 @@ Originalquelle: `src/core/map/ui/systems.rs` und `src/core/assets.rs`.
 - Boosts, Unit-Info, Top-Banner und Speed-Indikator sind im Original eigene UI-Bereiche und bleiben fuer UI-Parity separat zu auditieren/portieren.
 - HTML-Stand 2026-05-07: Erster HUD-Parity-Schritt umgesetzt: `swords1/2/3` werden geladen, die Player-Queue wird unten mit 10 Original-Sword-Slots angezeigt, der erste Slot zeigt Spawn-Progress, und Basic-Unit-Queue-Buttons wurden als kompakte linke Icon-Leiste statt Textbuttons umgesetzt. Vollstaendige UI-Parity ist damit nicht abgeschlossen.
 - HTML-Stand 2026-05-07: Direction-Icon aus Original-Assets umgesetzt inklusive Original-Mapping und vertikalem Flip fuer `Bot`/`MidBot`; Klick auf Icon/Panel cycled weiter wie Taste `L`.
+- HTML-Stand 2026-05-07: Top-Advance-Banner als erster sichtbarer `large ribbons`-Slice umgesetzt. Er zeigt Blue/Red-Anteile, Power und Strategieicons; Blue folgt der aktuellen Spielerstrategie, Red bleibt im Solo-Slice vorerst `Attack`. Die Fortschrittsformel nutzt die Originalidee, aber skaliert HTML-Weltkoordinaten auf Tilebreite, weil die Phaser-Map nicht um `(0,0)` zentriert ist.
 - HTML-Stand 2026-05-07: Strategy-State mit Original-Strategien, Hotkeys und 5s-Cooldown im Core umgesetzt und rechts als Icon-Leiste im HUD angebunden.
 - HTML-Stand 2026-05-07: `March`-Effekt umgesetzt: Blue-Units laufen mit `1.5x` Speed und ignorieren Unit-vs-Unit-Combat. Wie im Original bleibt Building-Combat davon unberuehrt, d.h. March-Units greifen gegnerische Buildings/Bases weiter an.
 - HTML-Stand 2026-05-07: `Berserk`-Effekt umgesetzt: Attack-Cycles laufen mit `1.3x` Geschwindigkeit; Priest-Heal bleibt unveraendert, weil Original nur `Action::Attack` beschleunigt. Verteidigende Berserk-Units ohne Building-Slot erhalten halbierte Armor/Magic-Resist; Units auf Buildings und Buildings selbst sind davon ausgenommen. Restabweichung: Red-AI nutzt vorerst weiter `Attack`; Guard fehlt.
