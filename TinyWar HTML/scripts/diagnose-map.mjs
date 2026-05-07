@@ -51,6 +51,9 @@ function parseTmx(xml) {
         tileHeight: Number(tilesetAttrs.tileheight),
         tileCount: Number(tilesetAttrs.tilecount),
         columns: Number(tilesetAttrs.columns),
+        image: attrs(body.match(/<image\b[^>]*>/)?.[0] ?? "").source,
+        imageWidth: Number(attrs(body.match(/<image\b[^>]*>/)?.[0] ?? "").width),
+        imageHeight: Number(attrs(body.match(/<image\b[^>]*>/)?.[0] ?? "").height),
         animations: Object.fromEntries(animations)
       };
     }
@@ -110,6 +113,36 @@ function findTileset(gid, tilesets) {
   return undefined;
 }
 
+function footprintForPlacement(column, row, tileset, map) {
+  const widthInCells = Math.ceil(tileset.tileWidth / map.tileWidth);
+  const heightInCells = Math.ceil(tileset.tileHeight / map.tileHeight);
+  return {
+    anchorPixelX: column * map.tileWidth,
+    anchorPixelY: (row + 1) * map.tileHeight,
+    minColumn: column,
+    maxColumn: column + widthInCells - 1,
+    minRow: row - heightInCells + 1,
+    maxRow: row,
+    widthInCells,
+    heightInCells,
+    clipped:
+      column < 0 ||
+      row < 0 ||
+      column + widthInCells - 1 >= map.width ||
+      row - heightInCells + 1 < 0 ||
+      row >= map.height
+  };
+}
+
+function countBy(items, keyFn) {
+  const counts = new Map();
+  for (const item of items) {
+    const key = keyFn(item);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]));
+}
+
 function summarizeMap(sourceMap, generatedMap) {
   const findings = [];
 
@@ -158,21 +191,38 @@ function summarizeMap(sourceMap, generatedMap) {
       }
 
       if (tileset && (tileset.tileWidth !== sourceMap.tileWidth || tileset.tileHeight !== sourceMap.tileHeight)) {
+        const footprint = footprintForPlacement(column, row, tileset, sourceMap);
         oversized.push({
           layer: layer.name,
           column,
           row,
           gid: cleanGid,
           tileset: tileset.name,
+          image: tileset.image,
           tileWidth: tileset.tileWidth,
           tileHeight: tileset.tileHeight,
-          localId: cleanGid - tileset.firstGid
+          localId: cleanGid - tileset.firstGid,
+          footprint
         });
       }
     });
   }
 
-  return { findings, flagged, oversized, animatedTilesets };
+  return {
+    findings,
+    flagged,
+    oversized,
+    animatedTilesets,
+    oversizedByLayer: countBy(oversized, (item) => item.layer),
+    oversizedByTileset: countBy(oversized, (item) => `${item.tileset} ${item.tileWidth}x${item.tileHeight}`),
+    clippedOversized: oversized.filter((item) => item.footprint.clipped),
+    nonFoamOversized: oversized.filter((item) => item.tileset.toLowerCase() !== "foam")
+  };
+}
+
+function formatOversizedPlacement(item) {
+  const footprint = item.footprint;
+  return `${item.layer} (${item.column},${item.row}) ${item.tileset} ${item.tileWidth}x${item.tileHeight} localId=${item.localId} covers cols ${footprint.minColumn}-${footprint.maxColumn}, rows ${footprint.minRow}-${footprint.maxRow}${footprint.clipped ? " CLIPPED" : ""}`;
 }
 
 const sourceMap = parseTmx(readFileSync(tmxPath, "utf8"));
@@ -196,13 +246,30 @@ for (const item of report.flagged) {
 }
 
 console.log(`- Non-64x64 tile placements: ${report.oversized.length}`);
+console.log("  Renderer model: bottom-left anchor at cell bottom-left, matching Tiled's large-tile draw model.");
+console.log("  Footprint columns/rows below describe the cells visually covered by the large sprite.");
+console.log(`  Clipped by map bounds: ${report.clippedOversized.length}`);
+console.log("  By layer:");
+for (const [layer, count] of report.oversizedByLayer) {
+  console.log(`    - ${layer}: ${count}`);
+}
+console.log("  By tileset:");
+for (const [tileset, count] of report.oversizedByTileset) {
+  console.log(`    - ${tileset}: ${count}`);
+}
 for (const item of report.oversized.slice(0, 30)) {
-  console.log(
-    `  - ${item.layer} (${item.column},${item.row}) ${item.tileset} ${item.tileWidth}x${item.tileHeight} localId=${item.localId}`
-  );
+  console.log(`  - ${formatOversizedPlacement(item)}`);
 }
 if (report.oversized.length > 30) {
   console.log(`  - ... ${report.oversized.length - 30} more`);
+}
+console.log(`  Non-foam placements: ${report.nonFoamOversized.length}`);
+for (const item of report.nonFoamOversized) {
+  console.log(`    - ${formatOversizedPlacement(item)}`);
+}
+console.log(`  Clipped placements: ${report.clippedOversized.length}`);
+for (const item of report.clippedOversized) {
+  console.log(`    - ${formatOversizedPlacement(item)}`);
 }
 
 if (report.findings.length > 0) {

@@ -59,7 +59,7 @@ Map-Rendering-Diagnose 2026-05-06:
 - HTML-Fix 2026-05-07: `MapRenderer` spielt TSX-Tile-Animationen mit den exportierten Frame-Dauern ab. Diese Korrektur wechselt nur den Frame bestehender Tile-Images; Layer, Positionen und TMX-Daten bleiben unveraendert.
 - Diagnose-Befund: 2 TMX-GIDs haben Tiled-Flip-Flags: Layer `obj` an `(6,11)` und `(23,12)`, jeweils `Sheep_Idle` horizontal gespiegelt.
 - HTML-Fix 2026-05-06: `generate-map-data.mjs` maskiert Tiled-Flip-/Rotation-Bits aus den GIDs und speichert Flags separat in `tileFlags`; `MapRenderer` wendet horizontal/vertical Flip auf die betroffenen Tiles an. Diagonal/Hex-Rotation wird bewusst nur gewarnt, weil aktuell keine solchen Tiles in der Map vorkommen.
-- Diagnose-Befund: 87 Non-64x64-Placements, vor allem Foam/Trees/Bushes. Diese duerfen erst nach gesonderter Anchor-/Offset-Diagnose geaendert werden.
+- Anchor-/Offset-Diagnose 2026-05-07: `diagnose-map` gruppiert Non-64x64-Placements nach Layer/Tileset und berechnet den sichtbaren Zell-Footprint nach Tiled-Bottom-Left-Anker. Befund: 87 Placements, davon 64 Foam und 23 Nicht-Foam; 9 Placements werden an Map-Grenzen geclippt. Es gibt keine `tileoffset`-Tags in der TMX/TSX-Quelle. Korrekturen duerfen deshalb nur gezielt nach visueller Pruefung der gemeldeten Footprints passieren, nicht pauschal.
 
 ## Units
 
