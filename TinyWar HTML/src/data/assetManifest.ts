@@ -124,5 +124,43 @@ export const ASSETS = {
       key: "projectile-arrow",
       path: `${ROOT}/images/units/arrow.png`
     }
+  },
+  audio: {
+    button: {
+      key: "audio-button",
+      path: `${ROOT}/audio/button.ogg`
+    },
+    click: {
+      key: "audio-click",
+      path: `${ROOT}/audio/click.ogg`
+    },
+    error: {
+      key: "audio-error",
+      path: `${ROOT}/audio/error.ogg`
+    },
+    explosion: {
+      key: "audio-explosion",
+      path: `${ROOT}/audio/explosion.ogg`
+    },
+    victory: {
+      key: "audio-victory",
+      path: `${ROOT}/audio/victory.ogg`
+    },
+    defeat: {
+      key: "audio-defeat",
+      path: `${ROOT}/audio/defeat.ogg`
+    },
+    horn: {
+      key: "audio-horn",
+      path: `${ROOT}/audio/horn.ogg`
+    },
+    message: {
+      key: "audio-message",
+      path: `${ROOT}/audio/message.ogg`
+    },
+    warning: {
+      key: "audio-warning",
+      path: `${ROOT}/audio/warning.ogg`
+    }
   }
 } as const;

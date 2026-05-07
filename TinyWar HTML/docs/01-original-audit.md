@@ -33,6 +33,7 @@ Relevante Originalmodule:
 
 Assets liegen unter `assets`:
 - `audio`: `button`, `click`, `defeat`, `error`, `explosion`, `horn`, `message`, `music`, `victory`, `warning` als OGG.
+- Audio-Befund 2026-05-07: Das Original enthaelt keine getrennten Kampf-SFX fuer Warrior/Lancer/Archer/Priest und keinen dedizierten Unit-Spawn-Sound. Belegte Original-Events sind u.a. `button` fuer Unit-Queue, `click` fuer Richtung/Strategie, `error` fuer blockierte Aktionen, `explosion` fuer Building-Explosionen sowie `victory`/`defeat` fuer Endgame. HTML darf deshalb vorerst keine erfundenen Unit-Combat-Sounds abspielen.
 - `fonts`: `FiraMono-Medium.ttf`, `FiraSans-Bold.ttf`.
 - `map`: `map.tmx`, TSX-Dateien und Tiles/Decorations.
 - `images/bg`: Cover, Background, Victory/Defeat, vier Scenery-Bilder.
@@ -177,6 +178,7 @@ Originalquelle: `src/core/map/ui/systems.rs` und `src/core/assets.rs`.
 - HTML-Stand 2026-05-07: Strategy-State mit Original-Strategien, Hotkeys und 5s-Cooldown im Core umgesetzt und rechts als Icon-Leiste im HUD angebunden.
 - HTML-Stand 2026-05-07: `March`-Effekt umgesetzt: Blue-Units laufen mit `1.5x` Speed und ignorieren Unit-vs-Unit-Combat. Wie im Original bleibt Building-Combat davon unberuehrt, d.h. March-Units greifen gegnerische Buildings/Bases weiter an.
 - HTML-Stand 2026-05-07: `Berserk`-Effekt umgesetzt: Attack-Cycles laufen mit `1.3x` Geschwindigkeit; Priest-Heal bleibt unveraendert, weil Original nur `Action::Attack` beschleunigt. Verteidigende Berserk-Units ohne Building-Slot erhalten halbierte Armor/Magic-Resist; Units auf Buildings und Buildings selbst sind davon ausgenommen. Restabweichung: Red-AI nutzt vorerst weiter `Attack`; Guard fehlt.
+- HTML-Stand 2026-05-07: Erster Audio-Slice umgesetzt: kleine Original-SFX werden in Phaser preloadet und nach erstem Nutzerinput entsperrt. Verdrahtet sind `button`, `click`, `error`, `explosion`, `victory` und `defeat` an die belegten Original-Events. `horn`, `message` und `warning` sind vorgeladen fuer Boost-/Info-Slices. `music.ogg` bleibt wegen Groesse und Autoplay-Regeln bis zum Audio-Toggle/Mobile-Unlock-Slice ausgelassen.
 
 ## Bekannte Audit-Luecken
 

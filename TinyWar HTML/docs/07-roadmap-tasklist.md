@@ -275,8 +275,9 @@ Status 2026-05-07:
 - Top-Advance-Banner umgesetzt: `large ribbons` werden geladen, Blue/Red-Banner zeigen Anteil, Power und Strategieicon. Fortschritt/Power werden aus aktuellen Solo-Units berechnet; Red bleibt vorerst auf `Attack`.
 - Top-Advance-Banner verfeinert: Abschluss-/Mittelstuecke aus `large ribbons` nach Originalframes in linearer Original-Reihenfolge zusammengesetzt und Zahlen weiss gesetzt.
 - Linke Unit-Leiste und rechte Strategie-Leiste mit blauen `small ribbons`-Traegern im Originalmuster `[0,2,2,2,9]` hinterlegt. Boost-Ribbon folgt mit der Boost-UI.
+- Erster Audio-Slice umgesetzt: kleine Original-SFX werden geladen und nach erstem Nutzerinput entsperrt; `button`, `click`, `error`, `explosion`, `victory` und `defeat` sind an belegte Original-Events angeschlossen. Keine erfundenen Unit-Combat-Sounds.
 - Restabweichung: `Guard` ist noch nicht aktiv; Red-AI bleibt vorerst auf `Attack`.
-- Offen fuer Milestone 6: Guard-Effekt, Boosts, Unit-Info, Speed/Pause und Mobile-Screenshot-QA.
+- Offen fuer Milestone 6: Guard-Effekt, Boosts, Audio-Toggle/Musik, Unit-Info, Speed/Pause und Mobile-Screenshot-QA.
 
 ## Milestone 7: Boost System in Groups
 

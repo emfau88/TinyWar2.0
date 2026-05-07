@@ -26,6 +26,7 @@ import { MapRenderer } from "../render/MapRenderer";
 import { ProjectileRenderer, type ProjectileRenderHandle } from "../render/ProjectileRenderer";
 import { UnitRenderer, type UnitRenderHandle } from "../render/UnitRenderer";
 import { resolveAndSyncCombat } from "../systems/CombatSync";
+import { GameAudio } from "../systems/GameAudio";
 import { GameHud } from "../ui/GameHud";
 
 export class GameScene extends Phaser.Scene {
@@ -44,6 +45,7 @@ export class GameScene extends Phaser.Scene {
   private mapDebugOverlay?: MapDebugOverlay;
   private mapRenderer?: MapRenderer;
   private projectileRenderer!: ProjectileRenderer;
+  private audio?: GameAudio;
   private queue: UnitQueue = createQueue();
   private enemyQueue: EnemyQueueState = createEnemyQueue();
   private spawnCounter = 0;
@@ -53,6 +55,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.audio = new GameAudio(this);
     this.mapRenderer = new MapRenderer(this);
     this.mapRenderer.render();
     const state = createInitialGameState();
@@ -131,6 +134,7 @@ export class GameScene extends Phaser.Scene {
       },
       delta
     );
+    this.playCombatResultAudio(this.buildings, combat.buildings, combat.winner);
     this.debugUnits = combat.units;
     this.buildings = combat.buildings;
     this.projectiles = combat.projectiles;
@@ -185,17 +189,25 @@ export class GameScene extends Phaser.Scene {
   }
 
   private queueUnit(unitName: UnitName): void {
+    const previousLength = this.queue.units.length;
     this.queue = enqueueUnit(this.queue, unitName);
+    this.audio?.play(this.queue.units.length > previousLength ? "button" : "error");
     this.hud?.updateQueue(this.queue);
   }
 
   private cycleDirection(): void {
     this.selectedDirection = nextDirection(this.selectedDirection);
+    this.audio?.play("click");
     this.hud?.updateDirection(this.selectedDirection);
   }
 
   private selectStrategy(strategy: PlayerStrategy): void {
     const result = selectStrategy(this.strategy, strategy);
+    if (result.changed) {
+      this.audio?.play("click");
+    } else if (this.strategy.current !== strategy && this.strategy.remainingCooldownMs > 0) {
+      this.audio?.play("error");
+    }
     this.strategy = result.state;
     this.hud?.updateStrategy(this.strategy);
     this.updateAdvanceBanner();
@@ -207,6 +219,20 @@ export class GameScene extends Phaser.Scene {
 
   private updateAdvanceBanner(): void {
     this.hud?.updateAdvanceBanner(this.calculateAdvanceBannerState());
+  }
+
+  private playCombatResultAudio(
+    previousBuildings: readonly BuildingInstance[],
+    nextBuildings: readonly BuildingInstance[],
+    winner?: "Blue" | "Red"
+  ): void {
+    if (nextBuildings.some((building) => building.health <= 0 && previousBuildings.some((previous) => previous.id === building.id && previous.health > 0))) {
+      this.audio?.play("explosion");
+    }
+
+    if (winner && !this.hud?.isWinnerVisible) {
+      this.audio?.play(winner === "Blue" ? "victory" : "defeat");
+    }
   }
 
   private setupHudCamera(): void {

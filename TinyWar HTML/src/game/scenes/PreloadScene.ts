@@ -46,6 +46,15 @@ export class PreloadScene extends Phaser.Scene {
     this.load.image(ASSETS.units.redArcher.key, ASSETS.units.redArcher.path);
     this.load.image(ASSETS.units.redPriest.key, ASSETS.units.redPriest.path);
     this.load.image(ASSETS.projectiles.arrow.key, ASSETS.projectiles.arrow.path);
+    this.load.audio(ASSETS.audio.button.key, ASSETS.audio.button.path);
+    this.load.audio(ASSETS.audio.click.key, ASSETS.audio.click.path);
+    this.load.audio(ASSETS.audio.error.key, ASSETS.audio.error.path);
+    this.load.audio(ASSETS.audio.explosion.key, ASSETS.audio.explosion.path);
+    this.load.audio(ASSETS.audio.victory.key, ASSETS.audio.victory.path);
+    this.load.audio(ASSETS.audio.defeat.key, ASSETS.audio.defeat.path);
+    this.load.audio(ASSETS.audio.horn.key, ASSETS.audio.horn.path);
+    this.load.audio(ASSETS.audio.message.key, ASSETS.audio.message.path);
+    this.load.audio(ASSETS.audio.warning.key, ASSETS.audio.warning.path);
 
     for (const animation of BASIC_UNIT_ANIMATIONS) {
       this.load.spritesheet(animation.key, animation.path, {
