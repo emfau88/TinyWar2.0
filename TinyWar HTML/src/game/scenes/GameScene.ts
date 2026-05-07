@@ -40,6 +40,7 @@ export class GameScene extends Phaser.Scene {
   private strategy: StrategyState = createStrategyState();
   private mapWorldWidth = 0;
   private hud?: GameHud;
+  private hudCamera?: Phaser.Cameras.Scene2D.Camera;
   private mapDebugOverlay?: MapDebugOverlay;
   private mapRenderer?: MapRenderer;
   private projectileRenderer!: ProjectileRenderer;
@@ -73,6 +74,7 @@ export class GameScene extends Phaser.Scene {
     });
     this.updateAdvanceBanner();
     this.mapDebugOverlay = new MapDebugOverlay(this);
+    this.setupHudCamera();
     this.input.keyboard?.on("keydown-M", () => this.mapDebugOverlay?.toggle());
 
     this.scale.on("resize", this.layout, this);
@@ -137,6 +139,7 @@ export class GameScene extends Phaser.Scene {
       this.hud?.showWinner(combat.winner);
     }
     this.updateAdvanceBanner();
+    this.syncCameraMasks();
   }
 
   shutdown(): void {
@@ -146,7 +149,14 @@ export class GameScene extends Phaser.Scene {
 
   private layout(gameSize: Phaser.Structs.Size): void {
     this.cameras.main.setSize(gameSize.width, gameSize.height);
-    this.scene.restart();
+    this.hudCamera?.setSize(gameSize.width, gameSize.height);
+    const mapSize = this.mapRenderer?.getWorldSize();
+    if (mapSize) {
+      this.fitMapToViewport(mapSize);
+    }
+    this.hud?.layout(gameSize.width, gameSize.height);
+    this.updateAdvanceBanner();
+    this.syncCameraMasks();
   }
 
   private fitMapToViewport(mapSize: Phaser.Math.Vector2): void {
@@ -197,6 +207,24 @@ export class GameScene extends Phaser.Scene {
 
   private updateAdvanceBanner(): void {
     this.hud?.updateAdvanceBanner(this.calculateAdvanceBannerState());
+  }
+
+  private setupHudCamera(): void {
+    this.hudCamera = this.cameras.add(0, 0, this.scale.width, this.scale.height);
+    this.hudCamera.setScroll(0, 0);
+    this.hudCamera.setZoom(1);
+    this.syncCameraMasks();
+  }
+
+  private syncCameraMasks(): void {
+    if (!this.hud || !this.hudCamera) {
+      return;
+    }
+
+    const hudObjects = this.hud.objects;
+    const hudObjectSet = new Set(hudObjects);
+    this.cameras.main.ignore(hudObjects);
+    this.hudCamera.ignore(this.children.list.filter((child) => !hudObjectSet.has(child)));
   }
 
   private calculateAdvanceBannerState() {

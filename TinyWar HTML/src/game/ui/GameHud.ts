@@ -40,6 +40,20 @@ export interface GameHudCallbacks {
   onSelectStrategy: (strategy: PlayerStrategy) => void;
 }
 
+interface UnitShopButton {
+  rect: Phaser.GameObjects.Rectangle;
+  icon: Phaser.GameObjects.Image;
+  label: Phaser.GameObjects.Text;
+}
+
+interface StrategyButton {
+  rect: Phaser.GameObjects.Rectangle;
+  icon: Phaser.GameObjects.Image;
+  label: Phaser.GameObjects.Text;
+  progressBg: Phaser.GameObjects.Rectangle;
+  progress: Phaser.GameObjects.Rectangle;
+}
+
 export class GameHud {
   private readonly blueAdvanceFill: Phaser.GameObjects.Image;
   private readonly redAdvanceFill: Phaser.GameObjects.Image;
@@ -47,16 +61,20 @@ export class GameHud {
   private readonly redAdvanceText: Phaser.GameObjects.Text;
   private readonly blueAdvanceStrategyIcon: Phaser.GameObjects.Image;
   private readonly redAdvanceStrategyIcon: Phaser.GameObjects.Image;
+  private readonly directionPanel: Phaser.GameObjects.Rectangle;
   private readonly directionIcon: Phaser.GameObjects.Image;
   private readonly directionText: Phaser.GameObjects.Text;
   private readonly queueText: Phaser.GameObjects.Text;
   private readonly winnerText: Phaser.GameObjects.Text;
+  private readonly queueStart: Phaser.GameObjects.Image;
+  private readonly queueEnd: Phaser.GameObjects.Image;
+  private readonly queueSlotBackgrounds: Phaser.GameObjects.Image[] = [];
   private readonly queueIcons: Phaser.GameObjects.Image[] = [];
   private readonly queueProgressBackgrounds: Phaser.GameObjects.Rectangle[] = [];
   private readonly queueProgressBars: Phaser.GameObjects.Rectangle[] = [];
-  private readonly strategyButtons = new Map<PlayerStrategy, Phaser.GameObjects.Rectangle>();
-  private readonly strategyProgressBackgrounds = new Map<PlayerStrategy, Phaser.GameObjects.Rectangle>();
-  private readonly strategyProgressBars = new Map<PlayerStrategy, Phaser.GameObjects.Rectangle>();
+  private readonly shopButtons: UnitShopButton[] = [];
+  private readonly strategyButtons = new Map<PlayerStrategy, StrategyButton>();
+  private lastAdvanceState?: AdvanceBannerState;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -80,9 +98,9 @@ export class GameHud {
     this.redAdvanceText = advance.redText;
     this.blueAdvanceStrategyIcon = advance.blueStrategyIcon;
     this.redAdvanceStrategyIcon = advance.redStrategyIcon;
-    this.updateAdvanceBanner(initialAdvance);
+    this.lastAdvanceState = initialAdvance;
 
-    this.scene.add
+    this.directionPanel = this.scene.add
       .rectangle(34, 34, 48, 44, 0x111827, 0.62)
       .setStrokeStyle(1, 0xf8fafc, 0.42)
       .setScrollFactor(0)
@@ -137,13 +155,44 @@ export class GameHud {
     this.bindKeyboard(callbacks);
     this.createShopButtons(callbacks);
     this.createStrategyButtons(callbacks);
-    this.createQueueDisplay();
+    const queueDisplay = this.createQueueDisplay();
+    this.queueStart = queueDisplay.start;
+    this.queueEnd = queueDisplay.end;
+    this.layout(this.scene.scale.width, this.scene.scale.height);
+    this.updateAdvanceBanner(initialAdvance);
     this.updateStrategy(strategy);
     this.updateQueue(queue);
   }
 
   get isWinnerVisible(): boolean {
     return this.winnerText.visible;
+  }
+
+  get objects(): Phaser.GameObjects.GameObject[] {
+    return [
+      this.blueAdvanceFill,
+      this.redAdvanceFill,
+      this.blueAdvanceText,
+      this.redAdvanceText,
+      this.blueAdvanceStrategyIcon,
+      this.redAdvanceStrategyIcon,
+      this.directionPanel,
+      this.directionIcon,
+      this.directionText,
+      this.queueText,
+      this.winnerText,
+      this.queueStart,
+      this.queueEnd,
+      ...this.queueSlotBackgrounds,
+      ...this.queueIcons,
+      ...this.queueProgressBackgrounds,
+      ...this.queueProgressBars,
+      ...this.shopButtons.flatMap((button) => [button.rect, button.icon, button.label]),
+      ...PLAYER_STRATEGIES.flatMap((strategy) => {
+        const button = this.strategyButtons.get(strategy);
+        return button ? [button.rect, button.icon, button.label, button.progressBg, button.progress] : [];
+      })
+    ];
   }
 
   updateDirection(direction: PlayerDirection): void {
@@ -161,21 +210,20 @@ export class GameHud {
 
     for (const item of PLAYER_STRATEGIES) {
       const button = this.strategyButtons.get(item);
-      const progressBg = this.strategyProgressBackgrounds.get(item);
-      const progress = this.strategyProgressBars.get(item);
-      if (!button || !progressBg || !progress) {
+      if (!button) {
         continue;
       }
 
       const active = item === strategy.current;
-      button.setStrokeStyle(active ? 2 : 1, active ? 0x4795a7 : 0xf8fafc, active ? 0.95 : 0.38);
-      progressBg.setVisible(active && cooldownFraction > 0);
-      progress.setVisible(active && cooldownFraction > 0);
-      progress.displayWidth = Math.max(1, (progressBg.displayWidth - 4) * cooldownFraction);
+      button.rect.setStrokeStyle(active ? 2 : 1, active ? 0x4795a7 : 0xf8fafc, active ? 0.95 : 0.38);
+      button.progressBg.setVisible(active && cooldownFraction > 0);
+      button.progress.setVisible(active && cooldownFraction > 0);
+      button.progress.displayWidth = Math.max(1, (button.progressBg.displayWidth - 4) * cooldownFraction);
     }
   }
 
   updateAdvanceBanner(state: AdvanceBannerState): void {
+    this.lastAdvanceState = state;
     const width = Math.min(this.scene.scale.width * 0.68, 560);
     const minHalfWidth = 42;
     const blueWidth = Math.max(minHalfWidth, width * Phaser.Math.Clamp(state.blueShare, 0.08, 0.92));
@@ -194,6 +242,19 @@ export class GameHud {
     this.redAdvanceStrategyIcon.setTexture(STRATEGY_ASSET_KEYS[state.redStrategy]);
     this.blueAdvanceStrategyIcon.setX(this.scene.scale.width / 2 - width * 0.39);
     this.redAdvanceStrategyIcon.setX(this.scene.scale.width / 2 + width * 0.39);
+  }
+
+  layout(width: number, height: number): void {
+    this.layoutAdvanceBanner(width);
+    this.layoutDirection();
+    this.layoutShopButtons(height);
+    this.layoutStrategyButtons(width, height);
+    this.layoutQueue(width, height);
+    this.winnerText.setPosition(width / 2, 84);
+
+    if (this.lastAdvanceState) {
+      this.updateAdvanceBanner(this.lastAdvanceState);
+    }
   }
 
   showWinner(winner: string): void {
@@ -229,13 +290,13 @@ export class GameHud {
         .setInteractive({ useHandCursor: true });
       rect.on("pointerdown", () => callbacks.onQueueUnit(unit));
 
-      this.scene.add
+      const icon = this.scene.add
         .image(x, y - 2, UNIT_ASSET_KEYS[unit])
         .setDisplaySize(34, 34)
         .setScrollFactor(0)
         .setDepth(101);
 
-      this.scene.add
+      const label = this.scene.add
         .text(x + 14, y + 12, this.hotkeyForUnit(unit), {
           fontFamily: "TinyWar Fira Sans",
           fontSize: "11px",
@@ -246,17 +307,18 @@ export class GameHud {
         .setOrigin(0.5)
         .setScrollFactor(0)
         .setDepth(102);
+      this.shopButtons.push({ rect, icon, label });
     });
   }
 
-  private createQueueDisplay(): void {
+  private createQueueDisplay(): { start: Phaser.GameObjects.Image; end: Phaser.GameObjects.Image } {
     const width = Math.min(this.scene.scale.width * 0.86, 640);
     const slotWidth = width / (QUEUE_SLOT_COUNT + 2);
     const slotHeight = Math.min(58, Math.max(42, slotWidth * 1.18));
     const y = this.scene.scale.height - slotHeight / 2 - 8;
     const startX = this.scene.scale.width / 2 - width / 2;
 
-    this.scene.add
+    const start = this.scene.add
       .image(startX + slotWidth / 2, y, ASSETS.ui.swords1.key, 0)
       .setDisplaySize(slotWidth, slotHeight)
       .setScrollFactor(0)
@@ -264,11 +326,12 @@ export class GameHud {
 
     for (let index = 0; index < QUEUE_SLOT_COUNT; index += 1) {
       const x = startX + slotWidth * (index + 1.5);
-      this.scene.add
+      const background = this.scene.add
         .image(x, y, ASSETS.ui.swords2.key)
         .setDisplaySize(slotWidth, slotHeight)
         .setScrollFactor(0)
         .setDepth(98);
+      this.queueSlotBackgrounds.push(background);
 
       const icon = this.scene.add
         .image(x, y - 3, ASSETS.units.blueWarrior.key)
@@ -300,11 +363,12 @@ export class GameHud {
       this.queueProgressBars.push(progress);
     }
 
-    this.scene.add
+    const end = this.scene.add
       .image(startX + slotWidth * (QUEUE_SLOT_COUNT + 1.5), y, ASSETS.ui.swords3.key)
       .setDisplaySize(slotWidth, slotHeight)
       .setScrollFactor(0)
       .setDepth(98);
+    return { start, end };
   }
 
   private createAdvanceBanner(): {
@@ -387,15 +451,14 @@ export class GameHud {
         .setDepth(100)
         .setInteractive({ useHandCursor: true });
       rect.on("pointerdown", () => callbacks.onSelectStrategy(strategy));
-      this.strategyButtons.set(strategy, rect);
 
-      this.scene.add
+      const icon = this.scene.add
         .image(x, y - 2, STRATEGY_ASSET_KEYS[strategy])
         .setDisplaySize(32, 32)
         .setScrollFactor(0)
         .setDepth(101);
 
-      this.scene.add
+      const label = this.scene.add
         .text(x + 14, y + 12, strategyHotkey(strategy), {
           fontFamily: "TinyWar Fira Sans",
           fontSize: "11px",
@@ -418,9 +481,82 @@ export class GameHud {
         .setScrollFactor(0)
         .setDepth(103)
         .setVisible(false);
-      this.strategyProgressBackgrounds.set(strategy, progressBg);
-      this.strategyProgressBars.set(strategy, progress);
+      this.strategyButtons.set(strategy, { rect, icon, label, progressBg, progress });
     });
+  }
+
+  private layoutAdvanceBanner(width: number): void {
+    const centerX = width / 2;
+    const y = 38;
+    this.blueAdvanceFill.setY(y);
+    this.redAdvanceFill.setY(y);
+    this.blueAdvanceText.setY(y);
+    this.redAdvanceText.setY(y);
+    this.blueAdvanceStrategyIcon.setY(y);
+    this.redAdvanceStrategyIcon.setY(y);
+    this.blueAdvanceFill.setX(centerX - 140);
+    this.redAdvanceFill.setX(centerX + 140);
+  }
+
+  private layoutDirection(): void {
+    this.directionPanel.setPosition(34, 92);
+    this.directionIcon.setPosition(34, 92);
+    this.directionText.setPosition(66, 74);
+  }
+
+  private layoutShopButtons(height: number): void {
+    const buttonSize = 44;
+    const gap = 7;
+    const totalHeight = this.shopButtons.length * buttonSize + (this.shopButtons.length - 1) * gap;
+    const startY = height / 2 - totalHeight / 2;
+    const x = 30;
+
+    this.shopButtons.forEach((button, index) => {
+      const y = startY + index * (buttonSize + gap) + buttonSize / 2;
+      button.rect.setPosition(x, y).setSize(buttonSize, buttonSize);
+      button.icon.setPosition(x, y - 2).setDisplaySize(34, 34);
+      button.label.setPosition(x + 14, y + 12);
+    });
+  }
+
+  private layoutStrategyButtons(width: number, height: number): void {
+    const buttonSize = 44;
+    const gap = 7;
+    const totalHeight = PLAYER_STRATEGIES.length * buttonSize + (PLAYER_STRATEGIES.length - 1) * gap;
+    const startY = height / 2 - totalHeight / 2;
+    const x = width - 30;
+
+    PLAYER_STRATEGIES.forEach((strategy, index) => {
+      const button = this.strategyButtons.get(strategy);
+      if (!button) {
+        return;
+      }
+      const y = startY + index * (buttonSize + gap) + buttonSize / 2;
+      button.rect.setPosition(x, y).setSize(buttonSize, buttonSize);
+      button.icon.setPosition(x, y - 2).setDisplaySize(32, 32);
+      button.label.setPosition(x + 14, y + 12);
+      button.progressBg.setPosition(x, y + buttonSize * 0.32).setSize(buttonSize * 0.68, 5);
+      button.progress.setPosition(x - (buttonSize * 0.68) / 2, y + buttonSize * 0.32).setSize(buttonSize * 0.62, 3);
+    });
+  }
+
+  private layoutQueue(width: number, height: number): void {
+    const queueWidth = Math.min(width * 0.86, 640);
+    const slotWidth = queueWidth / (QUEUE_SLOT_COUNT + 2);
+    const slotHeight = Math.min(58, Math.max(42, slotWidth * 1.18));
+    const y = height - slotHeight / 2 - 8;
+    const startX = width / 2 - queueWidth / 2;
+
+    this.queueStart.setPosition(startX + slotWidth / 2, y).setDisplaySize(slotWidth, slotHeight);
+    for (let index = 0; index < QUEUE_SLOT_COUNT; index += 1) {
+      const x = startX + slotWidth * (index + 1.5);
+      this.queueSlotBackgrounds[index].setPosition(x, y).setDisplaySize(slotWidth, slotHeight);
+      this.queueIcons[index].setPosition(x, y - 3).setDisplaySize(slotHeight * 0.55, slotHeight * 0.55);
+      this.queueProgressBackgrounds[index].setPosition(x, y + slotHeight * 0.26).setSize(slotWidth * 0.62, 5);
+      this.queueProgressBars[index].setPosition(x - (slotWidth * 0.62) / 2, y + slotHeight * 0.26).setSize(slotWidth * 0.58, 3);
+    }
+    this.queueEnd.setPosition(startX + slotWidth * (QUEUE_SLOT_COUNT + 1.5), y).setDisplaySize(slotWidth, slotHeight);
+    this.queueText.setPosition(12, Math.max(12, y - slotHeight / 2 - 28));
   }
 
   private directionLabel(direction: PlayerDirection): string {

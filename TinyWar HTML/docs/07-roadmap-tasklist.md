@@ -266,6 +266,7 @@ Exit-Kriterien:
 Status 2026-05-07:
 - Original-UI-Audit begonnen: Queue-Struktur aus `src/core/map/ui/systems.rs` geprueft.
 - Erster sichtbarer HUD-Schritt umgesetzt: Original-Sword-Queue unten und linke Basic-Unit-Icon-Leiste.
+- HUD-Layout stabilisiert: `GameHud.layout(width, height)` positioniert Banner, Direction, Shop, Strategien und Queue zentral im Screen-Space; eine eigene HUD-Kamera rendert UI mit Zoom `1`, getrennt von der Map-Kamera.
 - Direction-Icon umgesetzt: Original-Icon-Mapping aus `PlayerDirection::image()` inklusive vertikalem Flip fuer `Bot`/`MidBot`.
 - Strategy-Auswahl-Slice umgesetzt: Core-State fuer `Attack`, `Guard`, `March`, `Berserk`, Original-Hotkeys `T/Y/U/I`, initial fertiger 5s-Cooldown und rechte HUD-Icon-Leiste mit Cooldown-Anzeige.
 - `March`-Effekt umgesetzt: Blue-Units laufen mit 150% Speed und ignorieren Unit-vs-Unit-Combat; Building-/Base-Angriffe bleiben wie im Original moeglich. Tests sichern March-Speed, Unit-Ignore und Building-Angriff ab.
