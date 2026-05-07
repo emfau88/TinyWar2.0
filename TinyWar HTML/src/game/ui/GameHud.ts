@@ -55,8 +55,12 @@ interface StrategyButton {
 }
 
 export class GameHud {
+  private readonly blueAdvanceStart: Phaser.GameObjects.Image;
+  private readonly blueAdvanceJoin: Phaser.GameObjects.Image;
   private readonly blueAdvanceFill: Phaser.GameObjects.Image;
   private readonly redAdvanceFill: Phaser.GameObjects.Image;
+  private readonly redAdvanceJoin: Phaser.GameObjects.Image;
+  private readonly redAdvanceEnd: Phaser.GameObjects.Image;
   private readonly blueAdvanceText: Phaser.GameObjects.Text;
   private readonly redAdvanceText: Phaser.GameObjects.Text;
   private readonly blueAdvanceStrategyIcon: Phaser.GameObjects.Image;
@@ -92,8 +96,12 @@ export class GameHud {
       redStrategy: "Attack" as const
     };
     const advance = this.createAdvanceBanner();
+    this.blueAdvanceStart = advance.blueStart;
+    this.blueAdvanceJoin = advance.blueJoin;
     this.blueAdvanceFill = advance.blueFill;
     this.redAdvanceFill = advance.redFill;
+    this.redAdvanceJoin = advance.redJoin;
+    this.redAdvanceEnd = advance.redEnd;
     this.blueAdvanceText = advance.blueText;
     this.redAdvanceText = advance.redText;
     this.blueAdvanceStrategyIcon = advance.blueStrategyIcon;
@@ -172,6 +180,10 @@ export class GameHud {
     return [
       this.blueAdvanceFill,
       this.redAdvanceFill,
+      this.blueAdvanceStart,
+      this.blueAdvanceJoin,
+      this.redAdvanceJoin,
+      this.redAdvanceEnd,
       this.blueAdvanceText,
       this.redAdvanceText,
       this.blueAdvanceStrategyIcon,
@@ -225,14 +237,23 @@ export class GameHud {
   updateAdvanceBanner(state: AdvanceBannerState): void {
     this.lastAdvanceState = state;
     const width = Math.min(this.scene.scale.width * 0.68, 560);
+    const capWidth = 32;
     const minHalfWidth = 42;
     const blueWidth = Math.max(minHalfWidth, width * Phaser.Math.Clamp(state.blueShare, 0.08, 0.92));
     const redWidth = Math.max(minHalfWidth, width - blueWidth);
+    const centerX = this.scene.scale.width / 2;
+    const leftX = centerX - width / 2;
+    const blueBodyWidth = Math.max(18, blueWidth - capWidth * 2);
+    const redBodyWidth = Math.max(18, redWidth - capWidth * 2);
 
-    this.blueAdvanceFill.setDisplaySize(blueWidth, 44);
-    this.redAdvanceFill.setDisplaySize(redWidth, 44);
-    this.blueAdvanceFill.setX(this.scene.scale.width / 2 - redWidth / 2);
-    this.redAdvanceFill.setX(this.scene.scale.width / 2 + blueWidth / 2);
+    this.blueAdvanceStart.setDisplaySize(capWidth, 44).setPosition(leftX + capWidth / 2, this.blueAdvanceStart.y);
+    this.blueAdvanceJoin.setDisplaySize(capWidth, 44).setPosition(leftX + capWidth + blueBodyWidth + capWidth / 2, this.blueAdvanceJoin.y);
+    this.blueAdvanceFill.setDisplaySize(blueBodyWidth, 44);
+    this.redAdvanceFill.setDisplaySize(redBodyWidth, 44);
+    this.blueAdvanceFill.setX(leftX + capWidth + blueBodyWidth / 2);
+    this.redAdvanceFill.setX(leftX + blueWidth + redBodyWidth / 2);
+    this.redAdvanceJoin.setDisplaySize(capWidth, 44).setPosition(leftX + blueWidth - capWidth / 2, this.redAdvanceJoin.y);
+    this.redAdvanceEnd.setDisplaySize(capWidth, 44).setPosition(leftX + width - capWidth / 2, this.redAdvanceEnd.y);
 
     this.blueAdvanceText.setText(this.advanceLabel(state.blueShare, state.bluePower));
     this.redAdvanceText.setText(this.advanceLabel(state.redShare, state.redPower));
@@ -372,8 +393,12 @@ export class GameHud {
   }
 
   private createAdvanceBanner(): {
+    blueStart: Phaser.GameObjects.Image;
+    blueJoin: Phaser.GameObjects.Image;
     blueFill: Phaser.GameObjects.Image;
     redFill: Phaser.GameObjects.Image;
+    redJoin: Phaser.GameObjects.Image;
+    redEnd: Phaser.GameObjects.Image;
     blueText: Phaser.GameObjects.Text;
     redText: Phaser.GameObjects.Text;
     blueStrategyIcon: Phaser.GameObjects.Image;
@@ -384,6 +409,21 @@ export class GameHud {
     const depth = 97;
     const blueFrame = BLUE_RIBBON_INDEX * LARGE_RIBBON_FRAMES_PER_COLOR + 3;
     const redFrame = RED_RIBBON_INDEX * LARGE_RIBBON_FRAMES_PER_COLOR + 3;
+    const blueStartFrame = BLUE_RIBBON_INDEX * LARGE_RIBBON_FRAMES_PER_COLOR;
+    const blueJoinFrame = BLUE_RIBBON_INDEX * LARGE_RIBBON_FRAMES_PER_COLOR + 1;
+    const redJoinFrame = RED_RIBBON_INDEX * LARGE_RIBBON_FRAMES_PER_COLOR + 5;
+    const redEndFrame = RED_RIBBON_INDEX * LARGE_RIBBON_FRAMES_PER_COLOR + 6;
+
+    const blueStart = this.scene.add
+      .image(centerX - 312, y, ASSETS.ui.largeRibbons.key, blueStartFrame)
+      .setDisplaySize(32, 44)
+      .setScrollFactor(0)
+      .setDepth(depth);
+    const blueJoin = this.scene.add
+      .image(centerX - 280, y, ASSETS.ui.largeRibbons.key, blueJoinFrame)
+      .setDisplaySize(32, 44)
+      .setScrollFactor(0)
+      .setDepth(depth);
 
     const blueFill = this.scene.add
       .image(centerX - 140, y, ASSETS.ui.largeRibbons.key, blueFrame)
@@ -394,6 +434,16 @@ export class GameHud {
       .image(centerX + 140, y, ASSETS.ui.largeRibbons.key, redFrame)
       .setDisplaySize(280, 44)
       .setFlipX(true)
+      .setScrollFactor(0)
+      .setDepth(depth);
+    const redJoin = this.scene.add
+      .image(centerX + 280, y, ASSETS.ui.largeRibbons.key, redJoinFrame)
+      .setDisplaySize(32, 44)
+      .setScrollFactor(0)
+      .setDepth(depth + 1);
+    const redEnd = this.scene.add
+      .image(centerX + 312, y, ASSETS.ui.largeRibbons.key, redEndFrame)
+      .setDisplaySize(32, 44)
       .setScrollFactor(0)
       .setDepth(depth);
 
@@ -411,7 +461,7 @@ export class GameHud {
     const textStyle: Phaser.Types.GameObjects.Text.TextStyle = {
       fontFamily: "TinyWar Fira Sans",
       fontSize: "12px",
-      color: "#0f172a",
+      color: "#f8fafc",
       align: "center"
     };
     const blueText = this.scene.add
@@ -426,8 +476,12 @@ export class GameHud {
       .setDepth(depth + 2);
 
     return {
+      blueStart,
+      blueJoin,
       blueFill,
       redFill,
+      redJoin,
+      redEnd,
       blueText,
       redText,
       blueStrategyIcon,
@@ -490,6 +544,10 @@ export class GameHud {
     const y = 38;
     this.blueAdvanceFill.setY(y);
     this.redAdvanceFill.setY(y);
+    this.blueAdvanceStart.setY(y);
+    this.blueAdvanceJoin.setY(y);
+    this.redAdvanceJoin.setY(y);
+    this.redAdvanceEnd.setY(y);
     this.blueAdvanceText.setY(y);
     this.redAdvanceText.setY(y);
     this.blueAdvanceStrategyIcon.setY(y);
