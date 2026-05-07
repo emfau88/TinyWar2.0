@@ -95,6 +95,7 @@ Status 2026-05-06:
 - Weitere manuelle Map-Korrektur: Tree3-Anker links unten ein Feld nach unten verschoben.
 - Foam-Testkorrektur: Foam-Anker `(1,10)` nach `(1,8)` verschoben, um die sichtbare Beanstandung bei `(2,9)` Richtung `(2,7)` zu pruefen.
 - Stoerende Foam-Abdeckung an den vom Debug-Overlay gemeldeten sichtbaren Zellen entfernt; betroffene Foam-Anker gezielt geloescht.
+- Map-Polish fuer jetzt abgeschlossen: Stand ist gut genug fuer Fortsetzung mit UI-Parity; weitere Map-Feinheiten spaeter separat behandeln.
 - Tiled-GID-Flip-Flags werden beim Generieren maskiert und als `tileFlags` separat gespeichert; Renderer wendet horizontal/vertical Flip an. Aktuell betrifft das zwei `Sheep_Idle` Tiles im Layer `obj`.
 - Kamera ist zentriert, Touch/Mouse-Drag, WASD und Scroll-Zoom sind eingebaut.
 - Build und Tests erfolgreich.
