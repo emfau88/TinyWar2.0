@@ -86,6 +86,7 @@ Status 2026-05-06:
 - Phaser rendert die Original-Layer in TMX-Reihenfolge mit Original-Tileset-Bildern.
 - Animierte Tiles werden aus den TSX-Animationsdaten mit Original-Frame-Dauern abgespielt.
 - Map-Diagnose-Tooling ergaenzt: `npm run diagnose:map` meldet animierte Tilesets, Tiled-Flip-Flags und Non-64x64-Placements inklusive Layer-/Tileset-Gruppierung, Tiled-Bottom-Left-Footprints und Map-Grenz-Clipping.
+- Debug-Overlay per Taste `M` ergaenzt: Grid-Koordinaten und Non-64x64-Footprints sichtbar, geclippte Placements rot markiert.
 - Tiled-GID-Flip-Flags werden beim Generieren maskiert und als `tileFlags` separat gespeichert; Renderer wendet horizontal/vertical Flip an. Aktuell betrifft das zwei `Sheep_Idle` Tiles im Layer `obj`.
 - Kamera ist zentriert, Touch/Mouse-Drag, WASD und Scroll-Zoom sind eingebaut.
 - Build und Tests erfolgreich.

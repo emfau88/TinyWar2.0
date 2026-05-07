@@ -14,6 +14,7 @@ import type { UnitName } from "../../core/units/unitData";
 import { CameraDragController } from "../input/CameraDragController";
 import { BuildingRenderer } from "../render/BuildingRenderer";
 import type { BuildingRenderHandle } from "../render/BuildingRenderer";
+import { MapDebugOverlay } from "../render/MapDebugOverlay";
 import { MapRenderer } from "../render/MapRenderer";
 import { ProjectileRenderer, type ProjectileRenderHandle } from "../render/ProjectileRenderer";
 import { UnitRenderer, type UnitRenderHandle } from "../render/UnitRenderer";
@@ -30,6 +31,7 @@ export class GameScene extends Phaser.Scene {
   private projectiles: ProjectileInstance[] = [];
   private selectedDirection: PlayerDirection = "Any";
   private hud?: GameHud;
+  private mapDebugOverlay?: MapDebugOverlay;
   private mapRenderer?: MapRenderer;
   private projectileRenderer!: ProjectileRenderer;
   private queue: UnitQueue = createQueue();
@@ -58,6 +60,8 @@ export class GameScene extends Phaser.Scene {
       onCycleDirection: () => this.cycleDirection(),
       onQueueUnit: (unit) => this.queueUnit(unit)
     });
+    this.mapDebugOverlay = new MapDebugOverlay(this);
+    this.input.keyboard?.on("keydown-M", () => this.mapDebugOverlay?.toggle());
 
     this.scale.on("resize", this.layout, this);
   }
@@ -118,6 +122,7 @@ export class GameScene extends Phaser.Scene {
 
   shutdown(): void {
     this.cameraDrag?.destroy();
+    this.mapDebugOverlay?.destroy();
   }
 
   private layout(gameSize: Phaser.Structs.Size): void {
