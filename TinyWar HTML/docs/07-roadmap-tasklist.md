@@ -124,6 +124,7 @@ Status 2026-05-06:
 - Original-Startpositionen uebertragen: links Tile `(3,0)`, rechts Tile `(27,0)`.
 - Solo-Startfarben: Blue gegen Red.
 - Start-Bases sind Barracks mit 1000 Health.
+- Sichtbare Start-Barracks um eine Tilehoehe nach unten versetzt, damit die oberen Gebaeudeteile nicht am Map-Rand clippen. Original-Start-Tiles und Lane-/Pathing-Daten bleiben unveraendert.
 - Barracks/Castle/Tower-Daten und Unit-Slots als Core-Daten erfasst.
 - Original `with_units` Verhalten vorbereitet: Start-Barracks rendern je zwei Archer auf den Gebaeude-Slots.
 - Tests erweitert: 9 Tests erfolgreich.

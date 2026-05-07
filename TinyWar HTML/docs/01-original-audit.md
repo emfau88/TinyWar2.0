@@ -90,6 +90,7 @@ Gebaeude:
 - Barracks: Health 1000, zwei Unit-Slots.
 - Castle: Health 2000, drei Unit-Slots.
 - Tower: Health 500, ein Unit-Slot.
+- HTML-Stand 2026-05-07: Original-Start-Tiles bleiben links `(3,0)` und rechts `(27,0)`. Die sichtbaren Start-Barracks werden im Initial-State um eine Tilehoehe `+64px` nach unten versetzt, weil die oberen Gebaeudeteile am Map-Rand sonst abgeschnitten wirken. Die Building-Slot-Archer folgen diesem Offset. Pfad-/Lane-Startdaten bleiben unveraendert aus dem Original.
 
 ## Phase 1-3 Source Audit
 
