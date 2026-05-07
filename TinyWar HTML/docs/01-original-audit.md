@@ -65,6 +65,7 @@ Map-Rendering-Diagnose 2026-05-06:
 - Map-Korrektur 2026-05-07: Zwei manuell gepruefte Baum-Anker wurden in `map.tmx` verschoben: `obj` Tree3 von `(27,7)` nach `(26,7)` und `obj2` Tree1 von `(19,2)` nach `(20,2)`. Foam wurde nicht geaendert, weil die gemeldeten Foam-Koordinaten bereits bestehende Anker/Footprints betreffen und erst als eindeutige Ankerliste bestaetigt werden muessen.
 - Map-Korrektur 2026-05-07: Tree3-Anker `obj` von `(1,13)` nach `(1,14)` verschoben, damit der sichtbare Baum bei `(2,13)` ein Feld tiefer sitzt.
 - Map-Testkorrektur 2026-05-07: Foam-Anker `foam` von `(1,10)` nach `(1,8)` verschoben. Hintergrund: Der sichtbar bei `(2,9)` beanstandete Foam stammt von diesem 3x3-Footprint; Ziel ist eine visuelle Pruefung, ob der Foam dadurch bei `(2,7)` korrekt sitzt, ohne Cliff-Layer zu ueberdecken.
+- Map-Korrektur 2026-05-07: Stoerende Foam-Abdeckung entfernt, indem Foam-Anker bei `(1,8)`, `(18,1)`, `(20,1)`, `(21,1)`, `(22,1)`, `(21,2)`, `(19,3)`, `(20,3)`, `(27,6)`, `(28,6)`, `(26,9)`, `(27,9)` und `(26,10)` geloescht wurden. Gepruefte sichtbare Zellen ohne Foam-Abdeckung danach: `(1,8)`, `(20,2)`, `(19,0)`, `(21,0)`, `(22,0)`, `(23,0)`, `(29,5)`, `(28,8)`.
 
 ## Units
 
