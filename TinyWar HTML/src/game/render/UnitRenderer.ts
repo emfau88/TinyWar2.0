@@ -88,7 +88,11 @@ export class UnitRenderer {
     UnitRenderer.playUnitAction(sprite, unit, action);
   }
 
-  static actionForUnit(unit: UnitInstance & { moving?: boolean; targetId?: string }): UnitAction {
+  static actionForUnit(unit: UnitInstance & { moving?: boolean; targetId?: string; guarding?: boolean }): UnitAction {
+    if (unit.guarding) {
+      return "Guard";
+    }
+
     if (unit.targetId) {
       return unit.name === "Priest" ? "Heal" : "Attack";
     }

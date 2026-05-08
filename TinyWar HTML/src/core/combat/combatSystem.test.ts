@@ -53,6 +53,26 @@ describe("resolveCombat", () => {
     expect(attackingBlue?.attackCooldownMs).toBeCloseTo(ATTACK_DURATION_MS.Warrior / 1.3, 5);
   });
 
+  it("puts attacked guard-capable units into guard stance instead of attacking", () => {
+    const blue = combatUnit(createUnit("blue-warrior", "Warrior", "Blue", { x: 100, y: 100 }));
+    const red = combatUnit(createUnit("red-warrior", "Warrior", "Red", { x: 128, y: 100 }));
+    const windup = resolveCombat(
+      {
+        units: [blue, red],
+        buildings: [],
+        strategies: { Blue: "Guard" }
+      },
+      16
+    );
+    const state = resolveCombat(windup, 16);
+    const blueAfter = state.units.find((unit) => unit.id === "blue-warrior");
+
+    expect(blueAfter?.guarding).toBe(true);
+    expect(blueAfter?.targetId).toBeUndefined();
+    expect(blueAfter?.attackCooldownMs).toBe(0);
+    expect(blueAfter?.moving).toBe(false);
+  });
+
   it("does not speed up priest heal cycles while Berserk is active", () => {
     const priest = combatUnit(createUnit("blue-priest", "Priest", "Blue", { x: 100, y: 100 }));
     const warrior = {
@@ -223,6 +243,25 @@ describe("resolveCombat", () => {
     const berserk = resolveCombat(berserkWindup, ATTACK_DURATION_MS.Archer);
 
     expect(berserk.projectiles?.[0].damage).toBeCloseTo(normal.projectiles?.[0].damage ?? 0, 5);
+  });
+
+  it("reduces incoming damage for guard-capable defenders while Guard is active", () => {
+    const blue = combatUnit(createUnit("blue-archer", "Archer", "Blue", { x: 100, y: 100 }));
+    const red = combatUnit(createUnit("red-warrior", "Warrior", "Red", { x: 180, y: 100 }));
+    const normalWindup = resolveCombat({ units: [blue, red], buildings: [] }, 16);
+    const normal = resolveCombat(normalWindup, ATTACK_DURATION_MS.Archer);
+    const guardedTargetLock = resolveCombat(
+      {
+        units: [blue, red],
+        buildings: [],
+        strategies: { Red: "Guard" }
+      },
+      16
+    );
+    const guardedWindup = resolveCombat(guardedTargetLock, 16);
+    const guarded = resolveCombat(guardedWindup, ATTACK_DURATION_MS.Archer);
+
+    expect(guarded.projectiles?.[0].damage).toBeLessThan(normal.projectiles?.[0].damage ?? Infinity);
   });
 
   it("applies archer damage when the arrow collides with the target", () => {

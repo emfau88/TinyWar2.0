@@ -43,6 +43,7 @@ export function resolveAndSyncCombat(state: CombatSyncState, deltaMs: number): C
               health: combatUnit.health,
               attackCooldownMs: combatUnit.attackCooldownMs,
               moving: combatUnit.moving,
+              guarding: combatUnit.guarding,
               targetId: combatUnit.targetId,
               targetKind: combatUnit.targetKind
             }

@@ -29,6 +29,9 @@ import { resolveAndSyncCombat } from "../systems/CombatSync";
 import { GameAudio } from "../systems/GameAudio";
 import { GameHud } from "../ui/GameHud";
 
+const MIN_GAME_SPEED = 0.25;
+const MAX_GAME_SPEED = 16;
+
 export class GameScene extends Phaser.Scene {
   private cameraDrag?: CameraDragController;
   private debugUnits: MovingUnit[] = [];
@@ -47,6 +50,8 @@ export class GameScene extends Phaser.Scene {
   private projectileRenderer!: ProjectileRenderer;
   private audio?: GameAudio;
   private audioMuted = false;
+  private paused = false;
+  private gameSpeed = 1;
   private queue: UnitQueue = createQueue();
   private enemyQueue: EnemyQueueState = createEnemyQueue();
   private spawnCounter = 0;
@@ -75,34 +80,45 @@ export class GameScene extends Phaser.Scene {
       onCycleDirection: () => this.cycleDirection(),
       onQueueUnit: (unit) => this.queueUnit(unit),
       onSelectStrategy: (strategy) => this.selectStrategy(strategy),
-      onToggleAudio: () => this.toggleAudio()
+      onToggleAudio: () => this.toggleAudio(),
+      onToggleUnitInfo: () => this.toggleUnitInfo()
     });
     this.hud.updateAudioMuted(this.audioMuted);
+    this.hud.updateSpeed(this.gameSpeed, this.paused);
     this.updateAdvanceBanner();
     this.mapDebugOverlay = new MapDebugOverlay(this);
     this.setupHudCamera();
     this.input.keyboard?.on("keydown-M", () => this.mapDebugOverlay?.toggle());
+    this.input.keyboard?.on("keyup-SPACE", this.togglePause, this);
+    this.input.keyboard?.on("keyup-LEFT", this.adjustGameSpeed, this);
+    this.input.keyboard?.on("keyup-RIGHT", this.adjustGameSpeed, this);
 
     this.scale.on("resize", this.layout, this);
   }
 
   update(_time: number, delta: number): void {
-    this.mapRenderer?.update(delta);
+    const effectiveDelta = this.paused ? 0 : delta * this.gameSpeed;
+    this.mapRenderer?.update(effectiveDelta);
 
     if (this.hud?.isWinnerVisible) {
       return;
     }
 
-    const result = tickQueue(this.queue, delta);
+    if (this.paused) {
+      this.syncCameraMasks();
+      return;
+    }
+
+    const result = tickQueue(this.queue, effectiveDelta);
     this.queue = result.queue;
     for (const unitName of result.spawned) {
       this.spawnQueuedUnit(unitName, "Blue");
     }
     this.hud?.updateQueue(this.queue);
-    this.strategy = tickStrategyCooldown(this.strategy, delta);
+    this.strategy = tickStrategyCooldown(this.strategy, effectiveDelta);
     this.hud?.updateStrategy(this.strategy);
 
-    const enemyResult = tickEnemyQueue(this.enemyQueue, delta);
+    const enemyResult = tickEnemyQueue(this.enemyQueue, effectiveDelta);
     this.enemyQueue = enemyResult.state;
     for (const unitName of enemyResult.spawned) {
       this.spawnQueuedUnit(unitName, "Red");
@@ -110,7 +126,7 @@ export class GameScene extends Phaser.Scene {
 
     this.debugUnits = this.debugUnits.map((unit) => {
       const previousX = unit.position.x;
-      const moved = unit.moving ? updateMovingUnit(unit, delta / 1000, this.strategyForUnit(unit)) : unit;
+      const moved = unit.moving ? updateMovingUnit(unit, effectiveDelta / 1000, this.strategyForUnit(unit)) : unit;
       const handle = this.debugUnitSprites.get(unit.id);
       if (handle) {
         UnitRenderer.updateHandle(handle, moved, UnitRenderer.actionForUnit(moved));
@@ -135,7 +151,7 @@ export class GameScene extends Phaser.Scene {
           Red: "Attack"
         }
       },
-      delta
+      effectiveDelta
     );
     this.playCombatResultAudio(this.buildings, combat.buildings, combat.winner);
     this.debugUnits = combat.units;
@@ -152,6 +168,9 @@ export class GameScene extends Phaser.Scene {
   shutdown(): void {
     this.cameraDrag?.destroy();
     this.mapDebugOverlay?.destroy();
+    this.input.keyboard?.off("keyup-SPACE", this.togglePause, this);
+    this.input.keyboard?.off("keyup-LEFT", this.adjustGameSpeed, this);
+    this.input.keyboard?.off("keyup-RIGHT", this.adjustGameSpeed, this);
   }
 
   private layout(gameSize: Phaser.Structs.Size): void {
@@ -192,6 +211,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   private queueUnit(unitName: UnitName): void {
+    if (this.paused || this.hud?.isUnitInfoVisible) {
+      return;
+    }
+
     const previousLength = this.queue.units.length;
     this.queue = enqueueUnit(this.queue, unitName);
     this.audio?.play(this.queue.units.length > previousLength ? "button" : "error");
@@ -199,12 +222,20 @@ export class GameScene extends Phaser.Scene {
   }
 
   private cycleDirection(): void {
+    if (this.paused || this.hud?.isUnitInfoVisible) {
+      return;
+    }
+
     this.selectedDirection = nextDirection(this.selectedDirection);
     this.audio?.play("click");
     this.hud?.updateDirection(this.selectedDirection);
   }
 
   private selectStrategy(strategy: PlayerStrategy): void {
+    if (this.paused || this.hud?.isUnitInfoVisible) {
+      return;
+    }
+
     const result = selectStrategy(this.strategy, strategy);
     if (result.changed) {
       this.audio?.play("click");
@@ -223,6 +254,37 @@ export class GameScene extends Phaser.Scene {
     if (!this.audioMuted) {
       this.audio?.play("click");
     }
+  }
+
+  private toggleUnitInfo(): void {
+    this.hud?.toggleUnitInfo();
+    this.cameraDrag?.setEnabled(!this.hud?.isUnitInfoVisible);
+    this.audio?.play("click");
+  }
+
+  private togglePause(): void {
+    if (this.hud?.isWinnerVisible) {
+      return;
+    }
+
+    this.paused = !this.paused;
+    this.hud?.updateSpeed(this.gameSpeed, this.paused);
+  }
+
+  private adjustGameSpeed(event: KeyboardEvent): void {
+    if (!event.ctrlKey || this.hud?.isWinnerVisible) {
+      return;
+    }
+
+    if (event.key === "ArrowRight") {
+      this.gameSpeed = Math.min(MAX_GAME_SPEED, this.gameSpeed * 2);
+    } else if (event.key === "ArrowLeft") {
+      this.gameSpeed = Math.max(MIN_GAME_SPEED, this.gameSpeed * 0.5);
+    } else {
+      return;
+    }
+
+    this.hud?.updateSpeed(this.gameSpeed, this.paused);
   }
 
   private strategyForUnit(unit: MovingUnit): PlayerStrategy {

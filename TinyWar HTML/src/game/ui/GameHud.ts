@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { PLAYER_STRATEGIES, strategyHotkey } from "../../core/player/playerStrategy";
-import { UNITS as UNIT_DEFINITIONS } from "../../core/units/unitData";
+import { UNITS as UNIT_DEFINITIONS, unitCycleDurationMs } from "../../core/units/unitData";
 import { ASSETS } from "../../data/assetManifest";
 import type { PlayerDirection } from "../../core/player/playerDirection";
 import type { PlayerStrategy, StrategyState } from "../../core/player/playerStrategy";
@@ -41,6 +41,7 @@ export interface GameHudCallbacks {
   onQueueUnit: (unit: UnitName) => void;
   onSelectStrategy: (strategy: PlayerStrategy) => void;
   onToggleAudio: () => void;
+  onToggleUnitInfo: () => void;
 }
 
 interface UnitShopButton {
@@ -55,6 +56,13 @@ interface StrategyButton {
   label: Phaser.GameObjects.Text;
   progressBg: Phaser.GameObjects.Rectangle;
   progress: Phaser.GameObjects.Rectangle;
+}
+
+interface UnitInfoButton {
+  rect: Phaser.GameObjects.Rectangle;
+  icon: Phaser.GameObjects.Image;
+  label: Phaser.GameObjects.Text;
+  unit: UnitName;
 }
 
 export class GameHud {
@@ -73,7 +81,10 @@ export class GameHud {
   private readonly directionText: Phaser.GameObjects.Text;
   private readonly audioPanel: Phaser.GameObjects.Rectangle;
   private readonly audioIcon: Phaser.GameObjects.Image;
+  private readonly unitInfoTogglePanel: Phaser.GameObjects.Rectangle;
+  private readonly unitInfoToggleLabel: Phaser.GameObjects.Text;
   private readonly queueText: Phaser.GameObjects.Text;
+  private readonly speedText: Phaser.GameObjects.Text;
   private readonly winnerText: Phaser.GameObjects.Text;
   private readonly queueStart: Phaser.GameObjects.Image;
   private readonly queueEnd: Phaser.GameObjects.Image;
@@ -84,8 +95,20 @@ export class GameHud {
   private readonly shopRibbonPieces: Phaser.GameObjects.Image[] = [];
   private readonly strategyRibbonPieces: Phaser.GameObjects.Image[] = [];
   private readonly shopButtons: UnitShopButton[] = [];
+  private readonly unitInfoButtons: UnitInfoButton[] = [];
+  private readonly unitInfoBackdrop: Phaser.GameObjects.Rectangle;
+  private readonly unitInfoPanel: Phaser.GameObjects.Rectangle;
+  private readonly unitInfoTitle: Phaser.GameObjects.Text;
+  private readonly unitInfoClosePanel: Phaser.GameObjects.Rectangle;
+  private readonly unitInfoCloseLabel: Phaser.GameObjects.Text;
+  private readonly unitInfoPortrait: Phaser.GameObjects.Image;
+  private readonly unitInfoName: Phaser.GameObjects.Text;
+  private readonly unitInfoDescription: Phaser.GameObjects.Text;
+  private readonly unitInfoStats: Phaser.GameObjects.Text[] = [];
   private readonly strategyButtons = new Map<PlayerStrategy, StrategyButton>();
   private lastAdvanceState?: AdvanceBannerState;
+  private selectedUnitInfo: UnitName = "Archer";
+  private unitInfoVisible = false;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -159,6 +182,26 @@ export class GameHud {
       .setInteractive({ useHandCursor: true });
     this.audioIcon.on("pointerdown", callbacks.onToggleAudio);
 
+    this.unitInfoTogglePanel = this.scene.add
+      .rectangle(this.scene.scale.width - 34, 146, 44, 44, 0x111827, 0.62)
+      .setStrokeStyle(1, 0xf8fafc, 0.42)
+      .setScrollFactor(0)
+      .setDepth(100)
+      .setInteractive({ useHandCursor: true })
+      .on("pointerdown", callbacks.onToggleUnitInfo);
+
+    this.unitInfoToggleLabel = this.scene.add
+      .text(this.scene.scale.width - 34, 146, "H", {
+        fontFamily: "TinyWar Fira Mono",
+        fontSize: "18px",
+        color: "#f8fafc"
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(101)
+      .setInteractive({ useHandCursor: true });
+    this.unitInfoToggleLabel.on("pointerdown", callbacks.onToggleUnitInfo);
+
     this.queueText = this.scene.add
       .text(12, 42, this.queueLabel(queue), {
         fontFamily: "TinyWar Fira Sans",
@@ -167,6 +210,18 @@ export class GameHud {
         backgroundColor: "rgba(17, 24, 39, 0.58)",
         padding: { x: 7, y: 4 }
       })
+      .setScrollFactor(0)
+      .setDepth(100);
+
+    this.speedText = this.scene.add
+      .text(12, this.scene.scale.height - 14, "1x", {
+        fontFamily: "TinyWar Fira Mono",
+        fontSize: "12px",
+        color: "#f8fafc",
+        backgroundColor: "rgba(17, 24, 39, 0.58)",
+        padding: { x: 6, y: 3 }
+      })
+      .setOrigin(0, 1)
       .setScrollFactor(0)
       .setDepth(100);
 
@@ -183,11 +238,106 @@ export class GameHud {
       .setDepth(100)
       .setVisible(false);
 
+    this.unitInfoBackdrop = this.scene.add
+      .rectangle(this.scene.scale.width / 2, this.scene.scale.height / 2, this.scene.scale.width, this.scene.scale.height, 0x020617, 0.72)
+      .setScrollFactor(0)
+      .setDepth(190)
+      .setInteractive()
+      .setVisible(false);
+    this.unitInfoBackdrop.on("pointerdown", callbacks.onToggleUnitInfo);
+
+    this.unitInfoPanel = this.scene.add
+      .rectangle(this.scene.scale.width / 2, this.scene.scale.height / 2, 560, 420, 0xe2e8f0, 0.97)
+      .setStrokeStyle(3, 0x1e293b, 0.9)
+      .setScrollFactor(0)
+      .setDepth(191)
+      .setInteractive()
+      .setVisible(false);
+
+    this.unitInfoTitle = this.scene.add
+      .text(0, 0, "Unit Info", {
+        fontFamily: "TinyWar Fira Sans",
+        fontSize: "24px",
+        color: "#0f172a"
+      })
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(192)
+      .setVisible(false);
+
+    this.unitInfoClosePanel = this.scene.add
+      .rectangle(0, 0, 40, 32, 0x0f172a, 0.9)
+      .setStrokeStyle(1, 0xf8fafc, 0.42)
+      .setScrollFactor(0)
+      .setDepth(192)
+      .setInteractive({ useHandCursor: true })
+      .setVisible(false);
+    this.unitInfoClosePanel.on("pointerdown", callbacks.onToggleUnitInfo);
+
+    this.unitInfoCloseLabel = this.scene.add
+      .text(0, 0, "X", {
+        fontFamily: "TinyWar Fira Mono",
+        fontSize: "16px",
+        color: "#f8fafc"
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(193)
+      .setInteractive({ useHandCursor: true })
+      .setVisible(false);
+    this.unitInfoCloseLabel.on("pointerdown", callbacks.onToggleUnitInfo);
+
+    this.unitInfoPortrait = this.scene.add
+      .image(0, 0, UNIT_ASSET_KEYS[this.selectedUnitInfo])
+      .setDisplaySize(92, 92)
+      .setScrollFactor(0)
+      .setDepth(192)
+      .setVisible(false);
+
+    this.unitInfoName = this.scene.add
+      .text(0, 0, this.selectedUnitInfo, {
+        fontFamily: "TinyWar Fira Sans",
+        fontSize: "22px",
+        color: "#0f172a"
+      })
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(192)
+      .setVisible(false);
+
+    this.unitInfoDescription = this.scene.add
+      .text(0, 0, "", {
+        fontFamily: "TinyWar Fira Sans",
+        fontSize: "14px",
+        color: "#334155",
+        wordWrap: { width: 360 }
+      })
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(192)
+      .setVisible(false);
+
+    for (let index = 0; index < 8; index += 1) {
+      this.unitInfoStats.push(
+        this.scene.add
+          .text(0, 0, "", {
+            fontFamily: "TinyWar Fira Mono",
+            fontSize: "13px",
+            color: "#0f172a"
+          })
+          .setOrigin(0, 0)
+          .setScrollFactor(0)
+          .setDepth(192)
+          .setVisible(false)
+      );
+    }
+
     this.bindKeyboard(callbacks);
     this.shopRibbonPieces.push(...this.createSideRibbon());
     this.strategyRibbonPieces.push(...this.createSideRibbon());
     this.createShopButtons(callbacks);
     this.createStrategyButtons(callbacks);
+    this.createUnitInfoButtons();
     const queueDisplay = this.createQueueDisplay();
     this.queueStart = queueDisplay.start;
     this.queueEnd = queueDisplay.end;
@@ -195,10 +345,15 @@ export class GameHud {
     this.updateAdvanceBanner(initialAdvance);
     this.updateStrategy(strategy);
     this.updateQueue(queue);
+    this.refreshUnitInfo();
   }
 
   get isWinnerVisible(): boolean {
     return this.winnerText.visible;
+  }
+
+  get isUnitInfoVisible(): boolean {
+    return this.unitInfoVisible;
   }
 
   get objects(): Phaser.GameObjects.GameObject[] {
@@ -218,7 +373,10 @@ export class GameHud {
       this.directionText,
       this.audioPanel,
       this.audioIcon,
+      this.unitInfoTogglePanel,
+      this.unitInfoToggleLabel,
       this.queueText,
+      this.speedText,
       this.winnerText,
       this.queueStart,
       this.queueEnd,
@@ -229,10 +387,20 @@ export class GameHud {
       ...this.shopRibbonPieces,
       ...this.strategyRibbonPieces,
       ...this.shopButtons.flatMap((button) => [button.rect, button.icon, button.label]),
+      ...this.unitInfoButtons.flatMap((button) => [button.rect, button.icon, button.label]),
       ...PLAYER_STRATEGIES.flatMap((strategy) => {
         const button = this.strategyButtons.get(strategy);
         return button ? [button.rect, button.icon, button.label, button.progressBg, button.progress] : [];
-      })
+      }),
+      this.unitInfoBackdrop,
+      this.unitInfoPanel,
+      this.unitInfoTitle,
+      this.unitInfoClosePanel,
+      this.unitInfoCloseLabel,
+      this.unitInfoPortrait,
+      this.unitInfoName,
+      this.unitInfoDescription,
+      ...this.unitInfoStats
     ];
   }
 
@@ -266,6 +434,10 @@ export class GameHud {
   updateAudioMuted(muted: boolean): void {
     this.audioIcon.setTexture(muted ? ASSETS.icons.mute.key : ASSETS.icons.sound.key);
     this.audioPanel.setStrokeStyle(1, muted ? 0xfca5a5 : 0xf8fafc, muted ? 0.72 : 0.42);
+  }
+
+  updateSpeed(speed: number, paused: boolean): void {
+    this.speedText.setText(`${speed}x${paused ? " - paused" : ""}`);
   }
 
   updateAdvanceBanner(state: AdvanceBannerState): void {
@@ -313,9 +485,11 @@ export class GameHud {
     this.layoutAdvanceBanner(width);
     this.layoutDirection();
     this.layoutAudio(width);
+    this.layoutUnitInfoToggle(width);
     this.layoutShopButtons(height);
     this.layoutStrategyButtons(width, height);
     this.layoutQueue(width, height);
+    this.layoutUnitInfo(width, height);
     this.winnerText.setPosition(width / 2, 84);
 
     if (this.lastAdvanceState) {
@@ -325,6 +499,10 @@ export class GameHud {
 
   showWinner(winner: string): void {
     this.winnerText.setText(`${winner} wins`).setVisible(true);
+  }
+
+  toggleUnitInfo(): void {
+    this.setUnitInfoVisible(!this.unitInfoVisible);
   }
 
   private bindKeyboard(callbacks: GameHudCallbacks): void {
@@ -337,6 +515,7 @@ export class GameHud {
     this.scene.input.keyboard?.on("keydown-Y", () => callbacks.onSelectStrategy("Guard"));
     this.scene.input.keyboard?.on("keydown-U", () => callbacks.onSelectStrategy("March"));
     this.scene.input.keyboard?.on("keydown-I", () => callbacks.onSelectStrategy("Berserk"));
+    this.scene.input.keyboard?.on("keydown-H", callbacks.onToggleUnitInfo);
     this.scene.input.keyboard?.on("keydown-Q", callbacks.onToggleAudio);
   }
 
@@ -377,6 +556,45 @@ export class GameHud {
         .setDepth(102);
       this.shopButtons.push({ rect, icon, label });
     });
+  }
+
+  private createUnitInfoButtons(): void {
+    for (const unit of BASIC_UNITS) {
+      const rect = this.scene.add
+        .rectangle(0, 0, 54, 54, 0x0f172a, 0.14)
+        .setStrokeStyle(1, 0x1e293b, 0.24)
+        .setScrollFactor(0)
+        .setDepth(192)
+        .setInteractive({ useHandCursor: true })
+        .setVisible(false);
+      rect.on("pointerdown", () => this.selectUnitInfo(unit));
+
+      const icon = this.scene.add
+        .image(0, 0, UNIT_ASSET_KEYS[unit])
+        .setDisplaySize(40, 40)
+        .setScrollFactor(0)
+        .setDepth(193)
+        .setVisible(false)
+        .setInteractive({ useHandCursor: true });
+      icon.on("pointerdown", () => this.selectUnitInfo(unit));
+
+      const label = this.scene.add
+        .text(0, 0, this.hotkeyForUnit(unit), {
+          fontFamily: "TinyWar Fira Sans",
+          fontSize: "11px",
+          color: "#f8fafc",
+          backgroundColor: "rgba(15, 23, 42, 0.78)",
+          padding: { x: 2, y: 0 }
+        })
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(194)
+        .setVisible(false)
+        .setInteractive({ useHandCursor: true });
+      label.on("pointerdown", () => this.selectUnitInfo(unit));
+
+      this.unitInfoButtons.push({ rect, icon, label, unit });
+    }
   }
 
   private createQueueDisplay(): { start: Phaser.GameObjects.Image; end: Phaser.GameObjects.Image } {
@@ -615,6 +833,11 @@ export class GameHud {
     this.audioIcon.setPosition(width - 34, 92);
   }
 
+  private layoutUnitInfoToggle(width: number): void {
+    this.unitInfoTogglePanel.setPosition(width - 34, 146);
+    this.unitInfoToggleLabel.setPosition(width - 34, 146);
+  }
+
   private layoutShopButtons(height: number): void {
     const buttonSize = 44;
     const gap = 7;
@@ -670,6 +893,76 @@ export class GameHud {
     }
     this.queueEnd.setPosition(startX + slotWidth * (QUEUE_SLOT_COUNT + 1.5), y).setDisplaySize(slotWidth, slotHeight);
     this.queueText.setPosition(12, Math.max(12, y - slotHeight / 2 - 28));
+    this.speedText.setPosition(12, height - 10);
+  }
+
+  private layoutUnitInfo(width: number, height: number): void {
+    const mobile = width < 700;
+    const panelWidth = Math.min(width - (mobile ? 24 : 120), mobile ? 420 : 720);
+    const panelHeight = Math.min(height - (mobile ? 32 : 90), mobile ? 560 : 460);
+    const panelX = width / 2;
+    const panelY = height / 2;
+    const panelLeft = panelX - panelWidth / 2;
+    const panelTop = panelY - panelHeight / 2;
+
+    this.unitInfoBackdrop.setPosition(panelX, panelY).setSize(width, height);
+    this.unitInfoPanel.setPosition(panelX, panelY).setSize(panelWidth, panelHeight);
+    this.unitInfoTitle.setPosition(panelX, panelTop + 18);
+    this.unitInfoClosePanel.setPosition(panelLeft + panelWidth - 28, panelTop + 28);
+    this.unitInfoCloseLabel.setPosition(panelLeft + panelWidth - 28, panelTop + 28);
+
+    if (mobile) {
+      const buttonSize = 54;
+      const gap = 8;
+      const rowWidth = this.unitInfoButtons.length * buttonSize + (this.unitInfoButtons.length - 1) * gap;
+      const startX = panelX - rowWidth / 2 + buttonSize / 2;
+      const buttonY = panelTop + 88;
+
+      this.unitInfoButtons.forEach((button, index) => {
+        const x = startX + index * (buttonSize + gap);
+        button.rect.setPosition(x, buttonY).setSize(buttonSize, buttonSize);
+        button.icon.setPosition(x, buttonY - 3).setDisplaySize(40, 40);
+        button.label.setPosition(x + 16, buttonY + 16);
+      });
+
+      this.unitInfoPortrait.setPosition(panelX, panelTop + 175).setDisplaySize(88, 88);
+      this.unitInfoName.setPosition(panelLeft + 18, panelTop + 230);
+      this.unitInfoDescription.setPosition(panelLeft + 18, panelTop + 268).setWordWrapWidth(panelWidth - 36);
+
+      const statsStartY = panelTop + 352;
+      const leftX = panelLeft + 18;
+      const rightX = panelLeft + panelWidth / 2 + 8;
+      this.unitInfoStats.forEach((text, index) => {
+        const columnX = index < 4 ? leftX : rightX;
+        const row = index % 4;
+        text.setPosition(columnX, statsStartY + row * 26);
+      });
+      return;
+    }
+
+    const buttonX = panelLeft + 52;
+    const buttonStartY = panelTop + 96;
+    const buttonGap = 14;
+    this.unitInfoButtons.forEach((button, index) => {
+      const y = buttonStartY + index * (54 + buttonGap);
+      button.rect.setPosition(buttonX, y).setSize(54, 54);
+      button.icon.setPosition(buttonX, y - 3).setDisplaySize(40, 40);
+      button.label.setPosition(buttonX + 16, y + 16);
+    });
+
+    const detailLeft = panelLeft + 118;
+    this.unitInfoPortrait.setPosition(detailLeft + 44, panelTop + 98).setDisplaySize(88, 88);
+    this.unitInfoName.setPosition(detailLeft + 98, panelTop + 58);
+    this.unitInfoDescription.setPosition(detailLeft + 98, panelTop + 94).setWordWrapWidth(panelWidth - 244);
+
+    const statsStartY = panelTop + 188;
+    const leftX = detailLeft + 12;
+    const rightX = panelLeft + panelWidth / 2 + 30;
+    this.unitInfoStats.forEach((text, index) => {
+      const columnX = index < 4 ? leftX : rightX;
+      const row = index % 4;
+      text.setPosition(columnX, statsStartY + row * 30);
+    });
   }
 
   private createSideRibbon(): Phaser.GameObjects.Image[] {
@@ -690,6 +983,61 @@ export class GameHud {
     pieces.forEach((piece, index) => {
       piece.setPosition(x, startY + index * segmentSize).setDisplaySize(segmentSize, segmentSize);
     });
+  }
+
+  private setUnitInfoVisible(visible: boolean): void {
+    this.unitInfoVisible = visible;
+    this.unitInfoBackdrop.setVisible(visible);
+    this.unitInfoPanel.setVisible(visible);
+    this.unitInfoTitle.setVisible(visible);
+    this.unitInfoClosePanel.setVisible(visible);
+    this.unitInfoCloseLabel.setVisible(visible);
+    this.unitInfoPortrait.setVisible(visible);
+    this.unitInfoName.setVisible(visible);
+    this.unitInfoDescription.setVisible(visible);
+    for (const button of this.unitInfoButtons) {
+      button.rect.setVisible(visible);
+      button.icon.setVisible(visible);
+      button.label.setVisible(visible);
+    }
+    for (const text of this.unitInfoStats) {
+      text.setVisible(visible);
+    }
+    this.unitInfoTogglePanel.setStrokeStyle(1, visible ? 0x67e8f9 : 0xf8fafc, visible ? 0.95 : 0.42);
+  }
+
+  private selectUnitInfo(unit: UnitName): void {
+    this.selectedUnitInfo = unit;
+    this.refreshUnitInfo();
+  }
+
+  private refreshUnitInfo(): void {
+    const definition = UNIT_DEFINITIONS[this.selectedUnitInfo];
+    const cycleMs = unitCycleDurationMs(this.selectedUnitInfo);
+    const actionLabel = definition.physicalDamage >= 0 ? "Attack speed" : "Healing speed";
+    const damageLabel = definition.physicalDamage >= 0 ? "Physical damage" : "Healing";
+    const stats = [
+      `Health: ${definition.health}`,
+      `${damageLabel}: ${Math.abs(definition.physicalDamage)}`,
+      `Magic damage: ${definition.magicDamage}`,
+      `${actionLabel}: ${(1000 / cycleMs).toFixed(2)}`,
+      `Armor: ${definition.armor}`,
+      `Magic resist: ${definition.magicResist}`,
+      `Armor pen: ${definition.armorPen}`,
+      `Range / Spawn: ${definition.range} / ${(definition.spawnDurationMs / 1000).toFixed(1)}s`
+    ];
+
+    this.unitInfoPortrait.setTexture(UNIT_ASSET_KEYS[this.selectedUnitInfo]);
+    this.unitInfoName.setText(this.selectedUnitInfo);
+    this.unitInfoDescription.setText(definition.description);
+    this.unitInfoStats.forEach((text, index) => text.setText(stats[index] ?? ""));
+    this.unitInfoButtons.forEach((button) =>
+      button.rect.setStrokeStyle(
+        button.unit === this.selectedUnitInfo ? 2 : 1,
+        button.unit === this.selectedUnitInfo ? 0x4795a7 : 0x1e293b,
+        button.unit === this.selectedUnitInfo ? 0.95 : 0.24
+      )
+    );
   }
 
   private directionLabel(direction: PlayerDirection): string {

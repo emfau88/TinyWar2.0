@@ -2,7 +2,7 @@ import type { BuildingInstance } from "../buildings/buildingData";
 import { calculateDamage } from "./damage";
 import type { PlayerColor } from "../buildings/buildingData";
 import type { PlayerStrategy } from "../player/playerStrategy";
-import { UNITS, type UnitInstance } from "../units/unitData";
+import { UNITS, unitCanGuard, unitCycleDurationMs, type UnitInstance } from "../units/unitData";
 import { distance, ORIGINAL_RADIUS, unitAttackRange } from "./combatRange";
 import {
   clearInvalidTargets,
@@ -18,15 +18,16 @@ import {
 
 export const FRAME_MS = 100;
 export const ATTACK_DURATION_MS: Record<UnitInstance["name"], number> = {
-  Warrior: 8 * FRAME_MS,
-  Lancer: 9 * FRAME_MS,
-  Archer: 6 * FRAME_MS,
-  Priest: 11 * FRAME_MS
+  Warrior: unitCycleDurationMs("Warrior"),
+  Lancer: unitCycleDurationMs("Lancer"),
+  Archer: unitCycleDurationMs("Archer"),
+  Priest: unitCycleDurationMs("Priest")
 };
 
 export interface CombatUnit extends UnitInstance {
   attackCooldownMs: number;
   moving: boolean;
+  guarding?: boolean;
   targetId?: string;
   targetKind?: "unit" | "building";
 }
@@ -57,8 +58,32 @@ export function resolveCombat(state: CombatState, deltaMs: number): CombatState 
   let projectiles = [...projectileState.projectiles];
   let winner = projectileState.winner;
 
+  const attackedUnitIds = new Set(
+    units
+      .filter((unit) => unitCanAttack(unit) && unit.targetKind === "unit" && unit.targetId)
+      .map((unit) => unit.targetId as string)
+  );
+
+  units = units.map((unit) => {
+    const guarding = shouldGuard(unit, attackedUnitIds, state.strategies);
+    return guarding !== Boolean(unit.guarding)
+      ? {
+          ...unit,
+          guarding,
+          moving: !guarding,
+          attackCooldownMs: guarding ? 0 : unit.attackCooldownMs,
+          targetId: guarding ? undefined : unit.targetId,
+          targetKind: guarding ? undefined : unit.targetKind
+        }
+      : unit;
+  });
+
   for (const unit of units) {
     if (unit.health <= 0) {
+      continue;
+    }
+
+    if (unit.guarding) {
       continue;
     }
 
@@ -276,6 +301,7 @@ function resetAttackCycle(
       ? {
           ...unit,
           attackCooldownMs: durationMs,
+          guarding: false,
           moving: false,
           targetId,
           targetKind
@@ -294,6 +320,7 @@ function holdAttack(
     unit.id === unitId
       ? {
           ...unit,
+          guarding: false,
           moving: false,
           targetId,
           targetKind
@@ -344,9 +371,14 @@ function adjustedArmor(
   defender: CombatUnit,
   strategies?: Partial<Record<PlayerColor, PlayerStrategy>>
 ): number {
+  let adjusted = armor;
+  if (defender.guarding) {
+    adjusted *= 2;
+  }
+
   return strategyForColor(strategies, defender.color) === "Berserk" && !defender.onBuildingId
-    ? armor / 2
-    : armor;
+    ? adjusted / 2
+    : adjusted;
 }
 
 function adjustedMagicResist(
@@ -354,9 +386,23 @@ function adjustedMagicResist(
   defender: CombatUnit,
   strategies?: Partial<Record<PlayerColor, PlayerStrategy>>
 ): number {
+  let adjusted = magicResist;
+  if (defender.guarding) {
+    adjusted *= 2;
+  }
+
   return strategyForColor(strategies, defender.color) === "Berserk" && !defender.onBuildingId
-    ? magicResist / 2
-    : magicResist;
+    ? adjusted / 2
+    : adjusted;
 }
+
+function shouldGuard(
+  unit: CombatUnit,
+  attackedUnitIds: ReadonlySet<string>,
+  strategies?: Partial<Record<PlayerColor, PlayerStrategy>>
+): boolean {
+  return unitCanGuard(unit.name) && strategyForColor(strategies, unit.color) === "Guard" && attackedUnitIds.has(unit.id);
+}
+
 
 export { MELEE_BUILDING_RANGE, MELEE_UNIT_RANGE, ORIGINAL_RADIUS } from "./combatRange";

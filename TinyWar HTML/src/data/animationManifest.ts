@@ -1,7 +1,7 @@
 import { UNITS, type UnitName } from "../core/units/unitData";
 import type { PlayerColor } from "../core/buildings/buildingData";
 
-export type UnitAction = "Idle" | "Run" | "Attack" | "Heal";
+export type UnitAction = "Idle" | "Run" | "Guard" | "Attack" | "Heal";
 
 export interface UnitAnimationDefinition {
   key: string;
@@ -22,6 +22,7 @@ export function unitAnimationKey(color: PlayerColor, unit: UnitName, action: Uni
 export const BASIC_UNIT_ANIMATIONS = [
   unitAnimation("Blue", "Warrior", "Idle", 8),
   unitAnimation("Blue", "Warrior", "Run", 6),
+  unitAnimation("Blue", "Warrior", "Guard", 6),
   unitAnimation("Blue", "Warrior", "Attack", 8),
   unitAnimation("Blue", "Lancer", "Idle", 12),
   unitAnimation("Blue", "Lancer", "Run", 6),
@@ -34,6 +35,7 @@ export const BASIC_UNIT_ANIMATIONS = [
   unitAnimation("Blue", "Priest", "Heal", 11),
   unitAnimation("Red", "Warrior", "Idle", 8),
   unitAnimation("Red", "Warrior", "Run", 6),
+  unitAnimation("Red", "Warrior", "Guard", 6),
   unitAnimation("Red", "Warrior", "Attack", 8),
   unitAnimation("Red", "Lancer", "Idle", 12),
   unitAnimation("Red", "Lancer", "Run", 6),

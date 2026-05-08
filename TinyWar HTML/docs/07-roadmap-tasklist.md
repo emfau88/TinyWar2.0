@@ -252,8 +252,8 @@ Tasks:
 - [x] 5s Strategy-Cooldown.
 - [x] Top-Banner/Strategieanzeige aus `large ribbons`.
 - [x] Lane-Icon oben links mit Original-Direction-Icons.
-- [ ] Pause und Game-Speed fuer Solo.
-- [ ] Unit-Info-Panel.
+- [x] Pause und Game-Speed fuer Solo.
+- [x] Unit-Info-Panel.
 - [ ] Boost-Leiste und Boost-Aktivstatus vorbereiten.
 - [ ] Audio-Toggle und Mobile-Audio-Unlock.
 
@@ -276,8 +276,13 @@ Status 2026-05-07:
 - Top-Advance-Banner verfeinert: Abschluss-/Mittelstuecke aus `large ribbons` nach Originalframes in linearer Original-Reihenfolge zusammengesetzt und Zahlen weiss gesetzt.
 - Linke Unit-Leiste und rechte Strategie-Leiste mit blauen `small ribbons`-Traegern im Originalmuster `[0,2,2,2,9]` hinterlegt. Boost-Ribbon folgt mit der Boost-UI.
 - Erster Audio-Slice umgesetzt: kleine Original-SFX werden geladen und nach erstem Nutzerinput entsperrt; `button`, `click`, `error`, `explosion`, `victory` und `defeat` sind an belegte Original-Events angeschlossen. SFX-Toggle mit Original-Icons `sound`/`mute` und Hotkey `Q` umgesetzt. Keine erfundenen Unit-Combat-Sounds.
-- Restabweichung: `Guard` ist noch nicht aktiv; Red-AI bleibt vorerst auf `Attack`.
-- Offen fuer Milestone 6: Guard-Effekt, Boosts, Musik, Unit-Info, Speed/Pause und Mobile-Screenshot-QA.
+- `Guard`-Effekt umgesetzt: Guard-faehige Units im aktuellen HTML-Scope sind Warriors; wenn sie unter aktiver `Guard`-Strategie angegriffen werden, gehen sie in Guard-Haltung, greifen nicht an und erhalten den originalnahen Defense-Bonus aus dem Original-Combat-Code. Warrior-Guard-Animationen fuer Blue/Red sind angebunden. Red-AI bleibt vorerst auf `Attack`.
+- Pause/Game-Speed fuer den Solo-Slice umgesetzt: `Space` toggelt Pause, `Ctrl+Right` verdoppelt Speed, `Ctrl+Left` halbiert Speed. Grenzen wie im Original: `0.25x` bis `16x`. Queue, Strategy-Cooldown, Enemy-Queue, Movement, Combat, Projectiles und Map-Tile-Animationen laufen ueber den skalierten Simulations-Delta-Pfad; Kamera-Input bleibt nutzbar. Ein kleiner HUD-Status unten links zeigt `Nx` bzw. `Nx - paused`.
+- Restabweichung: Die Spielgeschwindigkeit skaliert aktuell den Simulationspfad sauber, aber nicht alle Phaser-Spritesheet-Animationen separat zur vollstaendigen Original-Parity. Gameplay-Timing ist korrekt skaliert; reine Render-Animationen koennen visuell naeher an ihrer bisherigen Rate bleiben.
+- Unit-Info-Panel umgesetzt: `H` toggelt ein modales Screen-Space-Overlay; auf Touch steht zusaetzlich rechts oben ein `H`-Button bereit. Das Panel zeigt fuer die aktuellen Basic Units Original-Beschreibungstexte und die aktuell portierten Werte fuer Health, Damage/Healing, Cycle-Speed, Armor, Resist, Pen, Range und Spawn-Dauer. Das Layout ist responsiv: auf breiten Viewports mit linker Unit-Liste, auf schmalen Viewports mit horizontaler Unit-Leiste oben.
+- Restpunkt Unit-Info: Echte Mobile-/Touch-QA steht noch aus. Geprueft werden muessen insbesondere Overlay-Touch-Ziele, Viewport-Hoehen auf kleinen Portrait-Screens und das saubere Blockieren von Kamera-Pan/Pinch unter dem geoeffneten Overlay.
+- Restpunkt Unit-Info: Der aktuelle HTML-Slice deckt bewusst nur den bestehenden Basic-Unit-Scope `Warrior/Lancer/Archer/Priest` ab. Monster-/Boost-Units folgen spaeter mit Milestone 7/8 und sind noch nicht im Panel enthalten.
+- Offen fuer Milestone 6: Boosts, Musik und Mobile-Screenshot-QA.
 
 ## Milestone 7: Boost System in Groups
 

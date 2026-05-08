@@ -10,6 +10,7 @@ export interface MovingUnit extends UnitInstance {
   pathIndex: number;
   direction: "LeftToRight" | "RightToLeft";
   moving: boolean;
+  guarding?: boolean;
   attackCooldownMs: number;
   targetId?: string;
   targetKind?: "unit" | "building";

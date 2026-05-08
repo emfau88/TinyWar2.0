@@ -1,7 +1,18 @@
 import Phaser from "phaser";
 
+type CameraInputState = "idle" | "single-pan" | "pinch-zoom";
+
 export class CameraDragController {
+  private static readonly DESKTOP_MIN_ZOOM = 0.35;
+  private static readonly DESKTOP_MAX_ZOOM = 1.4;
+  private static readonly MOBILE_MIN_ZOOM = 0.4;
+  private static readonly MOBILE_MAX_ZOOM = 1.2;
+
+  private state: CameraInputState = "idle";
+  private enabled = true;
   private previous?: Phaser.Math.Vector2;
+  private pinchStartDistance?: number;
+  private pinchStartZoom?: number;
   private keys?: Record<"up" | "left" | "down" | "right", Phaser.Input.Keyboard.Key>;
 
   constructor(private readonly scene: Phaser.Scene) {
@@ -29,8 +40,15 @@ export class CameraDragController {
     this.scene.events.off("update", this.update, this);
   }
 
+  setEnabled(enabled: boolean): void {
+    this.enabled = enabled;
+    if (!enabled) {
+      this.resetInputState();
+    }
+  }
+
   private update(_time: number, delta: number): void {
-    if (!this.keys) {
+    if (!this.enabled || !this.keys) {
       return;
     }
 
@@ -42,15 +60,41 @@ export class CameraDragController {
     if (x !== 0 || y !== 0) {
       camera.scrollX += x * speed;
       camera.scrollY += y * speed;
+      this.clampCameraScroll(camera);
     }
   }
 
   private onPointerDown(pointer: Phaser.Input.Pointer): void {
+    if (!this.enabled) {
+      return;
+    }
+
+    const activePointers = this.getActivePointers();
+    if (activePointers.length >= 2) {
+      this.beginPinch(activePointers[0], activePointers[1]);
+      return;
+    }
+
+    this.state = "single-pan";
     this.previous = new Phaser.Math.Vector2(pointer.x, pointer.y);
   }
 
   private onPointerMove(pointer: Phaser.Input.Pointer): void {
-    if (!pointer.isDown || !this.previous) {
+    if (!this.enabled || !pointer.isDown) {
+      return;
+    }
+
+    const activePointers = this.getActivePointers();
+    if (activePointers.length >= 2) {
+      if (this.state !== "pinch-zoom") {
+        this.beginPinch(activePointers[0], activePointers[1]);
+      } else {
+        this.updatePinch(activePointers[0], activePointers[1]);
+      }
+      return;
+    }
+
+    if (this.state !== "single-pan" || !this.previous) {
       return;
     }
 
@@ -59,11 +103,35 @@ export class CameraDragController {
     const dy = (pointer.y - this.previous.y) / camera.zoom;
     camera.scrollX -= dx;
     camera.scrollY -= dy;
+    this.clampCameraScroll(camera);
     this.previous.set(pointer.x, pointer.y);
   }
 
   private onPointerUp(): void {
+    if (!this.enabled) {
+      this.resetInputState();
+      return;
+    }
+
+    const activePointers = this.getActivePointers();
+    if (activePointers.length >= 2) {
+      this.beginPinch(activePointers[0], activePointers[1]);
+      return;
+    }
+
+    if (activePointers.length === 1) {
+      const [remainingPointer] = activePointers;
+      this.state = "single-pan";
+      this.pinchStartDistance = undefined;
+      this.pinchStartZoom = undefined;
+      this.previous = new Phaser.Math.Vector2(remainingPointer.x, remainingPointer.y);
+      return;
+    }
+
+    this.state = "idle";
     this.previous = undefined;
+    this.pinchStartDistance = undefined;
+    this.pinchStartZoom = undefined;
   }
 
   private onWheel(
@@ -72,8 +140,81 @@ export class CameraDragController {
     _deltaX: number,
     deltaY: number
   ): void {
+    if (!this.enabled) {
+      return;
+    }
+
     const camera = this.scene.cameras.main;
     const factor = deltaY > 0 ? 0.9 : 1.1;
-    camera.setZoom(Phaser.Math.Clamp(camera.zoom * factor, 0.35, 1.4));
+    camera.setZoom(
+      Phaser.Math.Clamp(
+        camera.zoom * factor,
+        CameraDragController.DESKTOP_MIN_ZOOM,
+        CameraDragController.DESKTOP_MAX_ZOOM
+      )
+    );
+    this.clampCameraScroll(camera);
+  }
+
+  private beginPinch(pointerA: Phaser.Input.Pointer, pointerB: Phaser.Input.Pointer): void {
+    this.state = "pinch-zoom";
+    this.previous = undefined;
+    this.pinchStartDistance = Phaser.Math.Distance.Between(pointerA.x, pointerA.y, pointerB.x, pointerB.y);
+    this.pinchStartZoom = this.scene.cameras.main.zoom;
+  }
+
+  private updatePinch(pointerA: Phaser.Input.Pointer, pointerB: Phaser.Input.Pointer): void {
+    if (!this.pinchStartDistance || !this.pinchStartZoom) {
+      this.beginPinch(pointerA, pointerB);
+      return;
+    }
+
+    const camera = this.scene.cameras.main;
+    const currentDistance = Phaser.Math.Distance.Between(pointerA.x, pointerA.y, pointerB.x, pointerB.y);
+    if (currentDistance <= 0) {
+      return;
+    }
+
+    const targetZoom = this.clampZoom(this.pinchStartZoom * (currentDistance / this.pinchStartDistance));
+    camera.setZoom(targetZoom);
+    this.clampCameraScroll(camera);
+  }
+
+  private clampZoom(zoom: number): number {
+    return Phaser.Math.Clamp(
+      zoom,
+      CameraDragController.MOBILE_MIN_ZOOM,
+      CameraDragController.MOBILE_MAX_ZOOM
+    );
+  }
+
+  private clampCameraScroll(camera: Phaser.Cameras.Scene2D.Camera): void {
+    const bounds = (camera as Phaser.Cameras.Scene2D.Camera & {
+      _bounds?: Phaser.Geom.Rectangle;
+    })._bounds;
+    if (!camera.useBounds || !bounds) {
+      return;
+    }
+
+    const visibleWidth = camera.width / camera.zoom;
+    const visibleHeight = camera.height / camera.zoom;
+    const minScrollX = bounds.x;
+    const minScrollY = bounds.y;
+    const maxScrollX = Math.max(minScrollX, bounds.right - visibleWidth);
+    const maxScrollY = Math.max(minScrollY, bounds.bottom - visibleHeight);
+
+    camera.scrollX = Phaser.Math.Clamp(camera.scrollX, minScrollX, maxScrollX);
+    camera.scrollY = Phaser.Math.Clamp(camera.scrollY, minScrollY, maxScrollY);
+  }
+
+  private getActivePointers(): Phaser.Input.Pointer[] {
+    return this.scene.input.manager.pointers.filter((pointer) => pointer.isDown);
+  }
+
+  private resetInputState(): void {
+    this.state = "idle";
+    this.previous = undefined;
+    this.pinchStartDistance = undefined;
+    this.pinchStartZoom = undefined;
   }
 }
