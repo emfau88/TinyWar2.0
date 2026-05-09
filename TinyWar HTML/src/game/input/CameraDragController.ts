@@ -2,17 +2,37 @@ import Phaser from "phaser";
 
 type CameraInputState = "idle" | "single-pan" | "pinch-zoom";
 
-export class CameraDragController {
-  private static readonly DESKTOP_MIN_ZOOM = 0.35;
-  private static readonly DESKTOP_MAX_ZOOM = 1.4;
-  private static readonly MOBILE_MIN_ZOOM = 0.4;
-  private static readonly MOBILE_MAX_ZOOM = 1.2;
+export const DESKTOP_MIN_ZOOM = 0.35;
+export const DESKTOP_MAX_ZOOM = 1.4;
+export const MOBILE_MIN_ZOOM = 0.4;
+export const MOBILE_MAX_ZOOM = 1.2;
 
+export function clampCameraScrollToBounds(camera: Phaser.Cameras.Scene2D.Camera): void {
+  const bounds = (camera as Phaser.Cameras.Scene2D.Camera & {
+    _bounds?: Phaser.Geom.Rectangle;
+  })._bounds;
+  if (!camera.useBounds || !bounds) {
+    return;
+  }
+
+  const visibleWidth = camera.width / camera.zoom;
+  const visibleHeight = camera.height / camera.zoom;
+  const minScrollX = bounds.x;
+  const minScrollY = bounds.y;
+  const maxScrollX = Math.max(minScrollX, bounds.right - visibleWidth);
+  const maxScrollY = Math.max(minScrollY, bounds.bottom - visibleHeight);
+
+  camera.scrollX = Phaser.Math.Clamp(camera.scrollX, minScrollX, maxScrollX);
+  camera.scrollY = Phaser.Math.Clamp(camera.scrollY, minScrollY, maxScrollY);
+}
+
+export class CameraDragController {
   private state: CameraInputState = "idle";
   private enabled = true;
   private previous?: Phaser.Math.Vector2;
   private pinchStartDistance?: number;
   private pinchStartZoom?: number;
+  private pinchAnchorWorld?: Phaser.Math.Vector2;
   private keys?: Record<"up" | "left" | "down" | "right", Phaser.Input.Keyboard.Key>;
 
   constructor(private readonly scene: Phaser.Scene) {
@@ -60,7 +80,7 @@ export class CameraDragController {
     if (x !== 0 || y !== 0) {
       camera.scrollX += x * speed;
       camera.scrollY += y * speed;
-      this.clampCameraScroll(camera);
+      clampCameraScrollToBounds(camera);
     }
   }
 
@@ -103,7 +123,7 @@ export class CameraDragController {
     const dy = (pointer.y - this.previous.y) / camera.zoom;
     camera.scrollX -= dx;
     camera.scrollY -= dy;
-    this.clampCameraScroll(camera);
+    clampCameraScrollToBounds(camera);
     this.previous.set(pointer.x, pointer.y);
   }
 
@@ -124,6 +144,7 @@ export class CameraDragController {
       this.state = "single-pan";
       this.pinchStartDistance = undefined;
       this.pinchStartZoom = undefined;
+      this.pinchAnchorWorld = undefined;
       this.previous = new Phaser.Math.Vector2(remainingPointer.x, remainingPointer.y);
       return;
     }
@@ -132,6 +153,7 @@ export class CameraDragController {
     this.previous = undefined;
     this.pinchStartDistance = undefined;
     this.pinchStartZoom = undefined;
+    this.pinchAnchorWorld = undefined;
   }
 
   private onWheel(
@@ -149,27 +171,31 @@ export class CameraDragController {
     camera.setZoom(
       Phaser.Math.Clamp(
         camera.zoom * factor,
-        CameraDragController.DESKTOP_MIN_ZOOM,
-        CameraDragController.DESKTOP_MAX_ZOOM
+        DESKTOP_MIN_ZOOM,
+        DESKTOP_MAX_ZOOM
       )
     );
-    this.clampCameraScroll(camera);
+    clampCameraScrollToBounds(camera);
   }
 
   private beginPinch(pointerA: Phaser.Input.Pointer, pointerB: Phaser.Input.Pointer): void {
+    const camera = this.scene.cameras.main;
+    const midpoint = pinchMidpoint(pointerA, pointerB);
     this.state = "pinch-zoom";
     this.previous = undefined;
     this.pinchStartDistance = Phaser.Math.Distance.Between(pointerA.x, pointerA.y, pointerB.x, pointerB.y);
-    this.pinchStartZoom = this.scene.cameras.main.zoom;
+    this.pinchStartZoom = camera.zoom;
+    this.pinchAnchorWorld = camera.getWorldPoint(midpoint.x, midpoint.y);
   }
 
   private updatePinch(pointerA: Phaser.Input.Pointer, pointerB: Phaser.Input.Pointer): void {
-    if (!this.pinchStartDistance || !this.pinchStartZoom) {
+    if (!this.pinchStartDistance || !this.pinchStartZoom || !this.pinchAnchorWorld) {
       this.beginPinch(pointerA, pointerB);
       return;
     }
 
     const camera = this.scene.cameras.main;
+    const midpoint = pinchMidpoint(pointerA, pointerB);
     const currentDistance = Phaser.Math.Distance.Between(pointerA.x, pointerA.y, pointerB.x, pointerB.y);
     if (currentDistance <= 0) {
       return;
@@ -177,34 +203,14 @@ export class CameraDragController {
 
     const targetZoom = this.clampZoom(this.pinchStartZoom * (currentDistance / this.pinchStartDistance));
     camera.setZoom(targetZoom);
-    this.clampCameraScroll(camera);
+    const currentWorldAtMidpoint = camera.getWorldPoint(midpoint.x, midpoint.y);
+    camera.scrollX += this.pinchAnchorWorld.x - currentWorldAtMidpoint.x;
+    camera.scrollY += this.pinchAnchorWorld.y - currentWorldAtMidpoint.y;
+    clampCameraScrollToBounds(camera);
   }
 
   private clampZoom(zoom: number): number {
-    return Phaser.Math.Clamp(
-      zoom,
-      CameraDragController.MOBILE_MIN_ZOOM,
-      CameraDragController.MOBILE_MAX_ZOOM
-    );
-  }
-
-  private clampCameraScroll(camera: Phaser.Cameras.Scene2D.Camera): void {
-    const bounds = (camera as Phaser.Cameras.Scene2D.Camera & {
-      _bounds?: Phaser.Geom.Rectangle;
-    })._bounds;
-    if (!camera.useBounds || !bounds) {
-      return;
-    }
-
-    const visibleWidth = camera.width / camera.zoom;
-    const visibleHeight = camera.height / camera.zoom;
-    const minScrollX = bounds.x;
-    const minScrollY = bounds.y;
-    const maxScrollX = Math.max(minScrollX, bounds.right - visibleWidth);
-    const maxScrollY = Math.max(minScrollY, bounds.bottom - visibleHeight);
-
-    camera.scrollX = Phaser.Math.Clamp(camera.scrollX, minScrollX, maxScrollX);
-    camera.scrollY = Phaser.Math.Clamp(camera.scrollY, minScrollY, maxScrollY);
+    return Phaser.Math.Clamp(zoom, MOBILE_MIN_ZOOM, MOBILE_MAX_ZOOM);
   }
 
   private getActivePointers(): Phaser.Input.Pointer[] {
@@ -216,5 +222,13 @@ export class CameraDragController {
     this.previous = undefined;
     this.pinchStartDistance = undefined;
     this.pinchStartZoom = undefined;
+    this.pinchAnchorWorld = undefined;
   }
+}
+
+function pinchMidpoint(
+  pointerA: Phaser.Input.Pointer,
+  pointerB: Phaser.Input.Pointer
+): Phaser.Math.Vector2 {
+  return new Phaser.Math.Vector2((pointerA.x + pointerB.x) / 2, (pointerA.y + pointerB.y) / 2);
 }

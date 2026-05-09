@@ -18,7 +18,13 @@ import {
 } from "../../core/player/playerStrategy";
 import { enqueueUnit, createQueue, tickQueue, type UnitQueue } from "../../core/queue/unitQueue";
 import { UNITS as UNIT_DEFINITIONS, type UnitName } from "../../core/units/unitData";
-import { CameraDragController } from "../input/CameraDragController";
+import {
+  CameraDragController,
+  DESKTOP_MIN_ZOOM,
+  MOBILE_MAX_ZOOM,
+  MOBILE_MIN_ZOOM,
+  clampCameraScrollToBounds
+} from "../input/CameraDragController";
 import { BuildingRenderer } from "../render/BuildingRenderer";
 import type { BuildingRenderHandle } from "../render/BuildingRenderer";
 import { MapDebugOverlay } from "../render/MapDebugOverlay";
@@ -31,6 +37,16 @@ import { GameHud } from "../ui/GameHud";
 
 const MIN_GAME_SPEED = 0.25;
 const MAX_GAME_SPEED = 16;
+const MOBILE_VIEWPORT_MAX_WIDTH = 900;
+const MOBILE_VIEWPORT_MAX_HEIGHT = 600;
+const MOBILE_PORTRAIT_DEFAULT_ZOOM = 0.9;
+const MOBILE_LANDSCAPE_DEFAULT_ZOOM = 0.7;
+
+type CameraViewportProfile = "desktop" | "mobile-portrait" | "mobile-landscape";
+
+function cameraVisibleWorldSize(camera: Phaser.Cameras.Scene2D.Camera): Phaser.Math.Vector2 {
+  return new Phaser.Math.Vector2(camera.width / camera.zoom, camera.height / camera.zoom);
+}
 
 export class GameScene extends Phaser.Scene {
   private cameraDrag?: CameraDragController;
@@ -74,7 +90,7 @@ export class GameScene extends Phaser.Scene {
     const mapSize = this.mapRenderer.getWorldSize();
     this.mapWorldWidth = mapSize.x;
     this.cameras.main.setBounds(0, 0, mapSize.x, mapSize.y);
-    this.fitMapToViewport(mapSize);
+    this.applyCameraFraming(mapSize);
     this.cameraDrag = new CameraDragController(this);
     this.hud = new GameHud(this, this.selectedDirection, this.strategy, this.queue, {
       onCycleDirection: () => this.cycleDirection(),
@@ -174,27 +190,91 @@ export class GameScene extends Phaser.Scene {
   }
 
   private layout(gameSize: Phaser.Structs.Size): void {
+    const previousCenter = this.cameraCenterWorld();
     this.cameras.main.setSize(gameSize.width, gameSize.height);
     this.hudCamera?.setSize(gameSize.width, gameSize.height);
     const mapSize = this.mapRenderer?.getWorldSize();
     if (mapSize) {
-      this.fitMapToViewport(mapSize);
+      this.applyCameraFraming(mapSize, previousCenter);
     }
     this.hud?.layout(gameSize.width, gameSize.height);
     this.updateAdvanceBanner();
     this.syncCameraMasks();
   }
 
-  private fitMapToViewport(mapSize: Phaser.Math.Vector2): void {
+  private applyCameraFraming(
+    mapSize: Phaser.Math.Vector2,
+    preserveCenter?: Phaser.Math.Vector2
+  ): void {
     const camera = this.cameras.main;
-    const zoom = Phaser.Math.Clamp(
-      Math.min(this.scale.width / mapSize.x, this.scale.height / mapSize.y) * 0.92,
-      0.35,
-      1
-    );
+    const profile = this.cameraViewportProfile();
+    const zoom = this.targetZoomForProfile(profile, mapSize);
 
     camera.setZoom(zoom);
-    camera.centerOn(mapSize.x / 2, mapSize.y / 2);
+    if (preserveCenter) {
+      camera.centerOn(preserveCenter.x, preserveCenter.y);
+      clampCameraScrollToBounds(camera);
+      return;
+    }
+
+    const startCenter = this.startCenterForProfile(profile, mapSize, zoom);
+    camera.centerOn(startCenter.x, startCenter.y);
+    clampCameraScrollToBounds(camera);
+  }
+
+  private cameraViewportProfile(): CameraViewportProfile {
+    const width = this.scale.width;
+    const height = this.scale.height;
+    const mobileViewport = width <= MOBILE_VIEWPORT_MAX_WIDTH || height <= MOBILE_VIEWPORT_MAX_HEIGHT;
+    if (!mobileViewport) {
+      return "desktop";
+    }
+
+    return height > width ? "mobile-portrait" : "mobile-landscape";
+  }
+
+  private targetZoomForProfile(profile: CameraViewportProfile, mapSize: Phaser.Math.Vector2): number {
+    if (profile === "desktop") {
+      return Phaser.Math.Clamp(
+        Math.min(this.scale.width / mapSize.x, this.scale.height / mapSize.y) * 0.92,
+        DESKTOP_MIN_ZOOM,
+        1
+      );
+    }
+
+    const baseZoom = profile === "mobile-portrait" ? MOBILE_PORTRAIT_DEFAULT_ZOOM : MOBILE_LANDSCAPE_DEFAULT_ZOOM;
+    return Phaser.Math.Clamp(baseZoom, MOBILE_MIN_ZOOM, MOBILE_MAX_ZOOM);
+  }
+
+  private startCenterForProfile(
+    profile: CameraViewportProfile,
+    mapSize: Phaser.Math.Vector2,
+    zoom: number
+  ): Phaser.Math.Vector2 {
+    if (profile === "desktop") {
+      return new Phaser.Math.Vector2(mapSize.x / 2, mapSize.y / 2);
+    }
+
+    const visibleWidth = cameraVisibleWorldSize(this.cameras.main).x;
+    const x = mapSize.x / 2;
+    // TinyWar's playable battle lanes live in the upper half of the map while the lower half is mostly water.
+    // Start slightly higher and, in portrait, a bit closer to avoid opening on dead space.
+    const yFactor = profile === "mobile-portrait" ? 0.34 : 0.38;
+    const center = new Phaser.Math.Vector2(x, mapSize.y * yFactor);
+    const halfWidth = visibleWidth / 2;
+    if (halfWidth >= mapSize.x * 0.5 && zoom < MOBILE_MAX_ZOOM) {
+      return new Phaser.Math.Vector2(mapSize.x / 2, center.y);
+    }
+
+    return center;
+  }
+
+  private cameraCenterWorld(): Phaser.Math.Vector2 {
+    const camera = this.cameras.main;
+    return new Phaser.Math.Vector2(
+      camera.scrollX + camera.width / (2 * camera.zoom),
+      camera.scrollY + camera.height / (2 * camera.zoom)
+    );
   }
 
   private spawnQueuedUnit(unitName: UnitName, color: "Blue" | "Red"): void {

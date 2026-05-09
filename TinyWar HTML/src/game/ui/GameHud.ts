@@ -26,6 +26,8 @@ const RED_RIBBON_INDEX = 1;
 const LARGE_RIBBON_FRAMES_PER_COLOR = 7;
 const SMALL_RIBBON_FRAMES_PER_COLOR = 10;
 const SIDE_RIBBON_FRAMES = [0, 2, 2, 2, 9] as const;
+const MOBILE_VIEWPORT_MAX_WIDTH = 900;
+const MOBILE_VIEWPORT_MAX_HEIGHT = 600;
 
 export interface AdvanceBannerState {
   blueShare: number;
@@ -66,6 +68,7 @@ interface UnitInfoButton {
 }
 
 export class GameHud {
+  private currentDirectionValue: PlayerDirection;
   private readonly blueAdvanceStart: Phaser.GameObjects.Image;
   private readonly blueAdvanceJoin: Phaser.GameObjects.Image;
   private readonly blueAdvanceFill: Phaser.GameObjects.Image;
@@ -117,6 +120,7 @@ export class GameHud {
     queue: UnitQueue,
     callbacks: GameHudCallbacks
   ) {
+    this.currentDirectionValue = direction;
     const initialAdvance = {
       blueShare: 0.5,
       redShare: 0.5,
@@ -405,6 +409,7 @@ export class GameHud {
   }
 
   updateDirection(direction: PlayerDirection): void {
+    this.currentDirectionValue = direction;
     this.directionText.setText(this.directionLabel(direction));
     this.directionIcon.setTexture(this.directionIconKey(direction)).setFlipY(this.directionFlipsY(direction));
   }
@@ -483,10 +488,10 @@ export class GameHud {
 
   layout(width: number, height: number): void {
     this.layoutAdvanceBanner(width);
-    this.layoutDirection();
-    this.layoutAudio(width);
-    this.layoutUnitInfoToggle(width);
-    this.layoutShopButtons(height);
+    this.layoutDirection(width, height);
+    this.layoutAudio(width, height);
+    this.layoutUnitInfoToggle(width, height);
+    this.layoutShopButtons(width, height);
     this.layoutStrategyButtons(width, height);
     this.layoutQueue(width, height);
     this.layoutUnitInfo(width, height);
@@ -806,8 +811,9 @@ export class GameHud {
   }
 
   private layoutAdvanceBanner(width: number): void {
+    const metrics = this.viewportMetrics(width, this.scene.scale.height);
     const centerX = width / 2;
-    const y = 38;
+    const y = metrics.mobile ? 30 : 38;
     this.blueAdvanceFill.setY(y);
     this.redAdvanceFill.setY(y);
     this.blueAdvanceStart.setY(y);
@@ -822,46 +828,71 @@ export class GameHud {
     this.redAdvanceFill.setX(centerX + 140);
   }
 
-  private layoutDirection(): void {
-    this.directionPanel.setPosition(34, 92);
-    this.directionIcon.setPosition(34, 92);
-    this.directionText.setPosition(66, 74);
+  private layoutDirection(width: number, height: number): void {
+    const metrics = this.viewportMetrics(width, height);
+    const panelX = metrics.mobile ? 28 : 34;
+    const panelY = metrics.mobile ? 82 : 92;
+    this.directionPanel.setPosition(panelX, panelY).setSize(metrics.sideButtonSize, metrics.sideButtonSize);
+    this.directionIcon
+      .setPosition(panelX, panelY)
+      .setDisplaySize(metrics.mobile ? 32 : 38, metrics.mobile ? 32 : 38);
+    this.directionText
+      .setText(this.directionLabel(this.currentDirectionValue, metrics.showKeyboardHints))
+      .setFontSize(metrics.mobile ? "12px" : "14px")
+      .setPosition(panelX + (metrics.mobile ? 28 : 32), panelY - (metrics.mobile ? 17 : 18));
   }
 
-  private layoutAudio(width: number): void {
-    this.audioPanel.setPosition(width - 34, 92);
-    this.audioIcon.setPosition(width - 34, 92);
+  private layoutAudio(width: number, height: number): void {
+    const metrics = this.viewportMetrics(width, height);
+    const panelX = width - (metrics.mobile ? 28 : 34);
+    const panelY = metrics.mobile ? 82 : 92;
+    this.audioPanel.setPosition(panelX, panelY).setSize(metrics.sideButtonSize, metrics.sideButtonSize);
+    this.audioIcon
+      .setPosition(panelX, panelY)
+      .setDisplaySize(metrics.mobile ? 26 : 30, metrics.mobile ? 26 : 30);
   }
 
-  private layoutUnitInfoToggle(width: number): void {
-    this.unitInfoTogglePanel.setPosition(width - 34, 146);
-    this.unitInfoToggleLabel.setPosition(width - 34, 146);
+  private layoutUnitInfoToggle(width: number, height: number): void {
+    const metrics = this.viewportMetrics(width, height);
+    const panelX = width - (metrics.mobile ? 28 : 34);
+    const panelY = metrics.mobile ? 130 : 146;
+    this.unitInfoTogglePanel.setPosition(panelX, panelY).setSize(metrics.sideButtonSize, metrics.sideButtonSize);
+    this.unitInfoToggleLabel
+      .setText(metrics.mobile ? "i" : "H")
+      .setFontSize(metrics.mobile ? "16px" : "18px")
+      .setPosition(panelX, panelY);
   }
 
-  private layoutShopButtons(height: number): void {
-    const buttonSize = 44;
-    const gap = 7;
+  private layoutShopButtons(width: number, height: number): void {
+    const metrics = this.viewportMetrics(width, height);
+    const buttonSize = metrics.sideButtonSize;
+    const gap = metrics.sideButtonGap;
     const totalHeight = this.shopButtons.length * buttonSize + (this.shopButtons.length - 1) * gap;
     const startY = height / 2 - totalHeight / 2;
-    const x = 30;
+    const x = metrics.mobile ? 28 : 30;
 
-    this.layoutSideRibbon(this.shopRibbonPieces, x, height);
+    this.layoutSideRibbon(this.shopRibbonPieces, x, height, metrics);
     this.shopButtons.forEach((button, index) => {
       const y = startY + index * (buttonSize + gap) + buttonSize / 2;
       button.rect.setPosition(x, y).setSize(buttonSize, buttonSize);
-      button.icon.setPosition(x, y - 2).setDisplaySize(34, 34);
-      button.label.setPosition(x + 14, y + 12);
+      button.icon
+        .setPosition(x, y - 2)
+        .setDisplaySize(metrics.mobile ? 30 : 34, metrics.mobile ? 30 : 34);
+      button.label
+        .setVisible(metrics.showKeyboardHints)
+        .setPosition(x + 14, y + 12);
     });
   }
 
   private layoutStrategyButtons(width: number, height: number): void {
-    const buttonSize = 44;
-    const gap = 7;
+    const metrics = this.viewportMetrics(width, height);
+    const buttonSize = metrics.sideButtonSize;
+    const gap = metrics.sideButtonGap;
     const totalHeight = PLAYER_STRATEGIES.length * buttonSize + (PLAYER_STRATEGIES.length - 1) * gap;
     const startY = height / 2 - totalHeight / 2;
-    const x = width - 30;
+    const x = width - (metrics.mobile ? 28 : 30);
 
-    this.layoutSideRibbon(this.strategyRibbonPieces, x, height);
+    this.layoutSideRibbon(this.strategyRibbonPieces, x, height, metrics);
     PLAYER_STRATEGIES.forEach((strategy, index) => {
       const button = this.strategyButtons.get(strategy);
       if (!button) {
@@ -869,18 +900,24 @@ export class GameHud {
       }
       const y = startY + index * (buttonSize + gap) + buttonSize / 2;
       button.rect.setPosition(x, y).setSize(buttonSize, buttonSize);
-      button.icon.setPosition(x, y - 2).setDisplaySize(32, 32);
-      button.label.setPosition(x + 14, y + 12);
+      button.icon
+        .setPosition(x, y - 2)
+        .setDisplaySize(metrics.mobile ? 28 : 32, metrics.mobile ? 28 : 32);
+      button.label
+        .setVisible(metrics.showKeyboardHints)
+        .setPosition(x + 14, y + 12);
       button.progressBg.setPosition(x, y + buttonSize * 0.32).setSize(buttonSize * 0.68, 5);
       button.progress.setPosition(x - (buttonSize * 0.68) / 2, y + buttonSize * 0.32).setSize(buttonSize * 0.62, 3);
     });
   }
 
   private layoutQueue(width: number, height: number): void {
+    const metrics = this.viewportMetrics(width, height);
     const queueWidth = Math.min(width * 0.86, 640);
     const slotWidth = queueWidth / (QUEUE_SLOT_COUNT + 2);
-    const slotHeight = Math.min(58, Math.max(42, slotWidth * 1.18));
-    const y = height - slotHeight / 2 - 8;
+    const baseHeight = Math.min(58, Math.max(42, slotWidth * 1.18));
+    const slotHeight = metrics.portrait ? Math.max(36, baseHeight - 8) : baseHeight;
+    const y = height - slotHeight / 2 - (metrics.mobile ? 6 : 8);
     const startX = width / 2 - queueWidth / 2;
 
     this.queueStart.setPosition(startX + slotWidth / 2, y).setDisplaySize(slotWidth, slotHeight);
@@ -894,6 +931,8 @@ export class GameHud {
     this.queueEnd.setPosition(startX + slotWidth * (QUEUE_SLOT_COUNT + 1.5), y).setDisplaySize(slotWidth, slotHeight);
     this.queueText.setPosition(12, Math.max(12, y - slotHeight / 2 - 28));
     this.speedText.setPosition(12, height - 10);
+    this.queueText.setFontSize(metrics.mobile ? "12px" : "14px");
+    this.speedText.setFontSize(metrics.mobile ? "11px" : "12px");
   }
 
   private layoutUnitInfo(width: number, height: number): void {
@@ -975,8 +1014,13 @@ export class GameHud {
     );
   }
 
-  private layoutSideRibbon(pieces: readonly Phaser.GameObjects.Image[], x: number, height: number): void {
-    const segmentSize = 56;
+  private layoutSideRibbon(
+    pieces: readonly Phaser.GameObjects.Image[],
+    x: number,
+    height: number,
+    metrics: ViewportMetrics
+  ): void {
+    const segmentSize = metrics.mobile ? 48 : 56;
     const totalHeight = pieces.length * segmentSize;
     const startY = height / 2 - totalHeight / 2 + segmentSize / 2;
 
@@ -1040,8 +1084,8 @@ export class GameHud {
     );
   }
 
-  private directionLabel(direction: PlayerDirection): string {
-    return `${direction}  |  L`;
+  private directionLabel(direction: PlayerDirection, showKeyboardHint = true): string {
+    return showKeyboardHint ? `${direction}  |  L` : direction;
   }
 
   private queueLabel(queue: UnitQueue): string {
@@ -1103,4 +1147,24 @@ export class GameHud {
   private directionFlipsY(direction: PlayerDirection): boolean {
     return direction === "Bot" || direction === "MidBot";
   }
+
+  private viewportMetrics(width: number, height: number): ViewportMetrics {
+    const mobile = width <= MOBILE_VIEWPORT_MAX_WIDTH || height <= MOBILE_VIEWPORT_MAX_HEIGHT;
+    const portrait = height > width;
+    return {
+      mobile,
+      portrait,
+      showKeyboardHints: !mobile,
+      sideButtonSize: mobile ? 40 : 44,
+      sideButtonGap: mobile ? 5 : 7
+    };
+  }
+}
+
+interface ViewportMetrics {
+  mobile: boolean;
+  portrait: boolean;
+  showKeyboardHints: boolean;
+  sideButtonSize: number;
+  sideButtonGap: number;
 }
