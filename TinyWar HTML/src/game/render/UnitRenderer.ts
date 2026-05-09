@@ -26,7 +26,8 @@ export class UnitRenderer {
   }
 
   renderUnit(unit: UnitInstance, action: UnitAction = "Idle"): UnitRenderHandle {
-      const sprite = this.scene.add.sprite(unit.position.x, unit.position.y, this.textureKey(unit));
+      const position = snapPosition(unit.position);
+      const sprite = this.scene.add.sprite(position.x, position.y, this.textureKey(unit));
       sprite.setOrigin(0.5, 0.5);
       sprite.setDisplaySize(UNITS[unit.name].renderSize, UNITS[unit.name].renderSize);
       sprite.setDepth(30);
@@ -37,13 +38,14 @@ export class UnitRenderer {
       this.playAction(sprite, unit, action);
 
       const healthWidth = 46;
+      const healthY = snap(unit.position.y - UNITS[unit.name].renderSize * 0.48);
       const healthBack = this.scene.add
-        .rectangle(unit.position.x, unit.position.y - UNITS[unit.name].renderSize * 0.48, healthWidth, 6, 0x000000, 0.7)
+        .rectangle(position.x, healthY, healthWidth, 6, 0x000000, 0.7)
         .setDepth(40);
       const healthFill = this.scene.add
         .rectangle(
-          unit.position.x - healthWidth / 2 + 1,
-          unit.position.y - UNITS[unit.name].renderSize * 0.48,
+          snap(unit.position.x - healthWidth / 2 + 1),
+          healthY,
           healthWidth - 2,
           4,
           0x32cd32,
@@ -66,11 +68,12 @@ export class UnitRenderer {
     action: UnitAction = "Idle",
     targetPosition?: { x: number; y: number }
   ): void {
-    const y = unit.position.y - UNITS[unit.name].renderSize * 0.48;
-    handle.sprite.setPosition(unit.position.x, unit.position.y);
+    const position = snapPosition(unit.position);
+    const y = snap(unit.position.y - UNITS[unit.name].renderSize * 0.48);
+    handle.sprite.setPosition(position.x, position.y);
     handle.sprite.setDisplaySize(UNITS[unit.name].renderSize, UNITS[unit.name].renderSize);
-    handle.healthBack.setPosition(unit.position.x, y);
-    handle.healthFill.setPosition(unit.position.x - (handle.healthFillMaxWidth + 2) / 2 + 1, y);
+    handle.healthBack.setPosition(position.x, y);
+    handle.healthFill.setPosition(snap(unit.position.x - (handle.healthFillMaxWidth + 2) / 2 + 1), y);
     handle.healthFill.width = handle.healthFillMaxWidth * (unit.health / unit.maxHealth);
     UnitRenderer.playUnitAction(handle.sprite, unit, action);
     if (targetPosition) {
@@ -146,4 +149,15 @@ export class UnitRenderer {
 
     throw new Error(`Missing unit texture for ${unit.color} ${unit.name}`);
   }
+}
+
+function snap(value: number): number {
+  return Math.round(value);
+}
+
+function snapPosition(position: { x: number; y: number }): { x: number; y: number } {
+  return {
+    x: snap(position.x),
+    y: snap(position.y)
+  };
 }

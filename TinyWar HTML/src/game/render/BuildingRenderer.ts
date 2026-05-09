@@ -38,7 +38,9 @@ export class BuildingRenderer {
 
   private renderBuilding(building: BuildingInstance): BuildingRenderHandle {
     const definition = BUILDINGS[building.name];
-    const renderPosition = getBuildingRenderPosition(building);
+    const renderPosition = snapPosition(getBuildingRenderPosition(building));
+    const renderWidth = snapSize(definition.size.width * definition.worldScale);
+    const renderHeight = snapSize(definition.size.height * definition.worldScale);
     const sprite = this.scene.add.image(
       renderPosition.x,
       renderPosition.y,
@@ -46,14 +48,11 @@ export class BuildingRenderer {
     );
 
     sprite.setOrigin(0.5, 0.5);
-    sprite.setDisplaySize(
-      definition.size.width * definition.worldScale,
-      definition.size.height * definition.worldScale
-    );
+    sprite.setDisplaySize(renderWidth, renderHeight);
     sprite.setDepth(10);
 
-    const barWidth = definition.size.width * definition.worldScale * HEALTH_BAR_WIDTH_RATIO;
-    const y = renderPosition.y - (definition.size.height * definition.worldScale) / 2 - 12;
+    const barWidth = renderWidth * HEALTH_BAR_WIDTH_RATIO;
+    const y = snap(renderPosition.y - renderHeight / 2 - 12);
     this.scene.add
       .rectangle(renderPosition.x, y, barWidth, HEALTH_BAR_HEIGHT, 0x000000, 0.75)
       .setDepth(20);
@@ -88,4 +87,19 @@ export class BuildingRenderer {
 
     throw new Error(`Missing building texture for ${building.color} ${building.name}`);
   }
+}
+
+function snap(value: number): number {
+  return Math.round(value);
+}
+
+function snapSize(value: number): number {
+  return Math.max(1, snap(value));
+}
+
+function snapPosition(position: { x: number; y: number }): { x: number; y: number } {
+  return {
+    x: snap(position.x),
+    y: snap(position.y)
+  };
 }

@@ -16,7 +16,8 @@ export function startGame(parent: string): Phaser.Game {
     },
     render: {
       pixelArt: true,
-      antialias: false
+      antialias: false,
+      roundPixels: true
     },
     input: {
       activePointers: 3

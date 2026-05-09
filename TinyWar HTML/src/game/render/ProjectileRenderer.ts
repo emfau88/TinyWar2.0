@@ -10,9 +10,10 @@ export class ProjectileRenderer {
   constructor(private readonly scene: Phaser.Scene) {}
 
   renderProjectile(projectile: ProjectileInstance): ProjectileRenderHandle {
+    const position = snapPosition(projectile.position);
     const sprite = this.scene.add.image(
-      projectile.position.x,
-      projectile.position.y,
+      position.x,
+      position.y,
       ASSETS.projectiles.arrow.key
     );
     sprite.setOrigin(0.5, 0.5);
@@ -24,7 +25,8 @@ export class ProjectileRenderer {
   }
 
   static updateHandle(handle: ProjectileRenderHandle, projectile: ProjectileInstance): void {
-    handle.sprite.setPosition(projectile.position.x, projectile.position.y);
+    const position = snapPosition(projectile.position);
+    handle.sprite.setPosition(position.x, position.y);
     const dx = projectile.destination.x - projectile.position.x;
     const dy = projectile.destination.y - projectile.position.y;
     if (Math.hypot(dx, dy) > 0.01) {
@@ -39,4 +41,11 @@ export class ProjectileRenderer {
   private updateSprite(sprite: Phaser.GameObjects.Image, projectile: ProjectileInstance): void {
     ProjectileRenderer.updateHandle({ sprite }, projectile);
   }
+}
+
+function snapPosition(position: { x: number; y: number }): { x: number; y: number } {
+  return {
+    x: Math.round(position.x),
+    y: Math.round(position.y)
+  };
 }
