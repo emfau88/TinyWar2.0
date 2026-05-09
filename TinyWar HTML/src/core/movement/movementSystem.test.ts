@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createDebugLaneUnit, createDebugMidLaneUnit, createLaneUnit, updateMovingUnit } from "./movementSystem";
+import { createDebugLaneUnit, createDebugMidLaneUnit, createLaneUnit, stationaryBuildingUnit, updateMovingUnit } from "./movementSystem";
+import { createUnit } from "../units/unitData";
 
 describe("movementSystem", () => {
   it("moves the debug unit along the mid lane", () => {
@@ -37,6 +38,43 @@ describe("movementSystem", () => {
     expect(red.color).toBe("Red");
     expect(red.direction).toBe("RightToLeft");
     expect(red.position.x).toBeGreaterThan(1700);
+  });
+
+  it("can start queued lane units from an explicit spawn anchor", () => {
+    const spawned = createLaneUnit("Warrior", "Mid", 0, "blue", "Blue", { x: 224, y: 160 });
+
+    expect(spawned.position).toEqual({ x: 224, y: 160 });
+    expect(spawned.pathIndex).toBeGreaterThan(1);
+  });
+
+  it("hands off from the blue HQ door without first moving upward toward the roof", () => {
+    const spawned = createLaneUnit("Warrior", "Mid", 0, "blue", "Blue", { x: 224, y: 160 });
+    const moved = updateMovingUnit(spawned, 1 / 60);
+
+    expect(moved.position.y).toBeGreaterThanOrEqual(spawned.position.y);
+  });
+
+  it("can wrap an on-building unit as stationary without lane movement", () => {
+    const buildingArcher = createUnit("left-base-archer-0", "Archer", "Blue", { x: 208, y: 96 }, "left-base");
+    const stationary = stationaryBuildingUnit(buildingArcher);
+
+    expect(stationary.moving).toBe(false);
+    expect(stationary.onBuildingId).toBe("left-base");
+    expect(stationary.pathIndex).toBe(0);
+  });
+
+  it("can add a local terminal position so lane units finish at the enemy door anchor", () => {
+    const spawned = createLaneUnit(
+      "Warrior",
+      "Mid",
+      0,
+      "blue",
+      "Blue",
+      { x: 224, y: 160 },
+      { x: 1760, y: 160 }
+    );
+
+    expect(spawned.terminalPosition).toEqual({ x: 1760, y: 160 });
   });
 
   it("advances pathIndex monotonically and does not jitter backwards", () => {

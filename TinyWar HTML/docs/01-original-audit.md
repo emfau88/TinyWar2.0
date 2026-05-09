@@ -186,6 +186,7 @@ Originalquelle: `src/core/map/ui/systems.rs` und `src/core/assets.rs`.
 - Restpunkt Unit-Info 2026-05-08: Die Interaktion unter dem Overlay wird im HTML-Slice technisch unterbunden, indem die Kamera waehrend des geoeffneten Panels deaktiviert wird. Das muss dennoch noch auf echten Mobile-Viewports manuell verifiziert werden, besonders fuer Touch-Ziele, kleine Portrait-Hoehen und das Zusammenspiel mit Pan/Pinch.
 - Restpunkt Unit-Info 2026-05-08: Der aktuelle Panel-Inhalt bleibt absichtlich auf den bereits portierten Basic-Unit-Scope `Warrior/Lancer/Archer/Priest` begrenzt. Weitere Monster-/Boost-Units sind in diesem Panel noch nicht vorhanden und folgen erst mit den spaeteren Boost-/Full-Unit-Milestones.
 - Restabweichung 2026-05-08: Die Spielgeschwindigkeit skaliert aktuell den Simulationspfad sauber, aber nicht alle Phaser-Spritesheet-Animationen separat zur vollstaendigen Original-Parity. Gameplay-Timing ist korrekt skaliert; reine Render-Animationen koennen visuell naeher an ihrer bisherigen Rate bleiben.
+- Restabweichung 2026-05-09: HQ-/Roof-Defender-Targeting ist noch nicht voll parity-sauber. Dach-Archer sind als stationaere `onBuilding`-Defender modelliert, aber ankommende Boden-Units fokussieren sie im Browser weiterhin teilweise statt konsequent die Base/HQ-Tuer zu attackieren. Dieses Verhalten ist fuer spaeter markiert; bis zur Korrektur gilt der Slice als bekannte Gameplay-/Darstellungsabweichung rund um Basenahkampf.
 
 ## Bekannte Audit-Luecken
 

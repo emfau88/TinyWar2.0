@@ -9,6 +9,7 @@ export interface ProjectileInstance {
   color: PlayerColor;
   kind: ProjectileKind;
   damage: number;
+  sourceOnBuilding: boolean;
   start: { x: number; y: number };
   destination: { x: number; y: number };
   position: { x: number; y: number };
@@ -33,6 +34,7 @@ let projectileCounter = 0;
 export function createArrowProjectile(
   color: PlayerColor,
   damage: number,
+  sourceOnBuilding: boolean,
   start: { x: number; y: number },
   destination: { x: number; y: number }
 ): ProjectileInstance {
@@ -41,6 +43,7 @@ export function createArrowProjectile(
     color,
     kind: "Arrow",
     damage,
+    sourceOnBuilding,
     start,
     destination,
     position: start,
@@ -71,6 +74,7 @@ export function updateProjectiles(state: ProjectileUpdateState, deltaMs: number)
       (unit) =>
         unit.color !== updated.color &&
         unit.health > 0 &&
+        (updated.sourceOnBuilding || !unit.onBuildingId) &&
         distance(unit.position, updated.position) < PROJECTILE_HIT_RADIUS
     );
 

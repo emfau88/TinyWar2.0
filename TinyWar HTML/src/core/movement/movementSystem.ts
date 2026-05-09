@@ -9,6 +9,7 @@ export interface MovingUnit extends UnitInstance {
   lane: LaneName;
   pathIndex: number;
   direction: "LeftToRight" | "RightToLeft";
+  terminalPosition?: { x: number; y: number };
   moving: boolean;
   guarding?: boolean;
   attackCooldownMs: number;
@@ -16,26 +17,45 @@ export interface MovingUnit extends UnitInstance {
   targetKind?: "unit" | "building";
 }
 
+export function stationaryBuildingUnit(
+  unit: UnitInstance,
+  lane: LaneName = "Mid"
+): MovingUnit {
+  return {
+    ...unit,
+    lane,
+    pathIndex: 0,
+    direction: unit.color === "Red" ? "RightToLeft" : "LeftToRight",
+    moving: false,
+    attackCooldownMs: 0
+  };
+}
+
 export function createLaneUnit(
   unitName: UnitName,
   lane: LaneName,
   index = 0,
   idPrefix = "unit",
-  color: PlayerColor = "Blue"
+  color: PlayerColor = "Blue",
+  spawnPosition?: { x: number; y: number },
+  terminalPosition?: { x: number; y: number }
 ): MovingUnit {
   const direction = color === "Red" ? "RightToLeft" : "LeftToRight";
   const sourcePath = getLaneWorldPath(lane);
   const path = direction === "RightToLeft" ? [...sourcePath].reverse() : sourcePath;
   const [start] = path;
+  const unitStart = spawnPosition ?? start;
+  const pathIndex = spawnPosition ? resolveSpawnPathIndex(path, unitStart) : 1;
 
   return {
     ...createUnit(`${idPrefix}-${unitName.toLowerCase()}-${lane.toLowerCase()}-${index}`, unitName, color, {
-      x: start.x + (color === "Red" ? -index * 16 : index * 16),
-      y: start.y + index * 12
+      x: unitStart.x + (color === "Red" ? -index * 16 : index * 16),
+      y: unitStart.y + index * 12
     }),
     lane,
-    pathIndex: 1,
+    pathIndex,
     direction,
+    terminalPosition,
     moving: true,
     attackCooldownMs: 0
   };
@@ -55,7 +75,7 @@ export function updateMovingUnit(
   strategy: PlayerStrategy = "Attack"
 ): MovingUnit {
   const sourcePath = getLaneWorldPath(unit.lane);
-  const path = unit.direction === "RightToLeft" ? [...sourcePath].reverse() : sourcePath;
+  const path = pathWithTerminalPosition(unit, sourcePath);
   const targetIndex = Math.min(unit.pathIndex, path.length - 1);
   const target = path[targetIndex];
 
@@ -95,4 +115,45 @@ export function updateMovingUnit(
     position: nextPosition,
     moving: true
   };
+}
+
+function pathWithTerminalPosition(
+  unit: Pick<MovingUnit, "direction" | "terminalPosition">,
+  sourcePath: readonly { x: number; y: number }[]
+): readonly { x: number; y: number }[] {
+  const path = unit.direction === "RightToLeft" ? [...sourcePath].reverse() : [...sourcePath];
+  const terminal = unit.terminalPosition;
+  if (!terminal) {
+    return path;
+  }
+
+  const last = path[path.length - 1];
+  if (last && Math.hypot(last.x - terminal.x, last.y - terminal.y) <= ARRIVAL_DISTANCE) {
+    return path;
+  }
+
+  path.push(terminal);
+  return path;
+}
+
+function resolveSpawnPathIndex(
+  path: readonly { x: number; y: number }[],
+  spawnPosition: { x: number; y: number }
+): number {
+  if (path.length <= 1) {
+    return 1;
+  }
+
+  let nearestIndex = 0;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+  for (let index = 0; index < path.length; index += 1) {
+    const point = path[index];
+    const distance = Math.hypot(point.x - spawnPosition.x, point.y - spawnPosition.y);
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearestIndex = index;
+    }
+  }
+
+  return Math.min(nearestIndex + 1, path.length - 1);
 }

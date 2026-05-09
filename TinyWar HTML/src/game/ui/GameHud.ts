@@ -69,6 +69,7 @@ interface UnitInfoButton {
 
 export class GameHud {
   private currentDirectionValue: PlayerDirection;
+  private currentStrategyValue: PlayerStrategy;
   private readonly blueAdvanceStart: Phaser.GameObjects.Image;
   private readonly blueAdvanceJoin: Phaser.GameObjects.Image;
   private readonly blueAdvanceFill: Phaser.GameObjects.Image;
@@ -121,6 +122,7 @@ export class GameHud {
     callbacks: GameHudCallbacks
   ) {
     this.currentDirectionValue = direction;
+    this.currentStrategyValue = strategy.current;
     const initialAdvance = {
       blueShare: 0.5,
       redShare: 0.5,
@@ -420,7 +422,9 @@ export class GameHud {
   }
 
   updateStrategy(strategy: StrategyState): void {
+    this.currentStrategyValue = strategy.current;
     const cooldownFraction = Phaser.Math.Clamp(strategy.remainingCooldownMs / 5000, 0, 1);
+    const metrics = this.viewportMetrics(this.scene.scale.width, this.scene.scale.height);
 
     for (const item of PLAYER_STRATEGIES) {
       const button = this.strategyButtons.get(item);
@@ -429,7 +433,12 @@ export class GameHud {
       }
 
       const active = item === strategy.current;
-      button.rect.setStrokeStyle(active ? 2 : 1, active ? 0x4795a7 : 0xf8fafc, active ? 0.95 : 0.38);
+      button.rect.setStrokeStyle(0, active ? 0x4795a7 : 0xf8fafc, 0);
+      button.icon.setAlpha(active ? 1 : 0.94);
+      button.icon.setDisplaySize(
+        metrics.strategyIconSize + (active ? 2 : 0),
+        metrics.strategyIconSize + (active ? 2 : 0)
+      );
       button.progressBg.setVisible(active && cooldownFraction > 0);
       button.progress.setVisible(active && cooldownFraction > 0);
       button.progress.displayWidth = Math.max(1, (button.progressBg.displayWidth - 4) * cooldownFraction);
@@ -535,8 +544,8 @@ export class GameHud {
       const y = startY + index * (buttonSize + gap) + buttonSize / 2;
       const rect = this.scene.add
         .rectangle(x, y, buttonSize, buttonSize, 0x111827, 0.72)
-        .setFillStyle(0x111827, 0.12)
-        .setStrokeStyle(1, 0xf8fafc, 0.22)
+        .setFillStyle(0x111827, 0)
+        .setStrokeStyle(0, 0xf8fafc, 0)
         .setScrollFactor(0)
         .setDepth(100)
         .setInteractive({ useHandCursor: true });
@@ -544,7 +553,7 @@ export class GameHud {
 
       const icon = this.scene.add
         .image(x, y - 2, UNIT_ASSET_KEYS[unit])
-        .setDisplaySize(34, 34)
+        .setDisplaySize(38, 38)
         .setScrollFactor(0)
         .setDepth(101);
 
@@ -770,8 +779,8 @@ export class GameHud {
       const y = startY + index * (buttonSize + gap) + buttonSize / 2;
       const rect = this.scene.add
         .rectangle(x, y, buttonSize, buttonSize, 0x111827, 0.72)
-        .setFillStyle(0x111827, 0.12)
-        .setStrokeStyle(1, 0xf8fafc, 0.38)
+        .setFillStyle(0x111827, 0)
+        .setStrokeStyle(0, 0xf8fafc, 0)
         .setScrollFactor(0)
         .setDepth(100)
         .setInteractive({ useHandCursor: true });
@@ -779,7 +788,7 @@ export class GameHud {
 
       const icon = this.scene.add
         .image(x, y - 2, STRATEGY_ASSET_KEYS[strategy])
-        .setDisplaySize(32, 32)
+        .setDisplaySize(36, 36)
         .setScrollFactor(0)
         .setDepth(101);
 
@@ -877,7 +886,7 @@ export class GameHud {
       button.rect.setPosition(x, y).setSize(buttonSize, buttonSize);
       button.icon
         .setPosition(x, y - 2)
-        .setDisplaySize(metrics.mobile ? 30 : 34, metrics.mobile ? 30 : 34);
+        .setDisplaySize(metrics.shopIconSize, metrics.shopIconSize);
       button.label
         .setVisible(metrics.showKeyboardHints)
         .setPosition(x + 14, y + 12);
@@ -900,9 +909,10 @@ export class GameHud {
       }
       const y = startY + index * (buttonSize + gap) + buttonSize / 2;
       button.rect.setPosition(x, y).setSize(buttonSize, buttonSize);
+      const iconSize = metrics.strategyIconSize + (strategy === this.currentStrategyValue ? 2 : 0);
       button.icon
         .setPosition(x, y - 2)
-        .setDisplaySize(metrics.mobile ? 28 : 32, metrics.mobile ? 28 : 32);
+        .setDisplaySize(iconSize, iconSize);
       button.label
         .setVisible(metrics.showKeyboardHints)
         .setPosition(x + 14, y + 12);
@@ -1156,7 +1166,9 @@ export class GameHud {
       portrait,
       showKeyboardHints: !mobile,
       sideButtonSize: mobile ? 40 : 44,
-      sideButtonGap: mobile ? 5 : 7
+      sideButtonGap: mobile ? 5 : 7,
+      shopIconSize: mobile ? 34 : 38,
+      strategyIconSize: mobile ? 32 : 36
     };
   }
 }
@@ -1167,4 +1179,6 @@ interface ViewportMetrics {
   showKeyboardHints: boolean;
   sideButtonSize: number;
   sideButtonGap: number;
+  shopIconSize: number;
+  strategyIconSize: number;
 }

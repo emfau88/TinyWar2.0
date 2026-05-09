@@ -1,5 +1,9 @@
 import Phaser from "phaser";
-import { BUILDINGS, type BuildingInstance } from "../../core/buildings/buildingData";
+import {
+  BUILDINGS,
+  getBuildingRenderPosition,
+  type BuildingInstance
+} from "../../core/buildings/buildingData";
 import { ASSETS } from "../../data/assetManifest";
 
 const HEALTH_BAR_WIDTH_RATIO = 0.5;
@@ -34,9 +38,10 @@ export class BuildingRenderer {
 
   private renderBuilding(building: BuildingInstance): BuildingRenderHandle {
     const definition = BUILDINGS[building.name];
+    const renderPosition = getBuildingRenderPosition(building);
     const sprite = this.scene.add.image(
-      building.position.x,
-      building.position.y,
+      renderPosition.x,
+      renderPosition.y,
       this.textureKey(building)
     );
 
@@ -48,14 +53,14 @@ export class BuildingRenderer {
     sprite.setDepth(10);
 
     const barWidth = definition.size.width * definition.worldScale * HEALTH_BAR_WIDTH_RATIO;
-    const y = building.position.y - (definition.size.height * definition.worldScale) / 2 - 12;
+    const y = renderPosition.y - (definition.size.height * definition.worldScale) / 2 - 12;
     this.scene.add
-      .rectangle(building.position.x, y, barWidth, HEALTH_BAR_HEIGHT, 0x000000, 0.75)
+      .rectangle(renderPosition.x, y, barWidth, HEALTH_BAR_HEIGHT, 0x000000, 0.75)
       .setDepth(20);
     const healthFillMaxWidth = barWidth - 4;
     const healthFill = this.scene.add
       .rectangle(
-        building.position.x - barWidth / 2 + 2,
+        renderPosition.x - barWidth / 2 + 2,
         y,
         healthFillMaxWidth * (building.health / building.maxHealth),
         HEALTH_BAR_HEIGHT - 4,

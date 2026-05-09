@@ -1,4 +1,4 @@
-import type { BuildingInstance } from "../buildings/buildingData";
+import { getBuildingCombatPosition, type BuildingInstance } from "../buildings/buildingData";
 import { calculateDamage } from "./damage";
 import type { PlayerColor } from "../buildings/buildingData";
 import type { PlayerStrategy } from "../player/playerStrategy";
@@ -119,7 +119,11 @@ export function resolveCombat(state: CombatState, deltaMs: number): CombatState 
     }
 
     const targetBuilding = lockedOrNearestEnemyBuilding(unit, buildings);
-    if (targetBuilding && unitCanAttack(unit) && distance(unit.position, targetBuilding.position) <= unitAttackRange(unit, "building")) {
+    if (
+      targetBuilding &&
+      unitCanAttack(unit) &&
+      distance(unit.position, getBuildingCombatPosition(targetBuilding)) <= unitAttackRange(unit, "building")
+    ) {
       if (unit.attackCooldownMs > 0) {
         units = holdAttack(units, unit.id, targetBuilding.id, "building");
         continue;
@@ -140,7 +144,15 @@ export function resolveCombat(state: CombatState, deltaMs: number): CombatState 
   }
 
   return {
-    units: clearInvalidTargets(units.filter((unit) => unit.health > 0), buildings),
+    units: clearInvalidTargets(
+      units.filter(
+        (unit) =>
+          unit.health > 0 &&
+          (!unit.onBuildingId ||
+            buildings.some((building) => building.id === unit.onBuildingId && building.health > 0))
+      ),
+      buildings
+    ),
     buildings,
     projectiles,
     strategies: state.strategies,
@@ -173,11 +185,12 @@ function resolveCompletedAttack(
         createArrowProjectile(
           attacker.color,
           damage,
+          Boolean(attacker.onBuildingId),
           {
             x: attacker.position.x + 0.25 * ORIGINAL_RADIUS * direction,
             y: attacker.position.y - 0.25 * ORIGINAL_RADIUS
           },
-          target.position
+          "isBase" in target ? getBuildingCombatPosition(target) : target.position
         )
       ]
     };

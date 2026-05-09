@@ -282,6 +282,7 @@ Status 2026-05-07:
 - Unit-Info-Panel umgesetzt: `H` toggelt ein modales Screen-Space-Overlay; auf Touch steht zusaetzlich rechts oben ein `H`-Button bereit. Das Panel zeigt fuer die aktuellen Basic Units Original-Beschreibungstexte und die aktuell portierten Werte fuer Health, Damage/Healing, Cycle-Speed, Armor, Resist, Pen, Range und Spawn-Dauer. Das Layout ist responsiv: auf breiten Viewports mit linker Unit-Liste, auf schmalen Viewports mit horizontaler Unit-Leiste oben.
 - Restpunkt Unit-Info: Echte Mobile-/Touch-QA steht noch aus. Geprueft werden muessen insbesondere Overlay-Touch-Ziele, Viewport-Hoehen auf kleinen Portrait-Screens und das saubere Blockieren von Kamera-Pan/Pinch unter dem geoeffneten Overlay.
 - Restpunkt Unit-Info: Der aktuelle HTML-Slice deckt bewusst nur den bestehenden Basic-Unit-Scope `Warrior/Lancer/Archer/Priest` ab. Monster-/Boost-Units folgen spaeter mit Milestone 7/8 und sind noch nicht im Panel enthalten.
+- Restpunkt HQ-Defender 2026-05-09: Browser-QA zeigt weiterhin, dass ankommende Boden-Units Dach-Archer an HQs teilweise fokussieren, statt konsequent nur die gegnerische Base im Tuerbereich zu attackieren. Dieser Parity-Fix ist bewusst vertagt und soll spaeter als eigener Slice nachgezogen werden, ohne TMX/Lane-Waypoints global zu verbiegen.
 - Offen fuer Milestone 6: Boosts, Musik und Mobile-Screenshot-QA.
 
 ## Milestone 7: Boost System in Groups

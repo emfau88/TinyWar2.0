@@ -1,10 +1,14 @@
 import Phaser from "phaser";
 import { createEnemyQueue, tickEnemyQueue, type EnemyQueueState } from "../../core/ai/enemyQueue";
-import type { BuildingInstance } from "../../core/buildings/buildingData";
+import {
+  getBuildingDoorSpawnPosition,
+  type BuildingInstance
+} from "../../core/buildings/buildingData";
 import type { ProjectileInstance } from "../../core/combat/projectileSystem";
 import { createInitialGameState } from "../../core/game/createInitialGameState";
 import {
   createLaneUnit,
+  stationaryBuildingUnit,
   updateMovingUnit,
   type MovingUnit
 } from "../../core/movement/movementSystem";
@@ -84,7 +88,8 @@ export class GameScene extends Phaser.Scene {
     this.buildings = [...state.buildings];
     this.buildingSprites = new BuildingRenderer(this).render(this.buildings);
     const unitRenderer = new UnitRenderer(this);
-    unitRenderer.render(state.units);
+    this.debugUnits = state.units.map((unit) => stationaryBuildingUnit(unit));
+    this.debugUnitSprites = unitRenderer.render(this.debugUnits);
     this.projectileRenderer = new ProjectileRenderer(this);
 
     const mapSize = this.mapRenderer.getWorldSize();
@@ -279,8 +284,20 @@ export class GameScene extends Phaser.Scene {
 
   private spawnQueuedUnit(unitName: UnitName, color: "Blue" | "Red"): void {
     const renderer = new UnitRenderer(this);
+    const base = this.buildings.find((building) => building.isBase && building.color === color);
+    const enemyBase = this.buildings.find((building) => building.isBase && building.color !== color);
+    const spawnPosition = base ? getBuildingDoorSpawnPosition(base) : undefined;
+    const terminalPosition = enemyBase ? getBuildingDoorSpawnPosition(enemyBase) : undefined;
     const units = lanesForDirection(this.selectedDirection).map((lane, index) =>
-      createLaneUnit(unitName, lane, index, `${color.toLowerCase()}-${this.spawnCounter}`, color)
+      createLaneUnit(
+        unitName,
+        lane,
+        index,
+        `${color.toLowerCase()}-${this.spawnCounter}`,
+        color,
+        spawnPosition,
+        terminalPosition
+      )
     );
     this.spawnCounter += 1;
 

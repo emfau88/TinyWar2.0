@@ -1,6 +1,8 @@
 export type BuildingName = "Barracks" | "Castle" | "Tower";
 export type PlayerColor = "Black" | "Blue" | "Purple" | "Red" | "Yellow";
 
+import { startingPositions, tileToWorld } from "../map/mapGeometry";
+
 export interface Size {
   width: number;
   height: number;
@@ -32,7 +34,15 @@ export interface BuildingInstance {
   };
 }
 
+export interface WorldOffset {
+  x: number;
+  y: number;
+}
+
 export const BUILDING_SCALE = 0.7;
+const BASE_RENDER_OFFSET_Y = 64;
+const BASE_DEFENDER_HALF_TILE_OFFSET_X = 16;
+const BASE_DEFENDER_HALF_TILE_OFFSET_Y = 32;
 
 export const BUILDINGS: Record<BuildingName, BuildingDefinition> = {
   Barracks: {
@@ -83,4 +93,72 @@ export function createBuilding(
     maxHealth: definition.health,
     position
   };
+}
+
+export function getBuildingRenderOffset(building: BuildingInstance): WorldOffset {
+  if (building.isBase && building.name === "Barracks") {
+    return {
+      x: 0,
+      y: BASE_RENDER_OFFSET_Y
+    };
+  }
+
+  return { x: 0, y: 0 };
+}
+
+export function getBuildingRenderPosition(building: BuildingInstance): WorldOffset {
+  const offset = getBuildingRenderOffset(building);
+  return {
+    x: building.position.x + offset.x,
+    y: building.position.y + offset.y
+  };
+}
+
+export function getBuildingDoorSpawnPosition(building: BuildingInstance): WorldOffset {
+  if (isCanonicalSoloBase(building)) {
+    return tileToWorld(building.color === "Blue" ? { x: 3, y: 2 } : { x: 27, y: 2 });
+  }
+
+  return { ...building.position };
+}
+
+export function getBuildingCombatPosition(building: BuildingInstance): WorldOffset {
+  return building.isBase ? getBuildingDoorSpawnPosition(building) : { ...building.position };
+}
+
+export function getBuildingUnitSlotPosition(
+  building: BuildingInstance,
+  slot: UnitSlot
+): WorldOffset {
+  const anchor = getBuildingRenderPosition(building);
+  return {
+    x: anchor.x + slot.x,
+    y: anchor.y + slot.y
+  };
+}
+
+export function getBuildingDefenderPositions(building: BuildingInstance): readonly WorldOffset[] {
+  if (isCanonicalSoloBase(building)) {
+    const roofTile = tileToWorld(building.color === "Blue" ? { x: 3, y: 1 } : { x: 27, y: 1 });
+    return [
+      { x: roofTile.x - BASE_DEFENDER_HALF_TILE_OFFSET_X, y: roofTile.y - BASE_DEFENDER_HALF_TILE_OFFSET_Y },
+      { x: roofTile.x + BASE_DEFENDER_HALF_TILE_OFFSET_X, y: roofTile.y - BASE_DEFENDER_HALF_TILE_OFFSET_Y }
+    ];
+  }
+
+  return BUILDINGS[building.name].unitSlots.map((slot) => getBuildingUnitSlotPosition(building, slot));
+}
+
+function isCanonicalSoloBase(building: BuildingInstance): boolean {
+  if (!building.isBase || building.name !== "Barracks") {
+    return false;
+  }
+
+  const [leftStart, rightStart] = startingPositions();
+  const expected = building.color === "Blue" ? leftStart : building.color === "Red" ? rightStart : undefined;
+  return Boolean(
+    expected &&
+      building.position.x === expected.x &&
+      building.position.y === expected.y
+  );
 }

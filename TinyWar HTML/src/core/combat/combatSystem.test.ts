@@ -206,6 +206,35 @@ describe("resolveCombat", () => {
     });
   });
 
+  it("lets on-building archers attack enemies in doubled building range while staying stationary", () => {
+    const base = createBuilding("left-base", "Barracks", "Blue", true, { x: 224, y: 32 });
+    const blue = {
+      ...combatUnit(createUnit("blue-roof-archer", "Archer", "Blue", { x: 208, y: 96 }, "left-base")),
+      moving: false
+    };
+    const red = combatUnit(createUnit("red-warrior", "Warrior", "Red", { x: 208 + ORIGINAL_RADIUS * 6 - 1, y: 96 }));
+    const state = resolveCombat({ units: [blue, red], buildings: [base] }, 16);
+    const blueAfter = state.units.find((unit) => unit.id === "blue-roof-archer");
+
+    expect(blueAfter?.targetId).toBe("red-warrior");
+    expect(blueAfter?.moving).toBe(false);
+    expect(blueAfter?.attackCooldownMs).toBe(ATTACK_DURATION_MS.Archer);
+  });
+
+  it("makes ground units attack the base instead of targeting roof defenders", () => {
+    const blueBase = createBuilding("blue-base", "Barracks", "Blue", true, { x: 224, y: 32 });
+    const redWarrior = combatUnit(createUnit("red-warrior", "Warrior", "Red", { x: 244, y: 160 }));
+    const blueRoofArcher = {
+      ...combatUnit(createUnit("blue-roof-archer", "Archer", "Blue", { x: 208, y: 64 }, "blue-base")),
+      moving: false
+    };
+    const state = resolveCombat({ units: [redWarrior, blueRoofArcher], buildings: [blueBase] }, 16);
+    const redAfter = state.units.find((unit) => unit.id === "red-warrior");
+
+    expect(redAfter?.targetKind).toBe("building");
+    expect(redAfter?.targetId).toBe("blue-base");
+  });
+
   it("halves armor and magic resist for Berserk defenders that are not on buildings", () => {
     const blue = combatUnit(createUnit("blue-archer", "Archer", "Blue", { x: 100, y: 100 }));
     const red = combatUnit(createUnit("red-warrior", "Warrior", "Red", { x: 180, y: 100 }));
@@ -225,17 +254,22 @@ describe("resolveCombat", () => {
   });
 
   it("does not halve Berserk defender armor while the target is on a building", () => {
-    const blue = combatUnit(createUnit("blue-archer", "Archer", "Blue", { x: 100, y: 100 }));
+    const blueBase = createBuilding("blue-base", "Barracks", "Blue", true, { x: 224, y: 32 });
+    const base = createBuilding("red-base", "Barracks", "Red", true, { x: 1760, y: 32 });
+    const blue = {
+      ...combatUnit(createUnit("blue-roof-archer", "Archer", "Blue", { x: 100, y: 100 }, "blue-base")),
+      moving: false
+    };
     const red = {
       ...combatUnit(createUnit("red-warrior", "Warrior", "Red", { x: 180, y: 100 }, "red-base")),
       onBuildingId: "red-base"
     };
-    const normalWindup = resolveCombat({ units: [blue, red], buildings: [] }, 16);
+    const normalWindup = resolveCombat({ units: [blue, red], buildings: [blueBase, base] }, 16);
     const normal = resolveCombat(normalWindup, ATTACK_DURATION_MS.Archer);
     const berserkWindup = resolveCombat(
       {
         units: [blue, red],
-        buildings: [],
+        buildings: [blueBase, base],
         strategies: { Red: "Berserk" }
       },
       16
@@ -291,6 +325,20 @@ describe("resolveCombat", () => {
 
     expect(blueAfter?.targetId).toBeUndefined();
     expect(blueAfter?.moving).toBe(true);
+  });
+
+  it("removes on-building units when their building is destroyed", () => {
+    const blue = {
+      ...combatUnit(createUnit("blue-roof-archer", "Archer", "Blue", { x: 208, y: 96 }, "left-base")),
+      moving: false
+    };
+    const destroyedBase = {
+      ...createBuilding("left-base", "Barracks", "Blue", true, { x: 224, y: 32 }),
+      health: 0
+    };
+    const state = resolveCombat({ units: [blue], buildings: [destroyedBase] }, 16);
+
+    expect(state.units).toHaveLength(0);
   });
 
   it("makes March units ignore enemy units instead of starting combat", () => {

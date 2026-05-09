@@ -1,6 +1,9 @@
 import { resolveCombat } from "../../core/combat/combatSystem";
 import type { ProjectileInstance } from "../../core/combat/projectileSystem";
-import type { BuildingInstance } from "../../core/buildings/buildingData";
+import {
+  getBuildingCombatPosition,
+  type BuildingInstance
+} from "../../core/buildings/buildingData";
 import type { MovingUnit } from "../../core/movement/movementSystem";
 import type { PlayerStrategy } from "../../core/player/playerStrategy";
 import { BuildingRenderer, type BuildingRenderHandle } from "../render/BuildingRenderer";
@@ -95,7 +98,8 @@ function targetPosition(
   }
 
   if (unit.targetKind === "building" && unit.targetId) {
-    return buildings.find((building) => building.id === unit.targetId)?.position;
+    const building = buildings.find((candidate) => candidate.id === unit.targetId);
+    return building ? getBuildingCombatPosition(building) : undefined;
   }
 
   return undefined;
