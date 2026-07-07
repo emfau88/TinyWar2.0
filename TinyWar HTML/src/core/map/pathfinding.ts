@@ -1,53 +1,33 @@
-import {
-  MAP_SIZE,
-  type TilePosition,
-  tileToWorld,
-  type WorldPosition
-} from "./mapGeometry";
+import { getActiveMap } from "./activeMap";
+import { tileToWorld, type TilePosition, type WorldPosition } from "./mapGeometry";
 
-export type LaneName = "Top" | "Mid" | "Bot";
-
-const WALKABLE_BITS = [
-  0b000100000000000000000000000100,
-  0b001111111000011110000001111110,
-  0b001111111101111110000011111110,
-  0b001111111111000011000111001110,
-  0b001111000000111101111100111110,
-  0b000111111111111110000011111110,
-  0b000000110000111111111111110000,
-  0b000111111011011111111001111100,
-  0b000000001111100110000110111100,
-  0b000011111111111001111111111000,
-  0b000011111111111101111111000000,
-  0b000111100011001111111111100000,
-  0b000111100000000111111011100000,
-  0b000000000000000111110000000000,
-  0b000000000000000111100000000000,
-  0b000000000000000000000000000000
-] as const;
-
-const LANE_WAYPOINTS: Record<LaneName, TilePosition> = {
-  Top: { x: 14, y: 2 },
-  Mid: { x: 14, y: 6 },
-  Bot: { x: 14, y: 10 }
-};
-
-const START = { x: 3, y: 0 } as const;
-const END = { x: 27, y: 0 } as const;
+export type { LaneName } from "./mapDefinition";
+import type { LaneName } from "./mapDefinition";
 
 export function isWalkable(tile: TilePosition): boolean {
-  if (tile.x < 0 || tile.y < 0 || tile.x >= MAP_SIZE.width || tile.y >= MAP_SIZE.height) {
+  const map = getActiveMap();
+  if (tile.x < 0 || tile.y < 0 || tile.x >= map.size.width || tile.y >= map.size.height) {
     return false;
   }
 
-  return (WALKABLE_BITS[tile.y] & (1 << (MAP_SIZE.width - 1 - tile.x))) !== 0;
+  return map.walkable[tile.y][tile.x] === "#";
 }
 
 export function getLanePath(lane: LaneName): readonly TilePosition[] {
-  const firstSegment = findPath(START, LANE_WAYPOINTS[lane]);
-  const secondSegment = findPath(LANE_WAYPOINTS[lane], END).slice(1);
+  const map = getActiveMap();
+  const waypoints = map.lanes[lane];
+  if (!waypoints || waypoints.length === 0) {
+    throw new Error(`Map ${map.id} has no lane ${lane}.`);
+  }
 
-  return [...firstSegment, ...secondSegment];
+  const stops = [map.start, ...waypoints, map.end];
+  const path: TilePosition[] = [];
+  for (let index = 0; index < stops.length - 1; index += 1) {
+    const segment = findPath(stops[index], stops[index + 1]);
+    path.push(...(index === 0 ? segment : segment.slice(1)));
+  }
+
+  return path;
 }
 
 export function getLaneWorldPath(lane: LaneName): readonly WorldPosition[] {
@@ -130,7 +110,10 @@ function neighbors(tile: TilePosition): TilePosition[] {
 }
 
 function heuristic(tile: TilePosition, end: TilePosition): number {
-  return Math.abs(START.x - tile.x) + Math.abs(START.y - tile.y) + Math.abs(end.x - tile.x);
+  // Matches the original heuristic exactly (it anchors on the map start for
+  // every segment) so classic lane shapes stay identical after the refactor.
+  const mapStart = getActiveMap().start;
+  return Math.abs(mapStart.x - tile.x) + Math.abs(mapStart.y - tile.y) + Math.abs(end.x - tile.x);
 }
 
 function reconstruct(node: PathNode): TilePosition[] {

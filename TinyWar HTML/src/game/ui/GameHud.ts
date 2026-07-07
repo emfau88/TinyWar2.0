@@ -14,7 +14,11 @@ const UNIT_ASSET_KEYS: Record<UnitName, string> = {
   Warrior: ASSETS.units.blueWarrior.key,
   Lancer: ASSETS.units.blueLancer.key,
   Archer: ASSETS.units.blueArcher.key,
-  Priest: ASSETS.units.bluePriest.key
+  Priest: ASSETS.units.bluePriest.key,
+  // Monsters are not purchasable; keys exist only to satisfy shared lookups.
+  Snake: "unit-monster-snake-idle",
+  Bear: "unit-monster-bear-idle",
+  Troll: "unit-monster-troll-idle"
 };
 const STRATEGY_ASSET_KEYS: Record<PlayerStrategy, string> = {
   Attack: ASSETS.icons.attack.key,
@@ -1285,12 +1289,14 @@ export class GameHud {
   }
 
   private hotkeyForUnit(unit: UnitName): string {
-    return {
-      Warrior: "Z",
-      Lancer: "X",
-      Archer: "C",
-      Priest: "V"
-    }[unit];
+    return (
+      {
+        Warrior: "Z",
+        Lancer: "X",
+        Archer: "C",
+        Priest: "V"
+      } as Partial<Record<UnitName, string>>
+    )[unit] ?? "";
   }
 
   private advanceLabel(share: number, power: number): string {

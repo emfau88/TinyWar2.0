@@ -1,7 +1,9 @@
 export type BuildingName = "Barracks" | "Castle" | "Tower";
 export type PlayerColor = "Black" | "Blue" | "Purple" | "Red" | "Yellow";
 
-import { startingPositions, tileToWorld } from "../map/mapGeometry";
+import { getActiveMap } from "../map/activeMap";
+import { tileToWorld } from "../map/mapGeometry";
+import type { BaseSetup } from "../map/mapDefinition";
 
 export interface Size {
   width: number;
@@ -115,8 +117,9 @@ export function getBuildingRenderPosition(building: BuildingInstance): WorldOffs
 }
 
 export function getBuildingDoorSpawnPosition(building: BuildingInstance): WorldOffset {
-  if (isCanonicalSoloBase(building)) {
-    return tileToWorld(building.color === "Blue" ? { x: 3, y: 2 } : { x: 27, y: 2 });
+  const base = baseSetupFor(building);
+  if (base) {
+    return tileToWorld(base.door);
   }
 
   return { ...building.position };
@@ -138,27 +141,38 @@ export function getBuildingUnitSlotPosition(
 }
 
 export function getBuildingDefenderPositions(building: BuildingInstance): readonly WorldOffset[] {
-  if (isCanonicalSoloBase(building)) {
-    const roofTile = tileToWorld(building.color === "Blue" ? { x: 3, y: 1 } : { x: 27, y: 1 });
-    return [
-      { x: roofTile.x - BASE_DEFENDER_HALF_TILE_OFFSET_X, y: roofTile.y - BASE_DEFENDER_HALF_TILE_OFFSET_Y },
-      { x: roofTile.x + BASE_DEFENDER_HALF_TILE_OFFSET_X, y: roofTile.y - BASE_DEFENDER_HALF_TILE_OFFSET_Y }
-    ];
+  const base = baseSetupFor(building);
+  if (base) {
+    return base.roofDefenders.map((tile, index) => {
+      const roofTile = tileToWorld(tile);
+      const side = base.roofDefenders.length > 1 ? (index === 0 ? -1 : 1) : 0;
+      return {
+        x: roofTile.x + side * BASE_DEFENDER_HALF_TILE_OFFSET_X,
+        y: roofTile.y - BASE_DEFENDER_HALF_TILE_OFFSET_Y
+      };
+    });
   }
 
   return BUILDINGS[building.name].unitSlots.map((slot) => getBuildingUnitSlotPosition(building, slot));
 }
 
-function isCanonicalSoloBase(building: BuildingInstance): boolean {
-  if (!building.isBase || building.name !== "Barracks") {
-    return false;
+function baseSetupFor(building: BuildingInstance): BaseSetup | undefined {
+  if (!building.isBase) {
+    return undefined;
   }
 
-  const [leftStart, rightStart] = startingPositions();
-  const expected = building.color === "Blue" ? leftStart : building.color === "Red" ? rightStart : undefined;
-  return Boolean(
-    expected &&
-      building.position.x === expected.x &&
-      building.position.y === expected.y
-  );
+  const { player, opponent } = getActiveMap().bases;
+  for (const base of [player, opponent]) {
+    const anchor = tileToWorld(base.anchor);
+    if (
+      base.building === building.name &&
+      base.color === building.color &&
+      building.position.x === anchor.x &&
+      building.position.y === anchor.y
+    ) {
+      return base;
+    }
+  }
+
+  return undefined;
 }

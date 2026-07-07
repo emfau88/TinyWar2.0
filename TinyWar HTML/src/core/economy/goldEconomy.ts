@@ -7,7 +7,11 @@ export const UNIT_COSTS: Record<UnitName, number> = {
   Warrior: 50,
   Lancer: 45,
   Archer: 55,
-  Priest: 65
+  Priest: 65,
+  // Monster costs feed the wildnis wave director's budget; players cannot buy them.
+  Snake: 15,
+  Bear: 90,
+  Troll: 400
 };
 
 export interface GoldState {

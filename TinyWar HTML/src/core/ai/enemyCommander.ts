@@ -24,11 +24,15 @@ export const MAX_ESCALATION = 2.5;
 const FRONTLINE_UNITS: readonly UnitName[] = ["Warrior", "Lancer"];
 const MAX_PRIESTS_PER_WAVE = 1;
 
+// Monsters have weight 0: the classic opponent never queues them.
 const WAVE_WEIGHTS: Record<UnitName, number> = {
   Warrior: 3,
   Lancer: 3,
   Archer: 2,
-  Priest: 1
+  Priest: 1,
+  Snake: 0,
+  Bear: 0,
+  Troll: 0
 };
 
 export type EnemyPhase = "saving" | "spawning" | "resting";
@@ -86,7 +90,10 @@ export function composeWave(budget: number, random = Math.random): readonly Unit
   while (wave.length < MAX_QUEUE_LENGTH) {
     const priests = wave.filter((unit) => unit === "Priest").length;
     const candidates = (Object.keys(WAVE_WEIGHTS) as UnitName[]).filter(
-      (unit) => UNIT_COSTS[unit] <= remaining && (unit !== "Priest" || priests < MAX_PRIESTS_PER_WAVE)
+      (unit) =>
+        WAVE_WEIGHTS[unit] > 0 &&
+        UNIT_COSTS[unit] <= remaining &&
+        (unit !== "Priest" || priests < MAX_PRIESTS_PER_WAVE)
     );
     if (candidates.length === 0) {
       break;

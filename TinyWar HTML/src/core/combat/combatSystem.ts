@@ -22,7 +22,10 @@ export const ATTACK_DURATION_MS: Record<UnitInstance["name"], number> = {
   Warrior: unitCycleDurationMs("Warrior"),
   Lancer: unitCycleDurationMs("Lancer"),
   Archer: unitCycleDurationMs("Archer"),
-  Priest: unitCycleDurationMs("Priest")
+  Priest: unitCycleDurationMs("Priest"),
+  Snake: unitCycleDurationMs("Snake"),
+  Bear: unitCycleDurationMs("Bear"),
+  Troll: unitCycleDurationMs("Troll")
 };
 
 export interface CombatUnit extends UnitInstance {

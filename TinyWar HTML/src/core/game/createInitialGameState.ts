@@ -3,7 +3,8 @@ import {
   getBuildingDefenderPositions,
   type BuildingInstance
 } from "../buildings/buildingData";
-import { startingPositions } from "../map/mapGeometry";
+import { getActiveMap } from "../map/activeMap";
+import { tileToWorld } from "../map/mapGeometry";
 import { createUnit, type UnitInstance } from "../units/unitData";
 
 export interface GameState {
@@ -12,10 +13,10 @@ export interface GameState {
 }
 
 export function createInitialGameState(): GameState {
-  const [leftStart, rightStart] = startingPositions();
+  const { player, opponent } = getActiveMap().bases;
   const buildings = [
-    createBuilding("left-base", "Barracks", "Blue", true, leftStart),
-    createBuilding("right-base", "Barracks", "Red", true, rightStart)
+    createBuilding("left-base", player.building, player.color, true, tileToWorld(player.anchor)),
+    createBuilding("right-base", opponent.building, opponent.color, true, tileToWorld(opponent.anchor))
   ];
 
   return {

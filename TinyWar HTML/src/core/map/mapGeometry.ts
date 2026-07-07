@@ -1,3 +1,5 @@
+import { getActiveMap } from "./activeMap";
+
 export interface TilePosition {
   x: number;
   y: number;
@@ -9,15 +11,10 @@ export interface WorldPosition {
 }
 
 export const MAP_TILE_SIZE = 64;
-export const MAP_SIZE = {
-  width: 30,
-  height: 16
-} as const;
 
-export const STARTING_TILES = [
-  { x: 3, y: 0 },
-  { x: 27, y: 0 }
-] as const satisfies readonly TilePosition[];
+export function mapSize(): { width: number; height: number } {
+  return getActiveMap().size;
+}
 
 export function tileToWorld(tile: TilePosition): WorldPosition {
   return {
@@ -27,5 +24,6 @@ export function tileToWorld(tile: TilePosition): WorldPosition {
 }
 
 export function startingPositions(): readonly WorldPosition[] {
-  return STARTING_TILES.map(tileToWorld);
+  const map = getActiveMap();
+  return [tileToWorld(map.start), tileToWorld(map.end)];
 }

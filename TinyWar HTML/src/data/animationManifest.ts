@@ -12,10 +12,17 @@ export interface UnitAnimationDefinition {
   frameRate: number;
 }
 
+import { isMonsterUnit } from "../core/units/unitData";
+
 const ROOT = "/assets/tinywar/images/units";
 const FRAME_MS = 100;
 
 export function unitAnimationKey(color: PlayerColor, unit: UnitName, action: UnitAction): string {
+  // Monsters share one neutral sprite set regardless of faction color.
+  if (isMonsterUnit(unit)) {
+    return `unit-monster-${unit.toLowerCase()}-${action.toLowerCase()}`;
+  }
+
   return `unit-${color.toLowerCase()}-${unit.toLowerCase()}-${action.toLowerCase()}`;
 }
 
@@ -45,7 +52,16 @@ export const BASIC_UNIT_ANIMATIONS = [
   unitAnimation("Red", "Archer", "Attack", 6),
   unitAnimation("Red", "Priest", "Idle", 6),
   unitAnimation("Red", "Priest", "Run", 4),
-  unitAnimation("Red", "Priest", "Heal", 11)
+  unitAnimation("Red", "Priest", "Heal", 11),
+  monsterAnimation("Snake", "Idle", 8),
+  monsterAnimation("Snake", "Run", 8),
+  monsterAnimation("Snake", "Attack", 6),
+  monsterAnimation("Bear", "Idle", 8),
+  monsterAnimation("Bear", "Run", 5),
+  monsterAnimation("Bear", "Attack", 9),
+  monsterAnimation("Troll", "Idle", 12),
+  monsterAnimation("Troll", "Run", 10),
+  monsterAnimation("Troll", "Attack", 6)
 ] as const satisfies readonly UnitAnimationDefinition[];
 
 function unitAnimation(
@@ -59,6 +75,19 @@ function unitAnimation(
   return {
     key: unitAnimationKey(color, unit, action),
     path: `${ROOT}/${color}/${unit}_${action}.png`,
+    frameWidth: size,
+    frameHeight: size,
+    frames,
+    frameRate: 1000 / FRAME_MS
+  };
+}
+
+function monsterAnimation(unit: UnitName, action: UnitAction, frames: number): UnitAnimationDefinition {
+  const size = UNITS[unit].spriteSize;
+
+  return {
+    key: unitAnimationKey("Red", unit, action),
+    path: `${ROOT}/Monsters/${unit}/${unit}_${action}.png`,
     frameWidth: size,
     frameHeight: size,
     frames,

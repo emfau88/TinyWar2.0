@@ -1,6 +1,12 @@
 import type { PlayerColor } from "../buildings/buildingData";
 
-export type UnitName = "Warrior" | "Lancer" | "Archer" | "Priest";
+export type UnitName = "Warrior" | "Lancer" | "Archer" | "Priest" | "Snake" | "Bear" | "Troll";
+
+export const MONSTER_UNITS: readonly UnitName[] = ["Snake", "Bear", "Troll"];
+
+export function isMonsterUnit(name: UnitName): boolean {
+  return MONSTER_UNITS.includes(name);
+}
 
 export interface UnitDefinition {
   name: UnitName;
@@ -110,6 +116,63 @@ export const UNITS: Record<UnitName, UnitDefinition> = {
     armorPen: 0,
     magicPen: 0,
     spawnDurationMs: 3400
+  },
+  Snake: {
+    name: "Snake",
+    description:
+      "A quick, venomous serpent that overwhelms enemies in numbers. Snakes are fragile but fast, and their magical venom bypasses plain armor.",
+    spriteSize: 192,
+    renderSize: 96,
+    worldSize: 96,
+    canGuard: false,
+    speed: 45,
+    range: 1,
+    health: 45,
+    physicalDamage: 0,
+    magicDamage: 8,
+    armor: 0,
+    magicResist: 0,
+    armorPen: 0,
+    magicPen: 0,
+    spawnDurationMs: 500
+  },
+  Bear: {
+    name: "Bear",
+    description:
+      "A massive forest bully that crushes enemies with its enormous, powerful claws. Bears soak up damage on the front line and hit hard.",
+    spriteSize: 256,
+    renderSize: 128,
+    worldSize: 96,
+    canGuard: false,
+    speed: 40,
+    range: 1,
+    health: 200,
+    physicalDamage: 20,
+    magicDamage: 0,
+    armor: 10,
+    magicResist: 6,
+    armorPen: 9,
+    magicPen: 0,
+    spawnDurationMs: 3400
+  },
+  Troll: {
+    name: "Troll",
+    description:
+      "A hulking terror of the deep woods. Trolls advance slowly but shrug off almost any attack and flatten whole formations with their club.",
+    spriteSize: 384,
+    renderSize: 192,
+    worldSize: 192,
+    canGuard: false,
+    speed: 20,
+    range: 1,
+    health: 500,
+    physicalDamage: 25,
+    magicDamage: 10,
+    armor: 17,
+    magicResist: 17,
+    armorPen: 12,
+    magicPen: 12,
+    spawnDurationMs: 10000
   }
 };
 
@@ -142,6 +205,9 @@ export function unitCycleDurationMs(name: UnitName): number {
     Warrior: 800,
     Lancer: 900,
     Archer: 600,
-    Priest: 1100
+    Priest: 1100,
+    Snake: 600,
+    Bear: 900,
+    Troll: 600
   }[name];
 }

@@ -49,9 +49,11 @@ describe("goldEconomy", () => {
   });
 
   it("sustains a slower pace than raw spawn durations", () => {
-    // With income 10/s the cheapest unit takes 4.5s of income - the economy,
-    // not the queue, must be the limiting factor for pacing.
-    const cheapest = Math.min(...Object.values(UNIT_COSTS));
+    // With income 10/s the cheapest buyable unit takes 4.5s of income - the
+    // economy, not the queue, must be the limiting factor for pacing.
+    // Monster costs are excluded: they only feed the wave director's budget.
+    const buyable = ["Warrior", "Lancer", "Archer", "Priest"] as const;
+    const cheapest = Math.min(...buyable.map((unit) => UNIT_COSTS[unit]));
     expect(cheapest / BASE_INCOME_PER_SEC).toBeGreaterThan(4);
   });
 });

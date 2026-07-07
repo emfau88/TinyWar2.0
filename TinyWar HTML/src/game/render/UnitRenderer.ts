@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { UNITS } from "../../core/units/unitData";
+import { UNITS, isMonsterUnit } from "../../core/units/unitData";
 import type { UnitInstance } from "../../core/units/unitData";
 import { ASSETS } from "../../data/assetManifest";
 import { unitAnimationKey, type UnitAction } from "../../data/animationManifest";
@@ -115,6 +115,11 @@ export class UnitRenderer {
   }
 
   private textureKey(unit: UnitInstance): string {
+    if (isMonsterUnit(unit.name)) {
+      // Monsters use their idle spritesheet as the base texture.
+      return unitAnimationKey(unit.color, unit.name, "Idle");
+    }
+
     if (unit.color === "Blue" && unit.name === "Archer") {
       return ASSETS.units.blueArcher.key;
     }
