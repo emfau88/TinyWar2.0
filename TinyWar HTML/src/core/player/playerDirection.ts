@@ -24,6 +24,11 @@ export function previousDirection(direction: PlayerDirection): PlayerDirection {
   ];
 }
 
+export function randomLaneForDirection(direction: PlayerDirection, random = Math.random): LaneName {
+  const lanes = lanesForDirection(direction);
+  return lanes[Math.min(lanes.length - 1, Math.floor(random() * lanes.length))];
+}
+
 export function lanesForDirection(direction: PlayerDirection): readonly LaneName[] {
   switch (direction) {
     case "Any":

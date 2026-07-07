@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { UNIT_COSTS, canAfford, displayGold, type GoldState } from "../../core/economy/goldEconomy";
 import { PLAYER_STRATEGIES, strategyHotkey } from "../../core/player/playerStrategy";
 import { UNITS as UNIT_DEFINITIONS, unitCycleDurationMs } from "../../core/units/unitData";
 import { ASSETS } from "../../data/assetManifest";
@@ -44,12 +45,16 @@ export interface GameHudCallbacks {
   onSelectStrategy: (strategy: PlayerStrategy) => void;
   onToggleAudio: () => void;
   onToggleUnitInfo: () => void;
+  onPlayAgain: () => void;
+  onExitToMenu: () => void;
 }
 
 interface UnitShopButton {
   rect: Phaser.GameObjects.Rectangle;
   icon: Phaser.GameObjects.Image;
   label: Phaser.GameObjects.Text;
+  cost: Phaser.GameObjects.Text;
+  unit: UnitName;
 }
 
 interface StrategyButton {
@@ -88,8 +93,16 @@ export class GameHud {
   private readonly unitInfoTogglePanel: Phaser.GameObjects.Rectangle;
   private readonly unitInfoToggleLabel: Phaser.GameObjects.Text;
   private readonly queueText: Phaser.GameObjects.Text;
+  private readonly goldText: Phaser.GameObjects.Text;
   private readonly speedText: Phaser.GameObjects.Text;
   private readonly winnerText: Phaser.GameObjects.Text;
+  private readonly winnerBackdrop: Phaser.GameObjects.Rectangle;
+  private readonly winnerPanel: Phaser.GameObjects.Rectangle;
+  private readonly winnerSubtitle: Phaser.GameObjects.Text;
+  private readonly winnerPlayPanel: Phaser.GameObjects.Rectangle;
+  private readonly winnerPlayLabel: Phaser.GameObjects.Text;
+  private readonly winnerMenuPanel: Phaser.GameObjects.Rectangle;
+  private readonly winnerMenuLabel: Phaser.GameObjects.Text;
   private readonly queueStart: Phaser.GameObjects.Image;
   private readonly queueEnd: Phaser.GameObjects.Image;
   private readonly queueSlotBackgrounds: Phaser.GameObjects.Image[] = [];
@@ -219,6 +232,18 @@ export class GameHud {
       .setScrollFactor(0)
       .setDepth(100);
 
+    this.goldText = this.scene.add
+      .text(0, 0, "Gold: 0", {
+        fontFamily: "TinyWar Fira Sans",
+        fontSize: "14px",
+        color: "#fbbf24",
+        backgroundColor: "rgba(17, 24, 39, 0.58)",
+        padding: { x: 7, y: 4 }
+      })
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(102);
+
     this.speedText = this.scene.add
       .text(12, this.scene.scale.height - 14, "1x", {
         fontFamily: "TinyWar Fira Mono",
@@ -231,18 +256,88 @@ export class GameHud {
       .setScrollFactor(0)
       .setDepth(100);
 
+    this.winnerBackdrop = this.scene.add
+      .rectangle(0, 0, this.scene.scale.width, this.scene.scale.height, 0x020617, 0.72)
+      .setOrigin(0)
+      .setScrollFactor(0)
+      .setDepth(200)
+      .setInteractive()
+      .setVisible(false);
+
+    this.winnerPanel = this.scene.add
+      .rectangle(0, 0, 340, 240, 0x0f172a, 0.96)
+      .setStrokeStyle(3, 0xf8fafc, 0.8)
+      .setScrollFactor(0)
+      .setDepth(201)
+      .setVisible(false);
+
     this.winnerText = this.scene.add
       .text(this.scene.scale.width / 2, 84, "", {
         fontFamily: "TinyWar Fira Sans",
-        fontSize: "18px",
+        fontSize: "40px",
         color: "#f8fafc",
-        backgroundColor: "rgba(127, 29, 29, 0.78)",
-        padding: { x: 10, y: 6 }
+        stroke: "#020617",
+        strokeThickness: 6
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
-      .setDepth(100)
+      .setDepth(202)
       .setVisible(false);
+
+    this.winnerSubtitle = this.scene.add
+      .text(0, 0, "", {
+        fontFamily: "TinyWar Fira Sans",
+        fontSize: "15px",
+        color: "#cbd5f5"
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(202)
+      .setVisible(false);
+
+    this.winnerPlayPanel = this.scene.add
+      .rectangle(0, 0, 220, 48, 0x1d4ed8, 0.92)
+      .setStrokeStyle(2, 0xf8fafc, 0.8)
+      .setScrollFactor(0)
+      .setDepth(202)
+      .setInteractive({ useHandCursor: true })
+      .setVisible(false);
+    this.winnerPlayPanel.on("pointerdown", callbacks.onPlayAgain);
+
+    this.winnerPlayLabel = this.scene.add
+      .text(0, 0, "Play again", {
+        fontFamily: "TinyWar Fira Sans",
+        fontSize: "20px",
+        color: "#f8fafc"
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(203)
+      .setInteractive({ useHandCursor: true })
+      .setVisible(false);
+    this.winnerPlayLabel.on("pointerdown", callbacks.onPlayAgain);
+
+    this.winnerMenuPanel = this.scene.add
+      .rectangle(0, 0, 220, 48, 0x111827, 0.92)
+      .setStrokeStyle(2, 0xf8fafc, 0.6)
+      .setScrollFactor(0)
+      .setDepth(202)
+      .setInteractive({ useHandCursor: true })
+      .setVisible(false);
+    this.winnerMenuPanel.on("pointerdown", callbacks.onExitToMenu);
+
+    this.winnerMenuLabel = this.scene.add
+      .text(0, 0, "Menu", {
+        fontFamily: "TinyWar Fira Sans",
+        fontSize: "20px",
+        color: "#f8fafc"
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(203)
+      .setInteractive({ useHandCursor: true })
+      .setVisible(false);
+    this.winnerMenuLabel.on("pointerdown", callbacks.onExitToMenu);
 
     this.unitInfoBackdrop = this.scene.add
       .rectangle(this.scene.scale.width / 2, this.scene.scale.height / 2, this.scene.scale.width, this.scene.scale.height, 0x020617, 0.72)
@@ -355,7 +450,7 @@ export class GameHud {
   }
 
   get isWinnerVisible(): boolean {
-    return this.winnerText.visible;
+    return this.winnerBackdrop.visible;
   }
 
   get isUnitInfoVisible(): boolean {
@@ -382,8 +477,16 @@ export class GameHud {
       this.unitInfoTogglePanel,
       this.unitInfoToggleLabel,
       this.queueText,
+      this.goldText,
       this.speedText,
       this.winnerText,
+      this.winnerBackdrop,
+      this.winnerPanel,
+      this.winnerSubtitle,
+      this.winnerPlayPanel,
+      this.winnerPlayLabel,
+      this.winnerMenuPanel,
+      this.winnerMenuLabel,
       this.queueStart,
       this.queueEnd,
       ...this.queueSlotBackgrounds,
@@ -392,7 +495,7 @@ export class GameHud {
       ...this.queueProgressBars,
       ...this.shopRibbonPieces,
       ...this.strategyRibbonPieces,
-      ...this.shopButtons.flatMap((button) => [button.rect, button.icon, button.label]),
+      ...this.shopButtons.flatMap((button) => [button.rect, button.icon, button.label, button.cost]),
       ...this.unitInfoButtons.flatMap((button) => [button.rect, button.icon, button.label]),
       ...PLAYER_STRATEGIES.flatMap((strategy) => {
         const button = this.strategyButtons.get(strategy);
@@ -419,6 +522,20 @@ export class GameHud {
   updateQueue(queue: UnitQueue): void {
     this.queueText.setText(this.queueLabel(queue));
     this.updateQueueDisplay(queue);
+  }
+
+  updateGold(gold: GoldState): void {
+    this.goldText.setText(`Gold: ${displayGold(gold)}`);
+    for (const button of this.shopButtons) {
+      const affordable = canAfford(gold, button.unit);
+      button.icon.setAlpha(affordable ? 1 : 0.4);
+      if (affordable) {
+        button.icon.clearTint();
+      } else {
+        button.icon.setTint(0x64748b);
+      }
+      button.cost.setColor(affordable ? "#fbbf24" : "#fca5a5");
+    }
   }
 
   updateStrategy(strategy: StrategyState): void {
@@ -504,7 +621,7 @@ export class GameHud {
     this.layoutStrategyButtons(width, height);
     this.layoutQueue(width, height);
     this.layoutUnitInfo(width, height);
-    this.winnerText.setPosition(width / 2, 84);
+    this.layoutWinnerOverlay(width, height);
 
     if (this.lastAdvanceState) {
       this.updateAdvanceBanner(this.lastAdvanceState);
@@ -512,7 +629,34 @@ export class GameHud {
   }
 
   showWinner(winner: string): void {
-    this.winnerText.setText(`${winner} wins`).setVisible(true);
+    const victory = winner === "Blue";
+    this.winnerText
+      .setText(victory ? "Victory!" : "Defeat")
+      .setColor(victory ? "#93c5fd" : "#fca5a5")
+      .setVisible(true);
+    this.winnerSubtitle
+      .setText(victory ? "The enemy base has fallen." : "Your base has been destroyed.")
+      .setVisible(true);
+    this.winnerBackdrop.setVisible(true);
+    this.winnerPanel.setVisible(true);
+    this.winnerPlayPanel.setVisible(true);
+    this.winnerPlayLabel.setVisible(true);
+    this.winnerMenuPanel.setVisible(true);
+    this.winnerMenuLabel.setVisible(true);
+    this.layoutWinnerOverlay(this.scene.scale.width, this.scene.scale.height);
+  }
+
+  private layoutWinnerOverlay(width: number, height: number): void {
+    const centerX = width / 2;
+    const centerY = height / 2;
+    this.winnerBackdrop.setPosition(0, 0).setSize(width, height);
+    this.winnerPanel.setPosition(centerX, centerY);
+    this.winnerText.setPosition(centerX, centerY - 66);
+    this.winnerSubtitle.setPosition(centerX, centerY - 26);
+    this.winnerPlayPanel.setPosition(centerX, centerY + 22);
+    this.winnerPlayLabel.setPosition(centerX, centerY + 22);
+    this.winnerMenuPanel.setPosition(centerX, centerY + 80);
+    this.winnerMenuLabel.setPosition(centerX, centerY + 80);
   }
 
   toggleUnitInfo(): void {
@@ -568,7 +712,19 @@ export class GameHud {
         .setOrigin(0.5)
         .setScrollFactor(0)
         .setDepth(102);
-      this.shopButtons.push({ rect, icon, label });
+
+      const cost = this.scene.add
+        .text(x - 12, y - 14, `${UNIT_COSTS[unit]}`, {
+          fontFamily: "TinyWar Fira Mono",
+          fontSize: "10px",
+          color: "#fbbf24",
+          backgroundColor: "rgba(15, 23, 42, 0.78)",
+          padding: { x: 2, y: 0 }
+        })
+        .setOrigin(0.5)
+        .setScrollFactor(0)
+        .setDepth(102);
+      this.shopButtons.push({ rect, icon, label, cost, unit });
     });
   }
 
@@ -823,6 +979,9 @@ export class GameHud {
     const metrics = this.viewportMetrics(width, this.scene.scale.height);
     const centerX = width / 2;
     const y = metrics.mobile ? 30 : 38;
+    // Centered below the advance banner: the only spot that stays clear of
+    // the shop, strategy and queue bars on every viewport.
+    this.goldText.setPosition(centerX, y + 26);
     this.blueAdvanceFill.setY(y);
     this.redAdvanceFill.setY(y);
     this.blueAdvanceStart.setY(y);
@@ -890,6 +1049,7 @@ export class GameHud {
       button.label
         .setVisible(metrics.showKeyboardHints)
         .setPosition(x + 14, y + 12);
+      button.cost.setPosition(x - buttonSize / 2 + 10, y - buttonSize / 2 + 6);
     });
   }
 

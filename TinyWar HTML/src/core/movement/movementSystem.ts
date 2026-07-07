@@ -15,6 +15,7 @@ export interface MovingUnit extends UnitInstance {
   attackCooldownMs: number;
   targetId?: string;
   targetKind?: "unit" | "building";
+  velocity?: { x: number; y: number };
 }
 
 export function stationaryBuildingUnit(

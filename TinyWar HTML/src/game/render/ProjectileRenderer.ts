@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import type { ProjectileInstance } from "../../core/combat/projectileSystem";
+import { projectileFacing, type ProjectileInstance } from "../../core/combat/projectileSystem";
 import { ASSETS } from "../../data/assetManifest";
 
 export interface ProjectileRenderHandle {
@@ -27,10 +27,11 @@ export class ProjectileRenderer {
   static updateHandle(handle: ProjectileRenderHandle, projectile: ProjectileInstance): void {
     const position = snapPosition(projectile.position);
     handle.sprite.setPosition(position.x, position.y);
-    const dx = projectile.destination.x - projectile.position.x;
-    const dy = projectile.destination.y - projectile.position.y;
-    if (Math.hypot(dx, dy) > 0.01) {
-      handle.sprite.setRotation(Math.atan2(dy, dx) + Math.PI / 4);
+    // Point the arrow along its actual arc velocity; once it has landed the
+    // facing is undefined and the impact rotation is kept.
+    const facing = projectileFacing(projectile);
+    if (facing) {
+      handle.sprite.setRotation(Math.atan2(facing.y, facing.x));
     }
   }
 

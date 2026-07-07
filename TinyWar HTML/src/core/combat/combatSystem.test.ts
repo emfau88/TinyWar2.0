@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { createBuilding } from "../buildings/buildingData";
 import { createUnit } from "../units/unitData";
-import { ATTACK_DURATION_MS, ORIGINAL_RADIUS, resolveCombat, type CombatUnit } from "./combatSystem";
+import {
+  ATTACK_DURATION_MS,
+  BUILDING_DEFENDER_CYCLE_MULTIPLIER,
+  ORIGINAL_RADIUS,
+  resolveCombat,
+  type CombatUnit
+} from "./combatSystem";
 
 function combatUnit(unit: ReturnType<typeof createUnit>): CombatUnit {
   return {
@@ -90,6 +96,36 @@ describe("resolveCombat", () => {
     const priestAfter = state.units.find((unit) => unit.id === "blue-priest");
 
     expect(priestAfter?.attackCooldownMs).toBe(ATTACK_DURATION_MS.Priest);
+  });
+
+  it("halves the fire rate of archers stationed on buildings", () => {
+    const roofArcher = combatUnit(
+      createUnit("blue-roof-archer", "Archer", "Blue", { x: 100, y: 100 }, "left-base")
+    );
+    const blueBase = createBuilding("left-base", "Barracks", "Blue", true, { x: 100, y: 100 });
+    const red = combatUnit(createUnit("red-lancer", "Lancer", "Red", { x: 180, y: 100 }));
+    const state = resolveCombat({ units: [roofArcher, red], buildings: [blueBase] }, 16);
+    const archerAfter = state.units.find((unit) => unit.id === "blue-roof-archer");
+
+    expect(archerAfter?.attackCooldownMs).toBe(
+      ATTACK_DURATION_MS.Archer * BUILDING_DEFENDER_CYCLE_MULTIPLIER
+    );
+  });
+
+  it("leads arrows ahead of moving targets", () => {
+    const archer = combatUnit(createUnit("blue-archer", "Archer", "Blue", { x: 100, y: 100 }));
+    const runner = {
+      ...combatUnit(createUnit("red-runner", "Warrior", "Red", { x: 200, y: 100 })),
+      velocity: { x: -30, y: 0 }
+    };
+    const windup = resolveCombat({ units: [archer, runner], buildings: [] }, 16);
+    const state = resolveCombat(windup, ATTACK_DURATION_MS.Archer);
+
+    expect(state.projectiles?.length).toBe(1);
+    // Runner moves toward the archer, so the predicted impact point sits in
+    // front of (left of) the runner's position at fire time.
+    expect(state.projectiles![0].destination.x).toBeLessThan(200);
+    expect(state.projectiles![0].destination.x).toBeGreaterThan(150);
   });
 
   it("damages enemy buildings at the end of the attack cycle", () => {
@@ -218,7 +254,9 @@ describe("resolveCombat", () => {
 
     expect(blueAfter?.targetId).toBe("red-warrior");
     expect(blueAfter?.moving).toBe(false);
-    expect(blueAfter?.attackCooldownMs).toBe(ATTACK_DURATION_MS.Archer);
+    expect(blueAfter?.attackCooldownMs).toBe(
+      ATTACK_DURATION_MS.Archer * BUILDING_DEFENDER_CYCLE_MULTIPLIER
+    );
   });
 
   it("makes ground units attack the base instead of targeting roof defenders", () => {
@@ -264,8 +302,9 @@ describe("resolveCombat", () => {
       ...combatUnit(createUnit("red-warrior", "Warrior", "Red", { x: 180, y: 100 }, "red-base")),
       onBuildingId: "red-base"
     };
+    const roofArcherCycle = ATTACK_DURATION_MS.Archer * BUILDING_DEFENDER_CYCLE_MULTIPLIER;
     const normalWindup = resolveCombat({ units: [blue, red], buildings: [blueBase, base] }, 16);
-    const normal = resolveCombat(normalWindup, ATTACK_DURATION_MS.Archer);
+    const normal = resolveCombat(normalWindup, roofArcherCycle);
     const berserkWindup = resolveCombat(
       {
         units: [blue, red],
@@ -274,7 +313,7 @@ describe("resolveCombat", () => {
       },
       16
     );
-    const berserk = resolveCombat(berserkWindup, ATTACK_DURATION_MS.Archer);
+    const berserk = resolveCombat(berserkWindup, roofArcherCycle);
 
     expect(berserk.projectiles?.[0].damage).toBeCloseTo(normal.projectiles?.[0].damage ?? 0, 5);
   });

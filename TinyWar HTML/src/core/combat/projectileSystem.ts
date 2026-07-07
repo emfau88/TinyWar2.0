@@ -129,18 +129,60 @@ function advanceProjectile(projectile: ProjectileInstance, deltaMs: number): Pro
     projectile.totalDistance,
     projectile.traveled + PROJECTILE_SPEED * (deltaMs / 1000)
   );
+
+  return {
+    ...projectile,
+    traveled,
+    position: arcPosition(projectile, traveled)
+  };
+}
+
+function arcPosition(projectile: ProjectileInstance, traveled: number): { x: number; y: number } {
   const progress = Math.min(1, traveled / projectile.totalDistance);
   const horizontal = lerp(projectile.start, projectile.destination, progress);
   const arcHeight = progress * (1 - progress) * 4 * projectile.totalDistance * 0.2;
 
   return {
-    ...projectile,
-    traveled,
-    position: {
-      x: horizontal.x,
-      y: horizontal.y - arcHeight
-    }
+    x: horizontal.x,
+    y: horizontal.y - arcHeight
   };
+}
+
+export function projectileFacing(projectile: ProjectileInstance): { x: number; y: number } | undefined {
+  if (projectile.traveled >= projectile.totalDistance) {
+    return undefined;
+  }
+
+  // Like the original: sample one world unit ahead along the arc so the arrow
+  // points along its actual flight path instead of straight at the target.
+  const current = arcPosition(projectile, projectile.traveled);
+  const ahead = arcPosition(projectile, projectile.traveled + 1);
+  const facing = { x: ahead.x - current.x, y: ahead.y - current.y };
+
+  return Math.hypot(facing.x, facing.y) > 0.001 ? facing : undefined;
+}
+
+export function leadProjectileDestination(
+  start: { x: number; y: number },
+  targetPosition: { x: number; y: number },
+  targetVelocity?: { x: number; y: number }
+): { x: number; y: number } {
+  if (!targetVelocity || (targetVelocity.x === 0 && targetVelocity.y === 0)) {
+    return targetPosition;
+  }
+
+  // Two-pass linear prediction: estimate flight time to the current position,
+  // then refine against the predicted position.
+  let predicted = targetPosition;
+  for (let pass = 0; pass < 2; pass += 1) {
+    const flightTimeSec = distance(start, predicted) / PROJECTILE_SPEED;
+    predicted = {
+      x: targetPosition.x + targetVelocity.x * flightTimeSec,
+      y: targetPosition.y + targetVelocity.y * flightTimeSec
+    };
+  }
+
+  return predicted;
 }
 
 function lerp(a: { x: number; y: number }, b: { x: number; y: number }, t: number): { x: number; y: number } {

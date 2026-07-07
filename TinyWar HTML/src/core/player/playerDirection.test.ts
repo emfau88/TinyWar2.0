@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { lanesForDirection, nextDirection, previousDirection } from "./playerDirection";
+import {
+  lanesForDirection,
+  nextDirection,
+  previousDirection,
+  randomLaneForDirection
+} from "./playerDirection";
 
 describe("playerDirection", () => {
   it("cycles in the original TinyWar order", () => {
@@ -22,5 +27,13 @@ describe("playerDirection", () => {
     expect(lanesForDirection("TopMid")).toEqual(["Top", "Mid"]);
     expect(lanesForDirection("MidBot")).toEqual(["Mid", "Bot"]);
     expect(lanesForDirection("TopBot")).toEqual(["Top", "Bot"]);
+  });
+
+  it("picks exactly one lane from the direction's lane set, like the original spawn", () => {
+    expect(randomLaneForDirection("Any", () => 0)).toBe("Top");
+    expect(randomLaneForDirection("Any", () => 0.5)).toBe("Mid");
+    expect(randomLaneForDirection("Any", () => 0.99)).toBe("Bot");
+    expect(randomLaneForDirection("Mid", () => 0.99)).toBe("Mid");
+    expect(randomLaneForDirection("TopBot", () => 0.6)).toBe("Bot");
   });
 });

@@ -1,5 +1,16 @@
 import Phaser from "phaser";
-import { createEnemyQueue, tickEnemyQueue, type EnemyQueueState } from "../../core/ai/enemyQueue";
+import {
+  createEnemyCommander,
+  tickEnemyCommander,
+  type EnemyCommanderState
+} from "../../core/ai/enemyCommander";
+import {
+  canAfford,
+  createGoldState,
+  spendForUnit,
+  tickGold,
+  type GoldState
+} from "../../core/economy/goldEconomy";
 import {
   getBuildingDoorSpawnPosition,
   type BuildingInstance
@@ -12,7 +23,7 @@ import {
   updateMovingUnit,
   type MovingUnit
 } from "../../core/movement/movementSystem";
-import { lanesForDirection, nextDirection, type PlayerDirection } from "../../core/player/playerDirection";
+import { nextDirection, randomLaneForDirection, type PlayerDirection } from "../../core/player/playerDirection";
 import {
   createStrategyState,
   selectStrategy,
@@ -73,7 +84,8 @@ export class GameScene extends Phaser.Scene {
   private paused = false;
   private gameSpeed = 1;
   private queue: UnitQueue = createQueue();
-  private enemyQueue: EnemyQueueState = createEnemyQueue();
+  private playerGold: GoldState = createGoldState();
+  private enemyCommander: EnemyCommanderState = createEnemyCommander();
   private spawnCounter = 0;
 
   constructor() {
@@ -81,6 +93,21 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
+    // Phaser reuses the scene instance on restart, so every piece of match
+    // state has to be reset here rather than in field initializers.
+    this.debugUnitSprites = new Map();
+    this.buildingSprites = new Map();
+    this.projectileSprites = new Map();
+    this.projectiles = [];
+    this.selectedDirection = "Any";
+    this.strategy = createStrategyState();
+    this.paused = false;
+    this.gameSpeed = 1;
+    this.queue = createQueue();
+    this.playerGold = createGoldState();
+    this.enemyCommander = createEnemyCommander();
+    this.spawnCounter = 0;
+
     this.audio = new GameAudio(this);
     this.mapRenderer = new MapRenderer(this);
     this.mapRenderer.render();
@@ -102,10 +129,13 @@ export class GameScene extends Phaser.Scene {
       onQueueUnit: (unit) => this.queueUnit(unit),
       onSelectStrategy: (strategy) => this.selectStrategy(strategy),
       onToggleAudio: () => this.toggleAudio(),
-      onToggleUnitInfo: () => this.toggleUnitInfo()
+      onToggleUnitInfo: () => this.toggleUnitInfo(),
+      onPlayAgain: () => this.scene.restart(),
+      onExitToMenu: () => this.scene.start("MenuScene")
     });
     this.hud.updateAudioMuted(this.audioMuted);
     this.hud.updateSpeed(this.gameSpeed, this.paused);
+    this.hud.updateGold(this.playerGold);
     this.updateAdvanceBanner();
     this.mapDebugOverlay = new MapDebugOverlay(this);
     this.setupHudCamera();
@@ -114,7 +144,9 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard?.on("keyup-LEFT", this.adjustGameSpeed, this);
     this.input.keyboard?.on("keyup-RIGHT", this.adjustGameSpeed, this);
 
+    this.scale.off("resize", this.layout, this);
     this.scale.on("resize", this.layout, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.shutdown());
   }
 
   update(_time: number, delta: number): void {
@@ -130,6 +162,8 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    this.playerGold = tickGold(this.playerGold, effectiveDelta);
+    this.hud?.updateGold(this.playerGold);
     const result = tickQueue(this.queue, effectiveDelta);
     this.queue = result.queue;
     for (const unitName of result.spawned) {
@@ -139,14 +173,15 @@ export class GameScene extends Phaser.Scene {
     this.strategy = tickStrategyCooldown(this.strategy, effectiveDelta);
     this.hud?.updateStrategy(this.strategy);
 
-    const enemyResult = tickEnemyQueue(this.enemyQueue, effectiveDelta);
-    this.enemyQueue = enemyResult.state;
+    const enemyResult = tickEnemyCommander(this.enemyCommander, effectiveDelta);
+    this.enemyCommander = enemyResult.state;
     for (const unitName of enemyResult.spawned) {
       this.spawnQueuedUnit(unitName, "Red");
     }
 
     this.debugUnits = this.debugUnits.map((unit) => {
       const previousX = unit.position.x;
+      const previousY = unit.position.y;
       const moved = unit.moving ? updateMovingUnit(unit, effectiveDelta / 1000, this.strategyForUnit(unit)) : unit;
       const handle = this.debugUnitSprites.get(unit.id);
       if (handle) {
@@ -155,7 +190,15 @@ export class GameScene extends Phaser.Scene {
           handle.sprite.setFlipX(moved.position.x < previousX);
         }
       }
-      return moved;
+      const deltaSeconds = effectiveDelta / 1000;
+      const velocity =
+        moved.moving && deltaSeconds > 0
+          ? {
+              x: (moved.position.x - previousX) / deltaSeconds,
+              y: (moved.position.y - previousY) / deltaSeconds
+            }
+          : { x: 0, y: 0 };
+      return { ...moved, velocity };
     });
 
     const combat = resolveAndSyncCombat(
@@ -188,7 +231,12 @@ export class GameScene extends Phaser.Scene {
 
   shutdown(): void {
     this.cameraDrag?.destroy();
+    this.cameraDrag = undefined;
     this.mapDebugOverlay?.destroy();
+    this.mapDebugOverlay = undefined;
+    this.hudCamera = undefined;
+    this.hud = undefined;
+    this.scale.off("resize", this.layout, this);
     this.input.keyboard?.off("keyup-SPACE", this.togglePause, this);
     this.input.keyboard?.off("keyup-LEFT", this.adjustGameSpeed, this);
     this.input.keyboard?.off("keyup-RIGHT", this.adjustGameSpeed, this);
@@ -288,23 +336,23 @@ export class GameScene extends Phaser.Scene {
     const enemyBase = this.buildings.find((building) => building.isBase && building.color !== color);
     const spawnPosition = base ? getBuildingDoorSpawnPosition(base) : undefined;
     const terminalPosition = enemyBase ? getBuildingDoorSpawnPosition(enemyBase) : undefined;
-    const units = lanesForDirection(this.selectedDirection).map((lane, index) =>
-      createLaneUnit(
-        unitName,
-        lane,
-        index,
-        `${color.toLowerCase()}-${this.spawnCounter}`,
-        color,
-        spawnPosition,
-        terminalPosition
-      )
+    // Original parity: each spawn places one unit on a random lane from the
+    // direction's lane set. Red follows its own direction, not the player's selector.
+    const direction = color === "Blue" ? this.selectedDirection : "Any";
+    const lane = randomLaneForDirection(direction);
+    const unit = createLaneUnit(
+      unitName,
+      lane,
+      0,
+      `${color.toLowerCase()}-${this.spawnCounter}`,
+      color,
+      spawnPosition,
+      terminalPosition
     );
     this.spawnCounter += 1;
 
-    for (const unit of units) {
-      this.debugUnits.push(unit);
-      this.debugUnitSprites.set(unit.id, renderer.renderUnit(unit, "Run"));
-    }
+    this.debugUnits.push(unit);
+    this.debugUnitSprites.set(unit.id, renderer.renderUnit(unit, "Run"));
   }
 
   private queueUnit(unitName: UnitName): void {
@@ -312,9 +360,20 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    if (!canAfford(this.playerGold, unitName)) {
+      this.audio?.play("error");
+      return;
+    }
+
     const previousLength = this.queue.units.length;
     this.queue = enqueueUnit(this.queue, unitName);
-    this.audio?.play(this.queue.units.length > previousLength ? "button" : "error");
+    if (this.queue.units.length > previousLength) {
+      this.playerGold = spendForUnit(this.playerGold, unitName).state;
+      this.audio?.play("button");
+      this.hud?.updateGold(this.playerGold);
+    } else {
+      this.audio?.play("error");
+    }
     this.hud?.updateQueue(this.queue);
   }
 

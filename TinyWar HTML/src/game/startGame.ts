@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { BootScene } from "./scenes/BootScene";
 import { GameScene } from "./scenes/GameScene";
+import { MenuScene } from "./scenes/MenuScene";
 import { PreloadScene } from "./scenes/PreloadScene";
 
 export function startGame(parent: string): Phaser.Game {
@@ -22,6 +23,6 @@ export function startGame(parent: string): Phaser.Game {
     input: {
       activePointers: 3
     },
-    scene: [BootScene, PreloadScene, GameScene]
+    scene: [BootScene, PreloadScene, MenuScene, GameScene]
   });
 }

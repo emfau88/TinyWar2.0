@@ -12,6 +12,7 @@ import {
 } from "./combatTargeting";
 import {
   createArrowProjectile,
+  leadProjectileDestination,
   updateProjectiles,
   type ProjectileInstance
 } from "./projectileSystem";
@@ -30,6 +31,7 @@ export interface CombatUnit extends UnitInstance {
   guarding?: boolean;
   targetId?: string;
   targetKind?: "unit" | "building";
+  velocity?: { x: number; y: number };
 }
 
 export interface CombatState {
@@ -177,21 +179,20 @@ function resolveCompletedAttack(
   if (attacker.name === "Archer") {
     const damage = damageForTarget(attacker, target, state.strategies);
     const direction = target.position.x < attacker.position.x ? -1 : 1;
+    const start = {
+      x: attacker.position.x + 0.25 * ORIGINAL_RADIUS * direction,
+      y: attacker.position.y - 0.25 * ORIGINAL_RADIUS
+    };
+    const destination =
+      "isBase" in target
+        ? getBuildingCombatPosition(target)
+        : leadProjectileDestination(start, target.position, target.velocity);
     return {
       units: [...state.units],
       buildings: [...state.buildings],
       projectiles: [
         ...state.projectiles,
-        createArrowProjectile(
-          attacker.color,
-          damage,
-          Boolean(attacker.onBuildingId),
-          {
-            x: attacker.position.x + 0.25 * ORIGINAL_RADIUS * direction,
-            y: attacker.position.y - 0.25 * ORIGINAL_RADIUS
-          },
-          "isBase" in target ? getBuildingCombatPosition(target) : target.position
-        )
+        createArrowProjectile(attacker.color, damage, Boolean(attacker.onBuildingId), start, destination)
       ]
     };
   }
@@ -374,8 +375,16 @@ function strategyForColor(
   return strategies?.[color] ?? "Attack";
 }
 
+export const BUILDING_DEFENDER_CYCLE_MULTIPLIER = 2;
+
 function attackDurationForUnit(state: CombatState, unit: CombatUnit): number {
-  const duration = ATTACK_DURATION_MS[unit.name];
+  let duration = ATTACK_DURATION_MS[unit.name];
+  // Base-roof defenders fire at half rate so they suppress instead of shredding
+  // whole waves on their own - tuned for the slower gold-economy pacing.
+  if (unit.onBuildingId) {
+    duration *= BUILDING_DEFENDER_CYCLE_MULTIPLIER;
+  }
+
   return strategyForUnit(state, unit) === "Berserk" && unit.name !== "Priest" ? duration / 1.3 : duration;
 }
 
