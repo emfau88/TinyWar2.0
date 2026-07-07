@@ -1,5 +1,6 @@
 import Phaser from "phaser";
-import { MAP_DATA } from "../../data/generated/mapData";
+import { getActiveMap } from "../../core/map/activeMap";
+import { mapDataFor } from "../../data/mapRegistry";
 import type { TiledTilesetData } from "../../data/mapTypes";
 import { visualOffsetForTileset } from "./mapTileVisualOffset";
 
@@ -15,6 +16,7 @@ const PREVIEW_ALPHA = 0.55;
 
 export class MapDebugOverlay {
   private readonly container: Phaser.GameObjects.Container;
+  private readonly mapData = mapDataFor(getActiveMap().id);
 
   constructor(private readonly scene: Phaser.Scene) {
     this.container = scene.add.container(0, 0).setDepth(10_000).setVisible(false);
@@ -37,23 +39,23 @@ export class MapDebugOverlay {
   }
 
   private drawGrid(graphics: Phaser.GameObjects.Graphics): void {
-    const width = MAP_DATA.width * MAP_DATA.tileWidth;
-    const height = MAP_DATA.height * MAP_DATA.tileHeight;
+    const width = this.mapData.width * this.mapData.tileWidth;
+    const height = this.mapData.height * this.mapData.tileHeight;
 
     graphics.lineStyle(1, GRID_COLOR, GRID_ALPHA);
-    for (let column = 0; column <= MAP_DATA.width; column += 1) {
-      const x = column * MAP_DATA.tileWidth;
+    for (let column = 0; column <= this.mapData.width; column += 1) {
+      const x = column * this.mapData.tileWidth;
       graphics.lineBetween(x, 0, x, height);
     }
-    for (let row = 0; row <= MAP_DATA.height; row += 1) {
-      const y = row * MAP_DATA.tileHeight;
+    for (let row = 0; row <= this.mapData.height; row += 1) {
+      const y = row * this.mapData.tileHeight;
       graphics.lineBetween(0, y, width, y);
     }
 
-    for (let row = 0; row < MAP_DATA.height; row += 1) {
-      for (let column = 0; column < MAP_DATA.width; column += 1) {
+    for (let row = 0; row < this.mapData.height; row += 1) {
+      for (let column = 0; column < this.mapData.width; column += 1) {
         const label = this.scene.add
-          .text(column * MAP_DATA.tileWidth + 3, row * MAP_DATA.tileHeight + 2, `${column},${row}`, {
+          .text(column * this.mapData.tileWidth + 3, row * this.mapData.tileHeight + 2, `${column},${row}`, {
             color: "#ffffff",
             fontFamily: "monospace",
             fontSize: "10px"
@@ -66,7 +68,7 @@ export class MapDebugOverlay {
   }
 
   private drawLargeTileFootprints(graphics: Phaser.GameObjects.Graphics): void {
-    for (const layer of MAP_DATA.layers) {
+    for (const layer of this.mapData.layers) {
       layer.data.forEach((gid, index) => {
         if (gid === 0) {
           return;
@@ -110,8 +112,8 @@ export class MapDebugOverlay {
     const frame = frames?.[0]?.tileId ?? gid - tileset.firstGid;
     const preview = this.scene.add
       .image(
-        column * MAP_DATA.tileWidth + visualOffsetForTileset(tileset).x,
-        (row + 1) * MAP_DATA.tileHeight + visualOffsetForTileset(tileset).y,
+        column * this.mapData.tileWidth + visualOffsetForTileset(tileset).x,
+        (row + 1) * this.mapData.tileHeight + visualOffsetForTileset(tileset).y,
         tileset.key,
         frame
       )
@@ -124,9 +126,9 @@ export class MapDebugOverlay {
   }
 
   private drawFoamVisibleHint(column: number, row: number): void {
-    const x = column * MAP_DATA.tileWidth + MAP_DATA.tileWidth / 2;
-    const y = row * MAP_DATA.tileHeight + MAP_DATA.tileHeight / 2;
-    if (x < 0 || y < 0 || x >= MAP_DATA.width * MAP_DATA.tileWidth || y >= MAP_DATA.height * MAP_DATA.tileHeight) {
+    const x = column * this.mapData.tileWidth + this.mapData.tileWidth / 2;
+    const y = row * this.mapData.tileHeight + this.mapData.tileHeight / 2;
+    if (x < 0 || y < 0 || x >= this.mapData.width * this.mapData.tileWidth || y >= this.mapData.height * this.mapData.tileHeight) {
       return;
     }
 
@@ -139,8 +141,8 @@ export class MapDebugOverlay {
 
 
   private drawAnchorLabel(column: number, row: number, color: number): void {
-    const x = column * MAP_DATA.tileWidth + 4;
-    const y = (row + 1) * MAP_DATA.tileHeight - 18;
+    const x = column * this.mapData.tileWidth + 4;
+    const y = (row + 1) * this.mapData.tileHeight - 18;
     const label = this.scene.add
       .text(x, y, "F", {
         backgroundColor: "#082f49",
@@ -156,12 +158,12 @@ export class MapDebugOverlay {
   }
 
   private footprint(column: number, row: number, tileset: TiledTilesetData) {
-    const widthInCells = Math.ceil(tileset.tileWidth / MAP_DATA.tileWidth);
-    const heightInCells = Math.ceil(tileset.tileHeight / MAP_DATA.tileHeight);
-    const x = column * MAP_DATA.tileWidth;
-    const y = (row - heightInCells + 1) * MAP_DATA.tileHeight;
-    const width = widthInCells * MAP_DATA.tileWidth;
-    const height = heightInCells * MAP_DATA.tileHeight;
+    const widthInCells = Math.ceil(tileset.tileWidth / this.mapData.tileWidth);
+    const heightInCells = Math.ceil(tileset.tileHeight / this.mapData.tileHeight);
+    const x = column * this.mapData.tileWidth;
+    const y = (row - heightInCells + 1) * this.mapData.tileHeight;
+    const width = widthInCells * this.mapData.tileWidth;
+    const height = heightInCells * this.mapData.tileHeight;
 
     return {
       x,
@@ -169,19 +171,19 @@ export class MapDebugOverlay {
       width,
       height,
       clipped:
-        column + widthInCells - 1 >= MAP_DATA.width ||
+        column + widthInCells - 1 >= this.mapData.width ||
         row - heightInCells + 1 < 0 ||
-        row >= MAP_DATA.height
+        row >= this.mapData.height
     };
   }
 
   private isMapSizedTile(tileset: TiledTilesetData): boolean {
-    return tileset.tileWidth === MAP_DATA.tileWidth && tileset.tileHeight === MAP_DATA.tileHeight;
+    return tileset.tileWidth === this.mapData.tileWidth && tileset.tileHeight === this.mapData.tileHeight;
   }
 
   private findTileset(gid: number): TiledTilesetData | undefined {
-    for (let index = MAP_DATA.tilesets.length - 1; index >= 0; index -= 1) {
-      const tileset = MAP_DATA.tilesets[index];
+    for (let index = this.mapData.tilesets.length - 1; index >= 0; index -= 1) {
+      const tileset = this.mapData.tilesets[index];
       if (gid >= tileset.firstGid) {
         return tileset;
       }

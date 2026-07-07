@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { ASSETS } from "../../data/assetManifest";
 import { BASIC_UNIT_ANIMATIONS } from "../../data/animationManifest";
-import { MAP_DATA } from "../../data/generated/mapData";
+import { allMapData } from "../../data/mapRegistry";
 
 export class PreloadScene extends Phaser.Scene {
   constructor() {
@@ -39,6 +39,7 @@ export class PreloadScene extends Phaser.Scene {
     this.load.image(ASSETS.icons.mute.key, ASSETS.icons.mute.path);
     this.load.image(ASSETS.buildings.blueBarracks.key, ASSETS.buildings.blueBarracks.path);
     this.load.image(ASSETS.buildings.redBarracks.key, ASSETS.buildings.redBarracks.path);
+    this.load.image(ASSETS.buildings.blackCastle.key, ASSETS.buildings.blackCastle.path);
     this.load.image(ASSETS.units.blueWarrior.key, ASSETS.units.blueWarrior.path);
     this.load.image(ASSETS.units.blueLancer.key, ASSETS.units.blueLancer.path);
     this.load.image(ASSETS.units.blueArcher.key, ASSETS.units.blueArcher.path);
@@ -65,11 +66,18 @@ export class PreloadScene extends Phaser.Scene {
       });
     }
 
-    for (const tileset of MAP_DATA.tilesets) {
-      this.load.spritesheet(tileset.key, tileset.image, {
-        frameWidth: tileset.tileWidth,
-        frameHeight: tileset.tileHeight
-      });
+    const loadedTilesets = new Set<string>();
+    for (const mapData of allMapData()) {
+      for (const tileset of mapData.tilesets) {
+        if (loadedTilesets.has(tileset.key)) {
+          continue;
+        }
+        loadedTilesets.add(tileset.key);
+        this.load.spritesheet(tileset.key, tileset.image, {
+          frameWidth: tileset.tileWidth,
+          frameHeight: tileset.tileHeight
+        });
+      }
     }
   }
 

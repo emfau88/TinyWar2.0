@@ -5,6 +5,16 @@ import {
   type EnemyCommanderState
 } from "../../core/ai/enemyCommander";
 import {
+  createMonsterDirector,
+  tickMonsterDirector,
+  type MonsterDirectorState
+} from "../../core/ai/monsterDirector";
+import { setActiveMap, getActiveMap } from "../../core/map/activeMap";
+import { CLASSIC_MAP, type MapId } from "../../core/map/mapDefinition";
+import { WILDNIS_MAP } from "../../core/map/wildnisMap";
+import { tileToWorld } from "../../core/map/mapGeometry";
+import type { PlayerColor } from "../../core/buildings/buildingData";
+import {
   canAfford,
   createGoldState,
   spendForUnit,
@@ -86,10 +96,21 @@ export class GameScene extends Phaser.Scene {
   private queue: UnitQueue = createQueue();
   private playerGold: GoldState = createGoldState();
   private enemyCommander: EnemyCommanderState = createEnemyCommander();
+  private monsterDirector: MonsterDirectorState = createMonsterDirector();
+  private mode: MapId = "classic";
   private spawnCounter = 0;
 
   constructor() {
     super("GameScene");
+  }
+
+  init(data: { mode?: MapId } = {}): void {
+    this.mode = data.mode === "wildnis" ? "wildnis" : "classic";
+    setActiveMap(this.mode === "wildnis" ? WILDNIS_MAP : CLASSIC_MAP);
+  }
+
+  private get opponentColor(): PlayerColor {
+    return getActiveMap().bases.opponent.color;
   }
 
   create(): void {
@@ -106,6 +127,7 @@ export class GameScene extends Phaser.Scene {
     this.queue = createQueue();
     this.playerGold = createGoldState();
     this.enemyCommander = createEnemyCommander();
+    this.monsterDirector = createMonsterDirector();
     this.spawnCounter = 0;
 
     this.audio = new GameAudio(this);
@@ -124,15 +146,22 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, mapSize.x, mapSize.y);
     this.applyCameraFraming(mapSize);
     this.cameraDrag = new CameraDragController(this);
-    this.hud = new GameHud(this, this.selectedDirection, this.strategy, this.queue, {
-      onCycleDirection: () => this.cycleDirection(),
-      onQueueUnit: (unit) => this.queueUnit(unit),
-      onSelectStrategy: (strategy) => this.selectStrategy(strategy),
-      onToggleAudio: () => this.toggleAudio(),
-      onToggleUnitInfo: () => this.toggleUnitInfo(),
-      onPlayAgain: () => this.scene.restart(),
-      onExitToMenu: () => this.scene.start("MenuScene")
-    });
+    this.hud = new GameHud(
+      this,
+      this.selectedDirection,
+      this.strategy,
+      this.queue,
+      {
+        onCycleDirection: () => this.cycleDirection(),
+        onQueueUnit: (unit) => this.queueUnit(unit),
+        onSelectStrategy: (strategy) => this.selectStrategy(strategy),
+        onToggleAudio: () => this.toggleAudio(),
+        onToggleUnitInfo: () => this.toggleUnitInfo(),
+        onPlayAgain: () => this.scene.restart({ mode: this.mode }),
+        onExitToMenu: () => this.scene.start("MenuScene")
+      },
+      { showDirectionSelector: getActiveMap().availableLanes.length > 1 }
+    );
     this.hud.updateAudioMuted(this.audioMuted);
     this.hud.updateSpeed(this.gameSpeed, this.paused);
     this.hud.updateGold(this.playerGold);
@@ -173,10 +202,21 @@ export class GameScene extends Phaser.Scene {
     this.strategy = tickStrategyCooldown(this.strategy, effectiveDelta);
     this.hud?.updateStrategy(this.strategy);
 
-    const enemyResult = tickEnemyCommander(this.enemyCommander, effectiveDelta);
-    this.enemyCommander = enemyResult.state;
-    for (const unitName of enemyResult.spawned) {
-      this.spawnQueuedUnit(unitName, "Red");
+    if (this.mode === "wildnis") {
+      const monsterResult = tickMonsterDirector(this.monsterDirector, effectiveDelta);
+      this.monsterDirector = monsterResult.state;
+      if (monsterResult.trollWarning) {
+        this.audio?.play("warning");
+      }
+      for (const unitName of monsterResult.spawned) {
+        this.spawnQueuedUnit(unitName, this.opponentColor);
+      }
+    } else {
+      const enemyResult = tickEnemyCommander(this.enemyCommander, effectiveDelta);
+      this.enemyCommander = enemyResult.state;
+      for (const unitName of enemyResult.spawned) {
+        this.spawnQueuedUnit(unitName, this.opponentColor);
+      }
     }
 
     this.debugUnits = this.debugUnits.map((unit) => {
@@ -304,6 +344,12 @@ export class GameScene extends Phaser.Scene {
     mapSize: Phaser.Math.Vector2,
     zoom: number
   ): Phaser.Math.Vector2 {
+    if (this.mode === "wildnis") {
+      // Open on the player's forest camp; the lair stays hidden up north.
+      const base = tileToWorld(getActiveMap().bases.player.anchor);
+      return new Phaser.Math.Vector2(base.x, base.y);
+    }
+
     if (profile === "desktop") {
       return new Phaser.Math.Vector2(mapSize.x / 2, mapSize.y / 2);
     }
@@ -330,16 +376,16 @@ export class GameScene extends Phaser.Scene {
     );
   }
 
-  private spawnQueuedUnit(unitName: UnitName, color: "Blue" | "Red"): void {
+  private spawnQueuedUnit(unitName: UnitName, color: PlayerColor): void {
     const renderer = new UnitRenderer(this);
     const base = this.buildings.find((building) => building.isBase && building.color === color);
     const enemyBase = this.buildings.find((building) => building.isBase && building.color !== color);
     const spawnPosition = base ? getBuildingDoorSpawnPosition(base) : undefined;
     const terminalPosition = enemyBase ? getBuildingDoorSpawnPosition(enemyBase) : undefined;
     // Original parity: each spawn places one unit on a random lane from the
-    // direction's lane set. Red follows its own direction, not the player's selector.
+    // direction's lane set, restricted to lanes that exist on the active map.
     const direction = color === "Blue" ? this.selectedDirection : "Any";
-    const lane = randomLaneForDirection(direction);
+    const lane = randomLaneForDirection(direction, Math.random, getActiveMap().availableLanes);
     const unit = createLaneUnit(
       unitName,
       lane,
@@ -378,7 +424,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private cycleDirection(): void {
-    if (this.paused || this.hud?.isUnitInfoVisible) {
+    if (this.paused || this.hud?.isUnitInfoVisible || getActiveMap().availableLanes.length <= 1) {
       return;
     }
 

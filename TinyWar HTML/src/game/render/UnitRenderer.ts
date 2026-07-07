@@ -31,7 +31,7 @@ export class UnitRenderer {
       sprite.setOrigin(0.5, 0.5);
       sprite.setDisplaySize(UNITS[unit.name].renderSize, UNITS[unit.name].renderSize);
       sprite.setDepth(30);
-      if (unit.color === "Red") {
+      if (unit.color !== "Blue") {
         sprite.setFlipX(true);
       }
 

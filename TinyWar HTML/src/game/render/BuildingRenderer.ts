@@ -85,6 +85,10 @@ export class BuildingRenderer {
       return ASSETS.buildings.redBarracks.key;
     }
 
+    if (building.color === "Black" && building.name === "Castle") {
+      return ASSETS.buildings.blackCastle.key;
+    }
+
     throw new Error(`Missing building texture for ${building.color} ${building.name}`);
   }
 }

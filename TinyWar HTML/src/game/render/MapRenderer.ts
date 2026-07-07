@@ -1,5 +1,6 @@
 import Phaser from "phaser";
-import { MAP_DATA } from "../../data/generated/mapData";
+import { getActiveMap } from "../../core/map/activeMap";
+import { mapDataFor } from "../../data/mapRegistry";
 import type { TiledAnimationFrame, TiledLayerData, TiledTilesetData } from "../../data/mapTypes";
 import { visualOffsetForTileset } from "./mapTileVisualOffset";
 
@@ -14,6 +15,7 @@ interface AnimatedTileHandle {
 
 export class MapRenderer {
   private readonly container: Phaser.GameObjects.Container;
+  private readonly mapData = mapDataFor(getActiveMap().id);
   private animatedTiles: AnimatedTileHandle[] = [];
 
   constructor(private readonly scene: Phaser.Scene) {
@@ -24,12 +26,12 @@ export class MapRenderer {
     this.container.removeAll(true);
     this.animatedTiles = [];
 
-    const mapWidth = MAP_DATA.width * MAP_DATA.tileWidth;
-    const mapHeight = MAP_DATA.height * MAP_DATA.tileHeight;
+    const mapWidth = this.mapData.width * this.mapData.tileWidth;
+    const mapHeight = this.mapData.height * this.mapData.tileHeight;
     const water = this.scene.add.rectangle(0, 0, mapWidth, mapHeight, WATER_COLOR).setOrigin(0);
     this.container.add(water);
 
-    for (const layer of MAP_DATA.layers) {
+    for (const layer of this.mapData.layers) {
       const layerContainer = this.scene.add.container(0, 0);
       layerContainer.setName(layer.name);
 
@@ -48,8 +50,8 @@ export class MapRenderer {
         const localId = frames?.[0]?.tileId ?? baseLocalId;
         const column = index % layer.width;
         const row = Math.floor(index / layer.width);
-        const x = column * MAP_DATA.tileWidth;
-        const y = (row + 1) * MAP_DATA.tileHeight;
+        const x = column * this.mapData.tileWidth;
+        const y = (row + 1) * this.mapData.tileHeight;
         const offset = visualOffsetForTileset(tileset);
         const tile = this.scene.add.image(x + offset.x, y + offset.y, tileset.key, localId);
 
@@ -88,14 +90,14 @@ export class MapRenderer {
 
   getWorldSize(): Phaser.Math.Vector2 {
     return new Phaser.Math.Vector2(
-      MAP_DATA.width * MAP_DATA.tileWidth,
-      MAP_DATA.height * MAP_DATA.tileHeight
+      this.mapData.width * this.mapData.tileWidth,
+      this.mapData.height * this.mapData.tileHeight
     );
   }
 
   private findTileset(gid: number): TiledTilesetData | undefined {
-    for (let index = MAP_DATA.tilesets.length - 1; index >= 0; index -= 1) {
-      const tileset = MAP_DATA.tilesets[index];
+    for (let index = this.mapData.tilesets.length - 1; index >= 0; index -= 1) {
+      const tileset = this.mapData.tilesets[index];
       if (gid >= tileset.firstGid) {
         return tileset;
       }

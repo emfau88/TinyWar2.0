@@ -91,6 +91,10 @@ export const ASSETS = {
     redBarracks: {
       key: "building-red-barracks",
       path: `${ROOT}/images/buildings/Red/Barracks.png`
+    },
+    blackCastle: {
+      key: "building-black-castle",
+      path: `${ROOT}/images/buildings/Black/Castle.png`
     }
   },
   units: {

@@ -2,10 +2,22 @@ import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 
 const projectRoot = resolve(import.meta.dirname, "..");
-const tmxPath = resolve(projectRoot, "public/assets/tinywar/map/map.tmx");
-const outputPath = resolve(projectRoot, "src/data/generated/mapData.ts");
 
-const xml = readFileSync(tmxPath, "utf8");
+const MAPS = [
+  {
+    tmx: "public/assets/tinywar/map/map.tmx",
+    out: "src/data/generated/mapData.ts",
+    exportName: "MAP_DATA",
+    keyPrefix: "map"
+  },
+  {
+    tmx: "public/assets/tinywar/map/wildnis.tmx",
+    out: "src/data/generated/wildnisMapData.ts",
+    exportName: "WILDNIS_MAP_DATA",
+    keyPrefix: "wildnis"
+  }
+];
+
 const FLIP_FLAGS = {
   horizontal: 0x80000000,
   vertical: 0x40000000,
@@ -20,6 +32,10 @@ function attrs(tag) {
     [...tag.matchAll(/([a-zA-Z]+)="([^"]*)"/g)].map(([, key, value]) => [key, value])
   );
 }
+
+function generateMap({ tmx, out, exportName, keyPrefix }) {
+const xml = readFileSync(resolve(projectRoot, tmx), "utf8");
+const outputPath = resolve(projectRoot, out);
 
 const mapTag = xml.match(/<map\b[^>]*>/)?.[0];
 if (!mapTag) {
@@ -53,7 +69,7 @@ const tilesets = tilesetMatches.map(([, attrText, body], index) => {
   }
 
   return {
-    key: `map-tileset-${index}-${tilesetAttrs.firstgid}`,
+    key: `${keyPrefix}-tileset-${index}-${tilesetAttrs.firstgid}`,
     firstGid: Number(tilesetAttrs.firstgid),
     name: tilesetAttrs.name,
     tileWidth: Number(tilesetAttrs.tilewidth),
@@ -112,6 +128,12 @@ const data = {
 mkdirSync(dirname(outputPath), { recursive: true });
 writeFileSync(
   outputPath,
-  `import type { TiledMapData } from "../mapTypes";\n\nexport const MAP_DATA = ${JSON.stringify(data, null, 2)} as const satisfies TiledMapData;\n`,
+  `import type { TiledMapData } from "../mapTypes";\n\nexport const ${exportName} = ${JSON.stringify(data, null, 2)} as const satisfies TiledMapData;\n`,
   "utf8"
 );
+console.log(`Wrote ${outputPath}`);
+}
+
+for (const map of MAPS) {
+  generateMap(map);
+}

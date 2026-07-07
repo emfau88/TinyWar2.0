@@ -24,8 +24,19 @@ export function previousDirection(direction: PlayerDirection): PlayerDirection {
   ];
 }
 
-export function randomLaneForDirection(direction: PlayerDirection, random = Math.random): LaneName {
-  const lanes = lanesForDirection(direction);
+export function randomLaneForDirection(
+  direction: PlayerDirection,
+  random = Math.random,
+  availableLanes?: readonly LaneName[]
+): LaneName {
+  const directionLanes = lanesForDirection(direction);
+  const lanes = availableLanes
+    ? directionLanes.filter((lane) => availableLanes.includes(lane))
+    : directionLanes;
+  if (lanes.length === 0) {
+    return availableLanes?.[0] ?? directionLanes[0];
+  }
+
   return lanes[Math.min(lanes.length - 1, Math.floor(random() * lanes.length))];
 }
 

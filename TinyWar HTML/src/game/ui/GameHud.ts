@@ -130,14 +130,17 @@ export class GameHud {
   private lastAdvanceState?: AdvanceBannerState;
   private selectedUnitInfo: UnitName = "Archer";
   private unitInfoVisible = false;
+  private readonly showDirectionSelector: boolean;
 
   constructor(
     private readonly scene: Phaser.Scene,
     direction: PlayerDirection,
     strategy: StrategyState,
     queue: UnitQueue,
-    callbacks: GameHudCallbacks
+    callbacks: GameHudCallbacks,
+    options: { showDirectionSelector?: boolean } = {}
   ) {
+    this.showDirectionSelector = options.showDirectionSelector ?? true;
     this.currentDirectionValue = direction;
     this.currentStrategyValue = strategy.current;
     const initialAdvance = {
@@ -435,6 +438,12 @@ export class GameHud {
           .setDepth(192)
           .setVisible(false)
       );
+    }
+
+    if (!this.showDirectionSelector) {
+      this.directionPanel.setVisible(false).disableInteractive();
+      this.directionIcon.setVisible(false).disableInteractive();
+      this.directionText.setVisible(false);
     }
 
     this.bindKeyboard(callbacks);

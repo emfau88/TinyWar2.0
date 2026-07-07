@@ -26,7 +26,7 @@ export function stationaryBuildingUnit(
     ...unit,
     lane,
     pathIndex: 0,
-    direction: unit.color === "Red" ? "RightToLeft" : "LeftToRight",
+    direction: unit.color === "Blue" ? "LeftToRight" : "RightToLeft",
     moving: false,
     attackCooldownMs: 0
   };
@@ -41,7 +41,8 @@ export function createLaneUnit(
   spawnPosition?: { x: number; y: number },
   terminalPosition?: { x: number; y: number }
 ): MovingUnit {
-  const direction = color === "Red" ? "RightToLeft" : "LeftToRight";
+  // Every non-player faction walks the lane from its far end toward the player.
+  const direction = color === "Blue" ? "LeftToRight" : "RightToLeft";
   const sourcePath = getLaneWorldPath(lane);
   const path = direction === "RightToLeft" ? [...sourcePath].reverse() : sourcePath;
   const [start] = path;
@@ -50,7 +51,7 @@ export function createLaneUnit(
 
   return {
     ...createUnit(`${idPrefix}-${unitName.toLowerCase()}-${lane.toLowerCase()}-${index}`, unitName, color, {
-      x: unitStart.x + (color === "Red" ? -index * 16 : index * 16),
+      x: unitStart.x + (color !== "Blue" ? -index * 16 : index * 16),
       y: unitStart.y + index * 12
     }),
     lane,
