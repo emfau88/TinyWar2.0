@@ -31,6 +31,36 @@ describe("resolveCombat", () => {
     expect(attackingBlue?.moving).toBe(false);
   });
 
+  it("increases melee damage with the Warrior boost", () => {
+    const attack = (boosts?: Parameters<typeof resolveCombat>[0]["boosts"]) => {
+      const blue = combatUnit(createUnit("blue-warrior", "Warrior", "Blue", { x: 100, y: 100 }));
+      const red = combatUnit(createUnit("red-lancer", "Lancer", "Red", { x: 128, y: 100 }));
+      const windup = resolveCombat({ units: [blue, red], buildings: [], boosts }, 16);
+      const state = resolveCombat({ ...windup, boosts }, ATTACK_DURATION_MS.Warrior);
+      const target = state.units.find((unit) => unit.id === "red-lancer")!;
+      return red.health - target.health;
+    };
+
+    const plain = attack();
+    const boosted = attack({ Blue: [{ name: "Warrior", remainingMs: 10000 }] });
+    expect(boosted).toBeCloseTo(plain * 1.5, 4);
+  });
+
+  it("reduces incoming damage with the ArmorGain boost on the defender", () => {
+    const attack = (boosts?: Parameters<typeof resolveCombat>[0]["boosts"]) => {
+      const blue = combatUnit(createUnit("blue-warrior", "Warrior", "Blue", { x: 100, y: 100 }));
+      const red = combatUnit(createUnit("red-lancer", "Lancer", "Red", { x: 128, y: 100 }));
+      const windup = resolveCombat({ units: [blue, red], buildings: [], boosts }, 16);
+      const state = resolveCombat({ ...windup, boosts }, ATTACK_DURATION_MS.Warrior);
+      const target = state.units.find((unit) => unit.id === "red-lancer")!;
+      return red.health - target.health;
+    };
+
+    const plain = attack();
+    const defended = attack({ Red: [{ name: "ArmorGain", remainingMs: 10000 }] });
+    expect(defended).toBeCloseTo(plain * 0.7, 4);
+  });
+
   it("damages enemy melee units at the end of the attack cycle", () => {
     const blue = combatUnit(createUnit("blue-warrior", "Warrior", "Blue", { x: 100, y: 100 }));
     const red = combatUnit(createUnit("red-lancer", "Lancer", "Red", { x: 128, y: 100 }));

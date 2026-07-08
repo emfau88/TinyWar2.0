@@ -1,4 +1,5 @@
 import { resolveCombat } from "../../core/combat/combatSystem";
+import type { ActiveBoostsByColor } from "../../core/boosts/boostModifiers";
 import type { ProjectileInstance } from "../../core/combat/projectileSystem";
 import {
   getBuildingCombatPosition,
@@ -22,6 +23,7 @@ export interface CombatSyncState {
     Blue?: PlayerStrategy;
     Red?: PlayerStrategy;
   };
+  boosts?: ActiveBoostsByColor;
   winner?: "Blue" | "Red";
 }
 
@@ -31,7 +33,8 @@ export function resolveAndSyncCombat(state: CombatSyncState, deltaMs: number): C
       units: state.units,
       buildings: state.buildings,
       projectiles: state.projectiles,
-      strategies: state.strategies
+      strategies: state.strategies,
+      boosts: state.boosts
     },
     deltaMs
   );

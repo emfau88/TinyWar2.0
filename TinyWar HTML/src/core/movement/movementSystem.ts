@@ -74,7 +74,8 @@ export function createDebugMidLaneUnit(): MovingUnit {
 export function updateMovingUnit(
   unit: MovingUnit,
   deltaSeconds: number,
-  strategy: PlayerStrategy = "Attack"
+  strategy: PlayerStrategy = "Attack",
+  speedBoostMultiplier = 1
 ): MovingUnit {
   const sourcePath = getLaneWorldPath(unit.lane);
   const path = pathWithTerminalPosition(unit, sourcePath);
@@ -105,7 +106,7 @@ export function updateMovingUnit(
   const strategySpeedMultiplier = strategy === "March" ? 1.5 : 1;
   const step = Math.min(
     distance,
-    UNITS[unit.name].speed * strategySpeedMultiplier * Math.min(deltaSeconds, 0.05)
+    UNITS[unit.name].speed * strategySpeedMultiplier * speedBoostMultiplier * Math.min(deltaSeconds, 0.05)
   );
   const nextPosition = {
     x: unit.position.x + (dx / distance) * step,

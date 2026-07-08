@@ -16,6 +16,13 @@ import {
   updateProjectiles,
   type ProjectileInstance
 } from "./projectileSystem";
+import {
+  bonusArmorPen,
+  damageMultiplier,
+  damageTakenMultiplier,
+  rangeMultiplier,
+  type ActiveBoostsByColor
+} from "../boosts/boostModifiers";
 
 export const FRAME_MS = 100;
 export const ATTACK_DURATION_MS: Record<UnitInstance["name"], number> = {
@@ -42,6 +49,7 @@ export interface CombatState {
   buildings: readonly BuildingInstance[];
   projectiles?: readonly ProjectileInstance[];
   strategies?: Partial<Record<PlayerColor, PlayerStrategy>>;
+  boosts?: ActiveBoostsByColor;
   winner?: "Blue" | "Red";
 }
 
@@ -107,14 +115,18 @@ export function resolveCombat(state: CombatState, deltaMs: number): CombatState 
     }
 
     const targetUnit = strategyForUnit(state, unit) === "March" ? undefined : lockedOrNearestEnemyUnit(unit, units);
-    if (targetUnit && unitCanAttack(unit) && distance(unit.position, targetUnit.position) <= unitAttackRange(unit, "unit")) {
+    if (targetUnit && unitCanAttack(unit) && distance(unit.position, targetUnit.position) <= boostedRange(unit, "unit", state.boosts)) {
       if (unit.attackCooldownMs > 0) {
         units = holdAttack(units, unit.id, targetUnit.id, "unit");
         continue;
       }
 
       if (unit.targetKind === "unit" && unit.targetId === targetUnit.id) {
-        const result = resolveCompletedAttack({ units, buildings, projectiles, strategies: state.strategies }, unit, targetUnit);
+        const result = resolveCompletedAttack(
+          { units, buildings, projectiles, strategies: state.strategies, boosts: state.boosts },
+          unit,
+          targetUnit
+        );
         units = result.units;
         buildings = result.buildings;
         projectiles = result.projectiles;
@@ -127,7 +139,7 @@ export function resolveCombat(state: CombatState, deltaMs: number): CombatState 
     if (
       targetBuilding &&
       unitCanAttack(unit) &&
-      distance(unit.position, getBuildingCombatPosition(targetBuilding)) <= unitAttackRange(unit, "building")
+      distance(unit.position, getBuildingCombatPosition(targetBuilding)) <= boostedRange(unit, "building", state.boosts)
     ) {
       if (unit.attackCooldownMs > 0) {
         units = holdAttack(units, unit.id, targetBuilding.id, "building");
@@ -135,7 +147,11 @@ export function resolveCombat(state: CombatState, deltaMs: number): CombatState 
       }
 
       if (unit.targetKind === "building" && unit.targetId === targetBuilding.id) {
-        const result = resolveCompletedAttack({ units, buildings, projectiles, strategies: state.strategies }, unit, targetBuilding);
+        const result = resolveCompletedAttack(
+          { units, buildings, projectiles, strategies: state.strategies, boosts: state.boosts },
+          unit,
+          targetBuilding
+        );
         units = result.units;
         buildings = result.buildings;
         projectiles = result.projectiles;
@@ -171,6 +187,7 @@ function resolveCompletedAttack(
     buildings: readonly BuildingInstance[];
     projectiles: readonly ProjectileInstance[];
     strategies?: Partial<Record<PlayerColor, PlayerStrategy>>;
+    boosts?: ActiveBoostsByColor;
   },
   attacker: CombatUnit,
   target: CombatUnit | BuildingInstance
@@ -180,7 +197,7 @@ function resolveCompletedAttack(
   projectiles: ProjectileInstance[];
 } {
   if (attacker.name === "Archer") {
-    const damage = damageForTarget(attacker, target, state.strategies);
+    const damage = damageForTarget(attacker, target, state.strategies, state.boosts);
     const direction = target.position.x < attacker.position.x ? -1 : 1;
     const start = {
       x: attacker.position.x + 0.25 * ORIGINAL_RADIUS * direction,
@@ -203,13 +220,13 @@ function resolveCompletedAttack(
   if ("maxHealth" in target && "isBase" in target) {
     return {
       units: [...state.units],
-      buildings: damageBuilding(state.buildings, target.id, attacker),
+      buildings: damageBuilding(state.buildings, target.id, attacker, state.boosts),
       projectiles: [...state.projectiles]
     };
   }
 
   return {
-    units: damageUnit(state.units, target.id, attacker, state.strategies),
+    units: damageUnit(state.units, target.id, attacker, state.strategies, state.boosts),
     buildings: [...state.buildings],
     projectiles: [...state.projectiles]
   };
@@ -218,10 +235,11 @@ function resolveCompletedAttack(
 function damageForTarget(
   attacker: CombatUnit,
   target: CombatUnit | BuildingInstance,
-  strategies?: Partial<Record<PlayerColor, PlayerStrategy>>
+  strategies?: Partial<Record<PlayerColor, PlayerStrategy>>,
+  boosts?: ActiveBoostsByColor
 ): number {
   if ("isBase" in target) {
-    return calculateDamage(toDamageStats(attacker), {
+    const raw = calculateDamage(boostedAttackerStats(attacker, boosts), {
       physicalDamage: 0,
       magicDamage: 0,
       armor: 0,
@@ -229,21 +247,24 @@ function damageForTarget(
       armorPen: 0,
       magicPen: 0
     });
+    return raw * boostDamageScale(attacker, undefined, boosts);
   }
 
   const definition = UNITS[target.name];
-  return calculateDamage(toDamageStats(attacker), {
+  const raw = calculateDamage(boostedAttackerStats(attacker, boosts), {
     ...toDamageStats(target),
     armor: adjustedArmor(definition.armor, target, strategies),
     magicResist: adjustedMagicResist(definition.magicResist, target, strategies)
   });
+  return raw * boostDamageScale(attacker, target.color, boosts);
 }
 
 function damageUnit(
   units: readonly CombatUnit[],
   targetId: string,
   attacker: CombatUnit,
-  strategies?: Partial<Record<PlayerColor, PlayerStrategy>>
+  strategies?: Partial<Record<PlayerColor, PlayerStrategy>>,
+  boosts?: ActiveBoostsByColor
 ): CombatUnit[] {
   return units.map((unit) => {
     if (unit.id !== targetId) {
@@ -251,14 +272,15 @@ function damageUnit(
     }
 
     const definition = UNITS[unit.name];
-    const damage = calculateDamage(
-      toDamageStats(attacker),
+    const raw = calculateDamage(
+      boostedAttackerStats(attacker, boosts),
       {
         ...toDamageStats(unit),
         armor: adjustedArmor(definition.armor, unit, strategies),
         magicResist: adjustedMagicResist(definition.magicResist, unit, strategies)
       }
     );
+    const damage = raw * boostDamageScale(attacker, unit.color, boosts);
 
     return {
       ...unit,
@@ -270,14 +292,15 @@ function damageUnit(
 function damageBuilding(
   buildings: readonly BuildingInstance[],
   targetId: string,
-  attacker: CombatUnit
+  attacker: CombatUnit,
+  boosts?: ActiveBoostsByColor
 ): BuildingInstance[] {
   return buildings.map((building) => {
     if (building.id !== targetId || building.health <= 0) {
       return building;
     }
 
-    const damage = calculateDamage(toDamageStats(attacker), {
+    const raw = calculateDamage(boostedAttackerStats(attacker, boosts), {
       physicalDamage: 0,
       magicDamage: 0,
       armor: 0,
@@ -285,6 +308,7 @@ function damageBuilding(
       armorPen: 0,
       magicPen: 0
     });
+    const damage = raw * boostDamageScale(attacker, building.color, boosts);
 
     return {
       ...building,
@@ -357,6 +381,39 @@ function toDamageStats(unit: UnitInstance) {
     armorPen: definition.armorPen,
     magicPen: definition.magicPen
   };
+}
+
+/** Attack range with the archer Longbow boost folded in. */
+function boostedRange(
+  unit: CombatUnit,
+  targetKind: "unit" | "building",
+  boosts?: ActiveBoostsByColor
+): number {
+  return unitAttackRange(unit, targetKind) * rangeMultiplier(boosts?.[unit.color], unit.name);
+}
+
+/** Attacker stats with active-boost armor penetration folded in. */
+function boostedAttackerStats(attacker: CombatUnit, boosts?: ActiveBoostsByColor) {
+  const stats = toDamageStats(attacker);
+  const attackerBoosts = boosts?.[attacker.color];
+  return {
+    ...stats,
+    armorPen: stats.armorPen + bonusArmorPen(attackerBoosts)
+  };
+}
+
+/**
+ * Combined damage scaling from active boosts: the attacker's outgoing buff
+ * (Warrior/Lancer/Arrows) times the defender's damage-taken reduction (ArmorGain).
+ */
+function boostDamageScale(
+  attacker: CombatUnit,
+  defenderColor: PlayerColor | undefined,
+  boosts?: ActiveBoostsByColor
+): number {
+  const outgoing = damageMultiplier(boosts?.[attacker.color], attacker.name);
+  const incoming = defenderColor ? damageTakenMultiplier(boosts?.[defenderColor]) : 1;
+  return outgoing * incoming;
 }
 
 function unitCanAttack(unit: CombatUnit): boolean {
