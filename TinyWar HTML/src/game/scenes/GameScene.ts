@@ -240,7 +240,7 @@ export class GameScene extends Phaser.Scene {
     if (this.mode === "wildnis") {
       const monsterResult = tickMonsterDirector(this.monsterDirector, effectiveDelta);
       this.monsterDirector = monsterResult.state;
-      if (monsterResult.trollWarning) {
+      if (monsterResult.bossWarning) {
         this.audio?.play("warning");
       }
       for (const unitName of monsterResult.spawned) {
