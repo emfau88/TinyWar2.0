@@ -139,6 +139,24 @@ export const ASSETS = {
     arrow: {
       key: "projectile-arrow",
       path: `${ROOT}/images/units/arrow.png`
+    },
+    // Bone and magic are animated sheets (spinning bone, pulsing orb); the
+    // harpoon is a single frame like the arrow.
+    bone: {
+      key: "projectile-bone",
+      path: `${ROOT}/images/units/bone.png`,
+      frameSize: 64,
+      frames: 4
+    },
+    magic: {
+      key: "projectile-magic",
+      path: `${ROOT}/images/units/magic.png`,
+      frameSize: 128,
+      frames: 3
+    },
+    harpoon: {
+      key: "projectile-harpoon",
+      path: `${ROOT}/images/units/harpoon.png`
     }
   },
   monsterPortraits: MONSTER_UNITS.reduce(

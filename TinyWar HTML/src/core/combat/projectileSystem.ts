@@ -1,8 +1,37 @@
 import type { BuildingInstance } from "../buildings/buildingData";
 import type { PlayerColor } from "../buildings/buildingData";
+import type { UnitName } from "../units/unitData";
 import type { CombatUnit } from "./combatSystem";
 
-export type ProjectileKind = "Arrow";
+export type ProjectileKind = "Arrow" | "Bone" | "Magic" | "Harpoon";
+
+export type ProjectileMode = "parabolic" | "straight";
+
+// Flight modes mirror the original Projectile::mode(): arrows and harpoons
+// arc and stick in the ground, bones and magic fly straight and vanish on
+// arrival.
+export const PROJECTILE_MODES: Record<ProjectileKind, ProjectileMode> = {
+  Arrow: "parabolic",
+  Harpoon: "parabolic",
+  Bone: "straight",
+  Magic: "straight"
+};
+
+const UNIT_PROJECTILES: Partial<Record<UnitName, ProjectileKind>> = {
+  Archer: "Arrow",
+  Gnoll: "Bone",
+  Shaman: "Magic",
+  Shark: "Harpoon"
+};
+
+/** The projectile a unit fires instead of applying melee damage, if any. */
+export function unitProjectile(name: UnitName): ProjectileKind | undefined {
+  return UNIT_PROJECTILES[name];
+}
+
+export function projectileMode(kind: ProjectileKind): ProjectileMode {
+  return PROJECTILE_MODES[kind];
+}
 
 export interface ProjectileInstance {
   id: string;
@@ -31,7 +60,8 @@ export const PROJECTILE_HIT_RADIUS = 48 * 0.4;
 
 let projectileCounter = 0;
 
-export function createArrowProjectile(
+export function createProjectile(
+  kind: ProjectileKind,
   color: PlayerColor,
   damage: number,
   sourceOnBuilding: boolean,
@@ -39,9 +69,9 @@ export function createArrowProjectile(
   destination: { x: number; y: number }
 ): ProjectileInstance {
   return {
-    id: `projectile-arrow-${projectileCounter++}`,
+    id: `projectile-${kind.toLowerCase()}-${projectileCounter++}`,
     color,
-    kind: "Arrow",
+    kind,
     damage,
     sourceOnBuilding,
     start,
@@ -63,6 +93,11 @@ export function updateProjectiles(state: ProjectileUpdateState, deltaMs: number)
     const updated = advanceProjectile(projectile, deltaMs);
 
     if (updated.traveled >= updated.totalDistance) {
+      // Straight projectiles vanish on arrival; parabolic ones stick in the
+      // ground for a while, like the original's arrows and harpoons.
+      if (projectileMode(updated.kind) === "straight") {
+        continue;
+      }
       const landedMs = updated.landedMs + deltaMs;
       if (landedMs < PROJECTILE_ON_GROUND_MS) {
         projectiles.push({ ...updated, landedMs });
@@ -140,6 +175,10 @@ function advanceProjectile(projectile: ProjectileInstance, deltaMs: number): Pro
 function arcPosition(projectile: ProjectileInstance, traveled: number): { x: number; y: number } {
   const progress = Math.min(1, traveled / projectile.totalDistance);
   const horizontal = lerp(projectile.start, projectile.destination, progress);
+  if (projectileMode(projectile.kind) === "straight") {
+    return horizontal;
+  }
+
   const arcHeight = progress * (1 - progress) * 4 * projectile.totalDistance * 0.2;
 
   return {
@@ -149,7 +188,9 @@ function arcPosition(projectile: ProjectileInstance, traveled: number): { x: num
 }
 
 export function projectileFacing(projectile: ProjectileInstance): { x: number; y: number } | undefined {
-  if (projectile.traveled >= projectile.totalDistance) {
+  // Straight projectiles keep their spawn rotation for the whole flight,
+  // mirroring the original (their spin comes from the sprite animation).
+  if (projectileMode(projectile.kind) === "straight" || projectile.traveled >= projectile.totalDistance) {
     return undefined;
   }
 

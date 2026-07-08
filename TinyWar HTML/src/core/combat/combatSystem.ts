@@ -11,8 +11,9 @@ import {
   lockedOrNearestEnemyUnit
 } from "./combatTargeting";
 import {
-  createArrowProjectile,
+  createProjectile,
   leadProjectileDestination,
+  unitProjectile,
   updateProjectiles,
   type ProjectileInstance
 } from "./projectileSystem";
@@ -190,7 +191,8 @@ function resolveCompletedAttack(
   buildings: BuildingInstance[];
   projectiles: ProjectileInstance[];
 } {
-  if (attacker.name === "Archer") {
+  const projectileKind = unitProjectile(attacker.name);
+  if (projectileKind) {
     const damage = damageForTarget(attacker, target, state.strategies, state.boosts);
     const direction = target.position.x < attacker.position.x ? -1 : 1;
     const start = {
@@ -206,7 +208,7 @@ function resolveCompletedAttack(
       buildings: [...state.buildings],
       projectiles: [
         ...state.projectiles,
-        createArrowProjectile(attacker.color, damage, Boolean(attacker.onBuildingId), start, destination)
+        createProjectile(projectileKind, attacker.color, damage, Boolean(attacker.onBuildingId), start, destination)
       ]
     };
   }

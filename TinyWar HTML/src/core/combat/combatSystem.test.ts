@@ -499,4 +499,44 @@ describe("resolveCombat", () => {
     expect(priestAfter?.moving).toBe(true);
     expect(enemyAfter?.health).toBe(enemy.health);
   });
+
+  it("lets ranged monsters fire their projectile instead of applying direct damage", () => {
+    for (const [monster, kind] of [
+      ["Gnoll", "Bone"],
+      ["Shaman", "Magic"],
+      ["Shark", "Harpoon"]
+    ] as const) {
+      const blue = combatUnit(createUnit(`blue-${monster}`, monster, "Blue", { x: 100, y: 100 }));
+      const red = combatUnit(createUnit("red-warrior", "Warrior", "Red", { x: 200, y: 100 }));
+      const windup = resolveCombat({ units: [blue, red], buildings: [] }, 16);
+      const state = resolveCombat(windup, ATTACK_DURATION_MS[monster]);
+
+      const target = state.units.find((unit) => unit.id === "red-warrior");
+      expect(target?.health, monster).toBe(red.health);
+      expect(state.projectiles, monster).toHaveLength(1);
+      expect(state.projectiles?.[0].kind, monster).toBe(kind);
+      expect(state.projectiles?.[0].color, monster).toBe("Blue");
+    }
+  });
+
+  it("keeps melee monsters dealing direct damage without projectiles", () => {
+    const blue = combatUnit(createUnit("blue-goblin", "Goblin", "Blue", { x: 100, y: 100 }));
+    const red = combatUnit(createUnit("red-warrior", "Warrior", "Red", { x: 128, y: 100 }));
+    const windup = resolveCombat({ units: [blue, red], buildings: [] }, 16);
+    const state = resolveCombat(windup, ATTACK_DURATION_MS.Goblin);
+
+    const target = state.units.find((unit) => unit.id === "red-warrior");
+    expect(state.projectiles).toHaveLength(0);
+    expect(target?.health ?? 0).toBeLessThan(red.health);
+  });
+
+  it("keeps a shaman out of melee range thanks to its 2.5 tile range", () => {
+    // 2.5 * ORIGINAL_RADIUS = 120 world units.
+    const blue = combatUnit(createUnit("blue-shaman", "Shaman", "Blue", { x: 100, y: 100 }));
+    const red = combatUnit(createUnit("red-warrior", "Warrior", "Red", { x: 100 + 2.4 * ORIGINAL_RADIUS, y: 100 }));
+    const state = resolveCombat({ units: [blue, red], buildings: [] }, 16);
+    const shaman = state.units.find((unit) => unit.id === "blue-shaman");
+    expect(shaman?.targetId).toBe("red-warrior");
+    expect(shaman?.moving).toBe(false);
+  });
 });

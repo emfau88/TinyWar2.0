@@ -49,6 +49,15 @@ export class PreloadScene extends Phaser.Scene {
     this.load.image(ASSETS.units.redArcher.key, ASSETS.units.redArcher.path);
     this.load.image(ASSETS.units.redPriest.key, ASSETS.units.redPriest.path);
     this.load.image(ASSETS.projectiles.arrow.key, ASSETS.projectiles.arrow.path);
+    this.load.image(ASSETS.projectiles.harpoon.key, ASSETS.projectiles.harpoon.path);
+    this.load.spritesheet(ASSETS.projectiles.bone.key, ASSETS.projectiles.bone.path, {
+      frameWidth: ASSETS.projectiles.bone.frameSize,
+      frameHeight: ASSETS.projectiles.bone.frameSize
+    });
+    this.load.spritesheet(ASSETS.projectiles.magic.key, ASSETS.projectiles.magic.path, {
+      frameWidth: ASSETS.projectiles.magic.frameSize,
+      frameHeight: ASSETS.projectiles.magic.frameSize
+    });
     for (const portrait of Object.values(ASSETS.monsterPortraits)) {
       this.load.image(portrait.key, portrait.path);
     }
@@ -85,6 +94,20 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   create(): void {
+    for (const projectile of [ASSETS.projectiles.bone, ASSETS.projectiles.magic]) {
+      if (!this.anims.exists(projectile.key)) {
+        this.anims.create({
+          key: projectile.key,
+          frames: this.anims.generateFrameNumbers(projectile.key, {
+            start: 0,
+            end: projectile.frames - 1
+          }),
+          frameRate: 10,
+          repeat: -1
+        });
+      }
+    }
+
     for (const animation of BASIC_UNIT_ANIMATIONS) {
       if (this.anims.exists(animation.key)) {
         continue;
