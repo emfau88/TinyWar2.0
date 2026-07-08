@@ -15,6 +15,26 @@ import { WILDNIS_MAP } from "../../core/map/wildnisMap";
 import { tileToWorld } from "../../core/map/mapGeometry";
 import type { PlayerColor } from "../../core/buildings/buildingData";
 import {
+  createBoostState,
+  selectBoost,
+  setBoostDraftInterval,
+  skipOffer,
+  tickBoosts,
+  type BoostState
+} from "../../core/boosts/boostState";
+import type { BoostName } from "../../core/boosts/boostData";
+import {
+  applyInstantHealing,
+  applyLightning,
+  applyRepair,
+  bearDefenderRequests,
+  cloneRequests,
+  instantArmyRequests,
+  snakeSwarmRequests,
+  trollRequests,
+  type SpawnRequest
+} from "../../core/boosts/instantBoosts";
+import {
   canAfford,
   createGoldState,
   spendForUnit,
@@ -97,6 +117,7 @@ export class GameScene extends Phaser.Scene {
   private playerGold: GoldState = createGoldState();
   private enemyCommander: EnemyCommanderState = createEnemyCommander();
   private monsterDirector: MonsterDirectorState = createMonsterDirector();
+  private boosts: BoostState = createBoostState();
   private mode: MapId = "classic";
   private spawnCounter = 0;
 
@@ -107,6 +128,10 @@ export class GameScene extends Phaser.Scene {
   init(data: { mode?: MapId } = {}): void {
     this.mode = data.mode === "wildnis" ? "wildnis" : "classic";
     setActiveMap(this.mode === "wildnis" ? WILDNIS_MAP : CLASSIC_MAP);
+    // Dev aid: ?boostfast shortens the draft cadence for quick testing.
+    if (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("boostfast")) {
+      setBoostDraftInterval(1500);
+    }
   }
 
   private get opponentColor(): PlayerColor {
@@ -128,6 +153,7 @@ export class GameScene extends Phaser.Scene {
     this.playerGold = createGoldState();
     this.enemyCommander = createEnemyCommander();
     this.monsterDirector = createMonsterDirector();
+    this.boosts = createBoostState();
     this.spawnCounter = 0;
 
     this.audio = new GameAudio(this);
@@ -158,7 +184,9 @@ export class GameScene extends Phaser.Scene {
         onToggleAudio: () => this.toggleAudio(),
         onToggleUnitInfo: () => this.toggleUnitInfo(),
         onPlayAgain: () => this.scene.restart({ mode: this.mode }),
-        onExitToMenu: () => this.scene.start("MenuScene")
+        onExitToMenu: () => this.scene.start("MenuScene"),
+        onChooseBoost: (name) => this.chooseBoost(name),
+        onDismissBoostOffer: () => this.dismissBoostOffer()
       },
       { showDirectionSelector: getActiveMap().availableLanes.length > 1 }
     );
@@ -202,6 +230,13 @@ export class GameScene extends Phaser.Scene {
     this.strategy = tickStrategyCooldown(this.strategy, effectiveDelta);
     this.hud?.updateStrategy(this.strategy);
 
+    const boostsBefore = this.boosts;
+    this.boosts = tickBoosts(this.boosts, effectiveDelta);
+    if (this.boosts.offer && !boostsBefore.offer) {
+      this.audio?.play("message");
+    }
+    this.hud?.updateBoosts(this.boosts);
+
     if (this.mode === "wildnis") {
       const monsterResult = tickMonsterDirector(this.monsterDirector, effectiveDelta);
       this.monsterDirector = monsterResult.state;
@@ -222,7 +257,10 @@ export class GameScene extends Phaser.Scene {
     this.debugUnits = this.debugUnits.map((unit) => {
       const previousX = unit.position.x;
       const previousY = unit.position.y;
-      const moved = unit.moving ? updateMovingUnit(unit, effectiveDelta / 1000, this.strategyForUnit(unit)) : unit;
+      const speedBoost = unit.color === "Blue" ? this.playerSpeedBoost() : 1;
+      const moved = unit.moving
+        ? updateMovingUnit(unit, effectiveDelta / 1000, this.strategyForUnit(unit), speedBoost)
+        : unit;
       const handle = this.debugUnitSprites.get(unit.id);
       if (handle) {
         UnitRenderer.updateHandle(handle, moved, UnitRenderer.actionForUnit(moved));
@@ -253,6 +291,9 @@ export class GameScene extends Phaser.Scene {
         strategies: {
           Blue: this.strategy.current,
           Red: "Attack"
+        },
+        boosts: {
+          Blue: this.boosts.active
         }
       },
       effectiveDelta
@@ -376,11 +417,12 @@ export class GameScene extends Phaser.Scene {
     );
   }
 
-  private spawnQueuedUnit(unitName: UnitName, color: PlayerColor): void {
+  private spawnQueuedUnit(unitName: UnitName, color: PlayerColor, atPosition?: { x: number; y: number }): void {
     const renderer = new UnitRenderer(this);
     const base = this.buildings.find((building) => building.isBase && building.color === color);
     const enemyBase = this.buildings.find((building) => building.isBase && building.color !== color);
-    const spawnPosition = base ? getBuildingDoorSpawnPosition(base) : undefined;
+    const baseDoor = base ? getBuildingDoorSpawnPosition(base) : undefined;
+    const spawnPosition = atPosition ?? baseDoor;
     const terminalPosition = enemyBase ? getBuildingDoorSpawnPosition(enemyBase) : undefined;
     // Original parity: each spawn places one unit on a random lane from the
     // direction's lane set, restricted to lanes that exist on the active map.
@@ -399,6 +441,90 @@ export class GameScene extends Phaser.Scene {
 
     this.debugUnits.push(unit);
     this.debugUnitSprites.set(unit.id, renderer.renderUnit(unit, "Run"));
+  }
+
+  private playerSpeedBoost(): number {
+    return this.boosts.active.some((boost) => boost.name === "Run") ? 2 : 1;
+  }
+
+  private chooseBoost(name: BoostName): void {
+    if (this.paused || this.hud?.isWinnerVisible) {
+      return;
+    }
+    const result = selectBoost(this.boosts, name);
+    if (result.state === this.boosts) {
+      return;
+    }
+    this.boosts = result.state;
+    this.audio?.play("button");
+    if (result.instant) {
+      this.applyInstantBoost(result.instant);
+    }
+    this.hud?.updateBoosts(this.boosts);
+  }
+
+  private dismissBoostOffer(): void {
+    this.boosts = skipOffer(this.boosts);
+    this.audio?.play("click");
+    this.hud?.updateBoosts(this.boosts);
+  }
+
+  private applyInstantBoost(name: BoostName): void {
+    switch (name) {
+      case "InstantHealing":
+        this.debugUnits = applyInstantHealing(this.debugUnits, "Blue") as MovingUnit[];
+        this.syncUnitHealth();
+        break;
+      case "Repair":
+        this.buildings = applyRepair(this.buildings, "Blue") as BuildingInstance[];
+        this.syncBuildingHealth();
+        break;
+      case "Lightning":
+        this.debugUnits = applyLightning(this.debugUnits) as MovingUnit[];
+        this.syncUnitHealth();
+        break;
+      case "InstantArmy":
+        this.fulfilSpawnRequests(instantArmyRequests("Blue"));
+        break;
+      case "Clone":
+        this.fulfilSpawnRequests(cloneRequests(this.debugUnits, "Blue"));
+        break;
+      case "Snakes":
+        this.fulfilSpawnRequests(snakeSwarmRequests("Blue"));
+        break;
+      case "SpawnTrolls":
+        this.fulfilSpawnRequests(trollRequests("Blue"));
+        break;
+      case "BearDefender":
+        this.fulfilSpawnRequests(bearDefenderRequests(this.debugUnits, "Blue"));
+        break;
+      default:
+        break;
+    }
+  }
+
+  private fulfilSpawnRequests(requests: readonly SpawnRequest[]): void {
+    for (const request of requests) {
+      this.spawnQueuedUnit(request.unit, request.color, request.position);
+    }
+  }
+
+  private syncUnitHealth(): void {
+    for (const unit of this.debugUnits) {
+      const handle = this.debugUnitSprites.get(unit.id);
+      if (handle) {
+        UnitRenderer.updateHandle(handle, unit, UnitRenderer.actionForUnit(unit));
+      }
+    }
+  }
+
+  private syncBuildingHealth(): void {
+    for (const building of this.buildings) {
+      const handle = this.buildingSprites.get(building.id);
+      if (handle) {
+        BuildingRenderer.updateHealth(handle, building);
+      }
+    }
   }
 
   private queueUnit(unitName: UnitName): void {

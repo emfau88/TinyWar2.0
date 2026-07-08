@@ -9,6 +9,17 @@ export const BOOST_DRAFT_INTERVAL_MS = 30000;
 export const BOOST_DRAFT_CHOICES = 3;
 export const MAX_ACTIVE_BOOSTS = 4;
 
+// Overridable so tests and dev builds can shorten the draft cadence.
+let draftIntervalMs = BOOST_DRAFT_INTERVAL_MS;
+
+export function setBoostDraftInterval(ms: number): void {
+  draftIntervalMs = ms;
+}
+
+export function boostDraftInterval(): number {
+  return draftIntervalMs;
+}
+
 export interface ActiveBoost {
   name: BoostName;
   remainingMs: number;
@@ -25,7 +36,7 @@ export interface BoostState {
 
 export function createBoostState(): BoostState {
   return {
-    draftTimerMs: BOOST_DRAFT_INTERVAL_MS,
+    draftTimerMs: boostDraftInterval(),
     offer: null,
     active: []
   };
@@ -56,7 +67,7 @@ export function tickBoosts(
     if (draftTimerMs <= 0) {
       offer = rollOffer(active, random);
       // Keep any overshoot so cadence stays stable across frames.
-      draftTimerMs = BOOST_DRAFT_INTERVAL_MS + draftTimerMs;
+      draftTimerMs = boostDraftInterval() + draftTimerMs;
     }
   }
 
@@ -97,7 +108,7 @@ export function selectBoost(state: BoostState, name: BoostName): SelectResult {
   const clearedOffer: BoostState = {
     ...state,
     offer: null,
-    draftTimerMs: BOOST_DRAFT_INTERVAL_MS
+    draftTimerMs: boostDraftInterval()
   };
 
   if (!isTimedBoost(name)) {
@@ -125,7 +136,7 @@ export function skipOffer(state: BoostState): BoostState {
   if (!state.offer) {
     return state;
   }
-  return { ...state, offer: null, draftTimerMs: BOOST_DRAFT_INTERVAL_MS };
+  return { ...state, offer: null, draftTimerMs: boostDraftInterval() };
 }
 
 export function hasActiveBoost(state: BoostState, name: BoostName): boolean {

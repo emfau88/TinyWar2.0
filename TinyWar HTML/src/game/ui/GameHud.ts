@@ -1,5 +1,8 @@
 import Phaser from "phaser";
 import { UNIT_COSTS, canAfford, displayGold, type GoldState } from "../../core/economy/goldEconomy";
+import type { BoostName } from "../../core/boosts/boostData";
+import type { BoostState } from "../../core/boosts/boostState";
+import { BoostHud } from "./BoostHud";
 import { PLAYER_STRATEGIES, strategyHotkey } from "../../core/player/playerStrategy";
 import { UNITS as UNIT_DEFINITIONS, unitCycleDurationMs } from "../../core/units/unitData";
 import { ASSETS } from "../../data/assetManifest";
@@ -51,6 +54,8 @@ export interface GameHudCallbacks {
   onToggleUnitInfo: () => void;
   onPlayAgain: () => void;
   onExitToMenu: () => void;
+  onChooseBoost: (name: BoostName) => void;
+  onDismissBoostOffer: () => void;
 }
 
 interface UnitShopButton {
@@ -131,6 +136,9 @@ export class GameHud {
   private selectedUnitInfo: UnitName = "Archer";
   private unitInfoVisible = false;
   private readonly showDirectionSelector: boolean;
+  private readonly boostHud: BoostHud;
+  private lastBoostState?: BoostState;
+  private readonly boostCallbacks: GameHudCallbacks;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -455,6 +463,12 @@ export class GameHud {
     const queueDisplay = this.createQueueDisplay();
     this.queueStart = queueDisplay.start;
     this.queueEnd = queueDisplay.end;
+    this.boostCallbacks = callbacks;
+    this.boostHud = new BoostHud(
+      this.scene,
+      (name) => callbacks.onChooseBoost(name),
+      () => callbacks.onDismissBoostOffer()
+    );
     this.layout(this.scene.scale.width, this.scene.scale.height);
     this.updateAdvanceBanner(initialAdvance);
     this.updateStrategy(strategy);
@@ -522,7 +536,8 @@ export class GameHud {
       this.unitInfoPortrait,
       this.unitInfoName,
       this.unitInfoDescription,
-      ...this.unitInfoStats
+      ...this.unitInfoStats,
+      ...this.boostHud.objects
     ];
   }
 
@@ -549,6 +564,15 @@ export class GameHud {
       }
       button.cost.setColor(affordable ? "#fbbf24" : "#fca5a5");
     }
+  }
+
+  updateBoosts(state: BoostState): void {
+    this.lastBoostState = state;
+    this.boostHud.update(state, this.scene.scale.width, this.scene.scale.height);
+  }
+
+  get isBoostOfferVisible(): boolean {
+    return this.boostHud.isOfferVisible;
   }
 
   updateStrategy(strategy: StrategyState): void {
@@ -639,6 +663,9 @@ export class GameHud {
     if (this.lastAdvanceState) {
       this.updateAdvanceBanner(this.lastAdvanceState);
     }
+    if (this.lastBoostState) {
+      this.boostHud.update(this.lastBoostState, width, height);
+    }
   }
 
   showWinner(winner: string): void {
@@ -688,6 +715,17 @@ export class GameHud {
     this.scene.input.keyboard?.on("keydown-I", () => callbacks.onSelectStrategy("Berserk"));
     this.scene.input.keyboard?.on("keydown-H", callbacks.onToggleUnitInfo);
     this.scene.input.keyboard?.on("keydown-Q", callbacks.onToggleAudio);
+    // Number keys pick from the active boost draft.
+    this.scene.input.keyboard?.on("keydown-ONE", () => this.pickOfferedBoost(0));
+    this.scene.input.keyboard?.on("keydown-TWO", () => this.pickOfferedBoost(1));
+    this.scene.input.keyboard?.on("keydown-THREE", () => this.pickOfferedBoost(2));
+  }
+
+  private pickOfferedBoost(index: number): void {
+    const offer = this.lastBoostState?.offer;
+    if (offer && offer[index]) {
+      this.boostCallbacks.onChooseBoost(offer[index]);
+    }
   }
 
   private createShopButtons(callbacks: GameHudCallbacks): void {
