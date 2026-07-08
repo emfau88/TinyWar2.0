@@ -32,7 +32,17 @@ const WAVE_WEIGHTS: Record<UnitName, number> = {
   Priest: 1,
   Snake: 0,
   Bear: 0,
-  Troll: 0
+  Troll: 0,
+  Gnoll: 0,
+  Gnome: 0,
+  Goblin: 0,
+  Hammerhead: 0,
+  Minotaur: 0,
+  Shaman: 0,
+  Shark: 0,
+  Skull: 0,
+  Spider: 0,
+  Turtle: 0
 };
 
 export type EnemyPhase = "saving" | "spawning" | "resting";

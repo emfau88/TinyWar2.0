@@ -25,15 +25,9 @@ import {
 } from "../boosts/boostModifiers";
 
 export const FRAME_MS = 100;
-export const ATTACK_DURATION_MS: Record<UnitInstance["name"], number> = {
-  Warrior: unitCycleDurationMs("Warrior"),
-  Lancer: unitCycleDurationMs("Lancer"),
-  Archer: unitCycleDurationMs("Archer"),
-  Priest: unitCycleDurationMs("Priest"),
-  Snake: unitCycleDurationMs("Snake"),
-  Bear: unitCycleDurationMs("Bear"),
-  Troll: unitCycleDurationMs("Troll")
-};
+export const ATTACK_DURATION_MS: Record<UnitInstance["name"], number> = Object.fromEntries(
+  (Object.keys(UNITS) as UnitInstance["name"][]).map((name) => [name, unitCycleDurationMs(name)])
+) as Record<UnitInstance["name"], number>;
 
 export interface CombatUnit extends UnitInstance {
   attackCooldownMs: number;

@@ -1,3 +1,5 @@
+import { MONSTER_UNITS } from "../core/units/unitData";
+
 // Relative to the page URL so the game also works under a sub-path deploy
 // (e.g. GitHub Pages at /TinyWar-HTML/).
 const ROOT = "assets/tinywar";
@@ -139,6 +141,16 @@ export const ASSETS = {
       path: `${ROOT}/images/units/arrow.png`
     }
   },
+  monsterPortraits: MONSTER_UNITS.reduce(
+    (portraits, name) => ({
+      ...portraits,
+      [name]: {
+        key: `unit-monster-${name.toLowerCase()}-portrait`,
+        path: `${ROOT}/images/units/Monsters/${name}/${name}.png`
+      }
+    }),
+    {} as Record<(typeof MONSTER_UNITS)[number], { key: string; path: string }>
+  ),
   audio: {
     button: {
       key: "audio-button",

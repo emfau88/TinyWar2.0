@@ -8,10 +8,21 @@ export const UNIT_COSTS: Record<UnitName, number> = {
   Lancer: 45,
   Archer: 55,
   Priest: 65,
-  // Monster costs feed the wildnis wave director's budget; players cannot buy them.
+  // Monster costs feed the wildnis wave director's budget and the shop price
+  // while a queue boost has unlocked the monster for the player.
   Snake: 15,
   Bear: 90,
-  Troll: 400
+  Troll: 400,
+  Gnoll: 65,
+  Gnome: 30,
+  Goblin: 55,
+  Hammerhead: 60,
+  Minotaur: 160,
+  Shaman: 110,
+  Shark: 65,
+  Skull: 20,
+  Spider: 55,
+  Turtle: 180
 };
 
 export interface GoldState {

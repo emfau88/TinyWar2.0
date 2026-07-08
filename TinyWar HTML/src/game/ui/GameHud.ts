@@ -18,11 +18,12 @@ const UNIT_ASSET_KEYS: Record<UnitName, string> = {
   Lancer: ASSETS.units.blueLancer.key,
   Archer: ASSETS.units.blueArcher.key,
   Priest: ASSETS.units.bluePriest.key,
-  // Monsters are not purchasable; keys exist only to satisfy shared lookups.
-  Snake: "unit-monster-snake-idle",
-  Bear: "unit-monster-bear-idle",
-  Troll: "unit-monster-troll-idle"
-};
+  ...Object.fromEntries(
+    (Object.keys(ASSETS.monsterPortraits) as (keyof typeof ASSETS.monsterPortraits)[]).map(
+      (name) => [name, ASSETS.monsterPortraits[name].key]
+    )
+  )
+} as Record<UnitName, string>;
 const STRATEGY_ASSET_KEYS: Record<PlayerStrategy, string> = {
   Attack: ASSETS.icons.attack.key,
   Guard: ASSETS.icons.guard.key,

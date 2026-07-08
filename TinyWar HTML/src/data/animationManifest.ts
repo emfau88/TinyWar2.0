@@ -61,7 +61,43 @@ export const BASIC_UNIT_ANIMATIONS = [
   monsterAnimation("Bear", "Attack", 9),
   monsterAnimation("Troll", "Idle", 12),
   monsterAnimation("Troll", "Run", 10),
-  monsterAnimation("Troll", "Attack", 6)
+  monsterAnimation("Troll", "Attack", 6),
+  // Frame counts mirror the original's UnitName::frames(); where a sheet has
+  // more frames than listed, the original intentionally skips trailing frames
+  // (e.g. ranged units spawn their projectile at the end of the cut cycle).
+  monsterAnimation("Gnoll", "Idle", 6),
+  monsterAnimation("Gnoll", "Run", 8),
+  monsterAnimation("Gnoll", "Attack", 6),
+  monsterAnimation("Gnome", "Idle", 8),
+  monsterAnimation("Gnome", "Run", 6),
+  monsterAnimation("Gnome", "Attack", 7),
+  monsterAnimation("Goblin", "Idle", 7),
+  monsterAnimation("Goblin", "Run", 6),
+  monsterAnimation("Goblin", "Attack", 8),
+  monsterAnimation("Hammerhead", "Idle", 8),
+  monsterAnimation("Hammerhead", "Run", 6),
+  monsterAnimation("Hammerhead", "Attack", 6),
+  monsterAnimation("Minotaur", "Idle", 16),
+  monsterAnimation("Minotaur", "Run", 8),
+  monsterAnimation("Minotaur", "Guard", 11),
+  monsterAnimation("Minotaur", "Attack", 12),
+  monsterAnimation("Shaman", "Idle", 8),
+  monsterAnimation("Shaman", "Run", 4),
+  monsterAnimation("Shaman", "Attack", 6),
+  monsterAnimation("Shark", "Idle", 8),
+  monsterAnimation("Shark", "Run", 6),
+  monsterAnimation("Shark", "Attack", 4),
+  monsterAnimation("Skull", "Idle", 8),
+  monsterAnimation("Skull", "Run", 6),
+  monsterAnimation("Skull", "Guard", 7),
+  monsterAnimation("Skull", "Attack", 7),
+  monsterAnimation("Spider", "Idle", 8),
+  monsterAnimation("Spider", "Run", 5),
+  monsterAnimation("Spider", "Attack", 8),
+  monsterAnimation("Turtle", "Idle", 10),
+  monsterAnimation("Turtle", "Run", 7),
+  monsterAnimation("Turtle", "Guard", 6),
+  monsterAnimation("Turtle", "Attack", 10)
 ] as const satisfies readonly UnitAnimationDefinition[];
 
 function unitAnimation(
