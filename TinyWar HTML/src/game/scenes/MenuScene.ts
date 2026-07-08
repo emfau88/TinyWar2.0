@@ -97,8 +97,11 @@ export class MenuScene extends Phaser.Scene {
       this.cover.setScale(scale).setPosition(width / 2, height / 2);
     }
 
-    this.layoutModeButton(this.classicButton, width / 2, height * 0.56);
-    this.layoutModeButton(this.wildnisButton, width / 2, height * 0.56 + 90);
+    // The cover art's TinyWar shield sits around the vertical center; keep
+    // the mode buttons in the lower quarter so the title stays fully visible.
+    const buttonsTop = Math.min(height * 0.74, height - 150);
+    this.layoutModeButton(this.classicButton, width / 2, buttonsTop);
+    this.layoutModeButton(this.wildnisButton, width / 2, buttonsTop + 88);
   }
 
   private layoutModeButton(button: ModeButton | undefined, x: number, y: number): void {

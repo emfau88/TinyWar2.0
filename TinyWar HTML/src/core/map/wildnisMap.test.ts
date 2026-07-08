@@ -33,8 +33,8 @@ describe("wildnis map", () => {
       Math.abs(WILDNIS_MAP.end.x - WILDNIS_MAP.start.x) +
       Math.abs(WILDNIS_MAP.end.y - WILDNIS_MAP.start.y);
 
-    // The serpentine must be substantially longer than the direct distance.
-    expect(path.length).toBeGreaterThan(direct * 1.8);
+    // The landscape S-curve must stay a real detour over the direct distance.
+    expect(path.length).toBeGreaterThan(direct * 1.25);
   });
 
   it("lets a monster walk the whole serpentine from the lair to the player's door", () => {

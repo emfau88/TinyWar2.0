@@ -14,42 +14,49 @@ import { dirname, resolve } from "node:path";
 //   B  player base anchor (walkable)
 //   L  lair (castle) anchor (blocked, part of castle grounds)
 //   o  small decorative islet (grass, blocked, bushes only)
+// Landscape layout, read left to right: player barracks top left, black
+// castle top right, and the lane snakes east-south-east-north-east between
+// them. Horizontal corridors are never directly above tall forest, and the
+// tree placer additionally refuses any tree whose canopy would overhang a
+// walkable tile (canopy = 3 tiles up, 3 tiles wide).
 const LAYOUT = [
-  "~~~~~~~~~~~~~~~~~~~~~~",
-  "~~~FFFFFFFFFFCCCCCF~~~",
-  "~~FFFFFFFFFFFCCLCCF~~~",
-  "~~FFFFFFFFFFFCCCCCF~~~",
-  "~~FF#############FF~~~",
-  "~~FF#############F~oo~",
-  "~~FF###FFFFFFFFFFF~~~~",
-  "~~FF###FFFFF~~~oo~~~~~",
-  "~~FF###FFFFFF~~oo~~~~~",
-  "~~FF##############F~~~",
-  "~~FF##############F~~~",
-  "~~FFFFFFFFFFFF####F~~~",
-  "~~~FFFFFFFFFF####FF~~~",
-  "~~FF#############FF~~~",
-  "~~FF#####B########F~~~",
-  "~~FFF############FF~~~",
-  "~~FFFF#####FFFFFFF~oo~",
-  "~~FFFFFFFFFFFFFFF~~oo~",
-  "~~~~~~~~~~~~~~~~~~~~~~"
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~FF#FFFFFFFFFFFFFFFFFFFFCCCCC~",
+  "~FF#FFFFFFFFFFFFFFFFFFFFCCLCC~",
+  "~~############FFFFFF########~~",
+  "~~############FFFFFF########~~",
+  "~~FFFFFFFFFF###FFFF###FFFFFF~~",
+  "~~FFFFFFFFFF###FFFF###FFFFFFo~",
+  "~~FFFFFF###############FFFFF~~",
+  "~~FFFFFF###############FFFFFo~",
+  "~~FFFFFFFFFFFFFFFFFFFFFFFFFF~~",
+  "~~FFFFFFFFFFFFFFFFFFFFFFFFFFo~",
+  "~~FFFFFFFFFFFFFFFFFFFFFFFFFF~~",
+  "~oFFFFFFFFFFFFFFFFFFFFFFFFFF~~",
+  "~~FFFFFFFFFFFFFFFFFFFFFFFFF~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 ];
 
 const WIDTH = LAYOUT[0].length;
 const HEIGHT = LAYOUT.length;
 
+for (const [index, row] of LAYOUT.entries()) {
+  if (row.length !== WIDTH) {
+    throw new Error(`LAYOUT row ${index} has length ${row.length}, expected ${WIDTH}.`);
+  }
+}
+
 // Gameplay anchors. The lane runs door-to-door along the serpentine.
-const PLAYER_BASE_ANCHOR = { x: 9, y: 14 };
-const PLAYER_DOOR = { x: 9, y: 16 };
-const PLAYER_ROOF = { x: 9, y: 15 };
-const LAIR_ANCHOR = { x: 15, y: 2 };
-const LAIR_DOOR = { x: 15, y: 4 };
+const PLAYER_BASE_ANCHOR = { x: 3, y: 1 };
+const PLAYER_DOOR = { x: 3, y: 3 };
+const PLAYER_ROOF = { x: 3, y: 2 };
+const LAIR_ANCHOR = { x: 26, y: 2 };
+const LAIR_DOOR = { x: 26, y: 4 };
 const LANE_WAYPOINTS = [
-  { x: 15, y: 14 },
-  { x: 15, y: 10 },
-  { x: 5, y: 9 },
-  { x: 5, y: 5 }
+  { x: 13, y: 4 },
+  { x: 13, y: 7 },
+  { x: 21, y: 8 },
+  { x: 21, y: 4 }
 ];
 
 // Tile ids inside each 54-tile grass tileset (9 columns), learned from the
@@ -185,6 +192,20 @@ function buildFoamLayer() {
   return data;
 }
 
+// A tree sprite covers roughly 3 columns and 4 rows (anchored bottom-left).
+// Refuse any tree whose canopy would overhang a walkable tile, so units on
+// the lane are never hidden behind foliage.
+function canopyClearsLane(x, y) {
+  for (let dy = 1; dy <= 3; dy += 1) {
+    for (let dx = 0; dx <= 2; dx += 1) {
+      if (isWalkable(x + dx, y - dy)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 function buildTreeLayer() {
   const data = new Array(WIDTH * HEIGHT).fill(0);
   const trees = [GID.tree1, GID.tree2, GID.tree3];
@@ -193,13 +214,12 @@ function buildTreeLayer() {
       if (!isForest(x, y)) {
         continue;
       }
-      // Tree sprites are 192px wide anchored bottom-left; keep them off the
-      // last two columns so canopies never overhang open water.
-      if (!isLand(x + 1, y) || !isLand(x + 2, y)) {
+      // Keep canopies off open water on the right and off the lane above.
+      if (!isLand(x + 1, y) || !isLand(x + 2, y) || !canopyClearsLane(x, y)) {
         continue;
       }
       const roll = hash(x, y, 1);
-      if (roll < 0.42) {
+      if (roll < 0.5) {
         data[y * WIDTH + x] = trees[Math.floor(hash(x, y, 2) * trees.length)];
       }
     }
@@ -216,11 +236,14 @@ function buildDecorationLayer() {
     for (let x = 0; x < WIDTH; x += 1) {
       const here = cell(x, y);
 
-      // Bushes soften the forest border along the corridor.
+      // Forest cells that cannot hold a tree (canopy would cover the lane)
+      // become bushy undergrowth instead, so the woods still read as dense.
       if (here === "F") {
+        const treeBlocked = !canopyClearsLane(x, y) || !isLand(x + 1, y) || !isLand(x + 2, y);
         const bordersPath =
           isWalkable(x, y - 1) || isWalkable(x, y + 1) || isWalkable(x - 1, y) || isWalkable(x + 1, y);
-        if (bordersPath && hash(x, y, 3) < 0.3) {
+        const bushChance = treeBlocked ? 0.45 : bordersPath ? 0.3 : 0;
+        if (bushChance > 0 && hash(x, y, 3) < bushChance) {
           data[y * WIDTH + x] = bushes[Math.floor(hash(x, y, 4) * bushes.length)];
           continue;
         }
@@ -250,8 +273,8 @@ function buildDecorationLayer() {
 
   // A couple of sheep grazing near the player base for charm.
   const sheepSpots = [
-    { x: PLAYER_BASE_ANCHOR.x - 3, y: PLAYER_BASE_ANCHOR.y + 1 },
-    { x: PLAYER_BASE_ANCHOR.x + 3, y: PLAYER_BASE_ANCHOR.y + 2 }
+    { x: PLAYER_BASE_ANCHOR.x + 3, y: PLAYER_BASE_ANCHOR.y + 2 },
+    { x: PLAYER_BASE_ANCHOR.x + 6, y: PLAYER_BASE_ANCHOR.y + 3 }
   ];
   for (const spot of sheepSpots) {
     if (isWalkable(spot.x, spot.y)) {
