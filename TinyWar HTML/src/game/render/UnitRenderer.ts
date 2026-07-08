@@ -38,7 +38,10 @@ export class UnitRenderer {
       this.playAction(sprite, unit, action);
 
       const healthWidth = 46;
-      const healthY = snap(unit.position.y - UNITS[unit.name].renderSize * 0.48);
+      // Anchor the bar to the unit's world size, not its sprite frame size -
+      // sprite frames differ wildly (Lancer 320px art vs Warrior 192px) while
+      // the actual character height is comparable.
+      const healthY = snap(unit.position.y - UNITS[unit.name].worldSize * 0.52);
       const healthBack = this.scene.add
         .rectangle(position.x, healthY, healthWidth, 6, 0x000000, 0.7)
         .setDepth(40);
@@ -69,7 +72,7 @@ export class UnitRenderer {
     targetPosition?: { x: number; y: number }
   ): void {
     const position = snapPosition(unit.position);
-    const y = snap(unit.position.y - UNITS[unit.name].renderSize * 0.48);
+    const y = snap(unit.position.y - UNITS[unit.name].worldSize * 0.52);
     handle.sprite.setPosition(position.x, position.y);
     handle.sprite.setDisplaySize(UNITS[unit.name].renderSize, UNITS[unit.name].renderSize);
     handle.healthBack.setPosition(position.x, y);

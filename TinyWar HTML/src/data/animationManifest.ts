@@ -14,7 +14,7 @@ export interface UnitAnimationDefinition {
 
 import { isMonsterUnit } from "../core/units/unitData";
 
-const ROOT = "/assets/tinywar/images/units";
+const ROOT = "assets/tinywar/images/units";
 const FRAME_MS = 100;
 
 export function unitAnimationKey(color: PlayerColor, unit: UnitName, action: UnitAction): string {

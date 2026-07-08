@@ -1,14 +1,6 @@
-@font-face {
-  font-family: "TinyWar Fira Sans";
-  src: url("/assets/tinywar/fonts/FiraSans-Bold.ttf") format("truetype");
-  font-weight: 700;
-}
-
-@font-face {
-  font-family: "TinyWar Fira Mono";
-  src: url("/assets/tinywar/fonts/FiraMono-Medium.ttf") format("truetype");
-  font-weight: 500;
-}
+/* The @font-face rules live in index.html so their relative asset URLs
+   resolve against the page root both in dev and under a sub-path deploy
+   (GitHub Pages). */
 
 :root {
   color: #f8fafc;

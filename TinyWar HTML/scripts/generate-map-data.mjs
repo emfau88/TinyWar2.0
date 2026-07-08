@@ -76,7 +76,7 @@ const tilesets = tilesetMatches.map(([, attrText, body], index) => {
     tileHeight: Number(tilesetAttrs.tileheight),
     tileCount: Number(tilesetAttrs.tilecount),
     columns: Number(tilesetAttrs.columns),
-    image: `/assets/tinywar/map/${imageAttrs.source}`,
+    image: `assets/tinywar/map/${imageAttrs.source}`,
     imageWidth: Number(imageAttrs.width),
     imageHeight: Number(imageAttrs.height),
     animations

@@ -14,7 +14,7 @@ export const MAP_DATA = {
       "tileHeight": 64,
       "tileCount": 54,
       "columns": 9,
-      "image": "/assets/tinywar/map/images/tiles/Tilemap_color3.png",
+      "image": "assets/tinywar/map/images/tiles/Tilemap_color3.png",
       "imageWidth": 576,
       "imageHeight": 384,
       "animations": {}
@@ -27,7 +27,7 @@ export const MAP_DATA = {
       "tileHeight": 64,
       "tileCount": 54,
       "columns": 9,
-      "image": "/assets/tinywar/map/images/tiles/Tilemap_color1.png",
+      "image": "assets/tinywar/map/images/tiles/Tilemap_color1.png",
       "imageWidth": 576,
       "imageHeight": 384,
       "animations": {}
@@ -40,7 +40,7 @@ export const MAP_DATA = {
       "tileHeight": 64,
       "tileCount": 54,
       "columns": 9,
-      "image": "/assets/tinywar/map/images/tiles/Tilemap_color2.png",
+      "image": "assets/tinywar/map/images/tiles/Tilemap_color2.png",
       "imageWidth": 576,
       "imageHeight": 384,
       "animations": {}
@@ -53,7 +53,7 @@ export const MAP_DATA = {
       "tileHeight": 192,
       "tileCount": 16,
       "columns": 16,
-      "image": "/assets/tinywar/map/images/tiles/Water Foam.png",
+      "image": "assets/tinywar/map/images/tiles/Water Foam.png",
       "imageWidth": 3072,
       "imageHeight": 192,
       "animations": {
@@ -121,7 +121,7 @@ export const MAP_DATA = {
       "tileHeight": 64,
       "tileCount": 16,
       "columns": 16,
-      "image": "/assets/tinywar/map/images/decorations/Water Rocks_01.png",
+      "image": "assets/tinywar/map/images/decorations/Water Rocks_01.png",
       "imageWidth": 1024,
       "imageHeight": 64,
       "animations": {
@@ -201,7 +201,7 @@ export const MAP_DATA = {
       "tileHeight": 64,
       "tileCount": 16,
       "columns": 16,
-      "image": "/assets/tinywar/map/images/decorations/Water Rocks_02.png",
+      "image": "assets/tinywar/map/images/decorations/Water Rocks_02.png",
       "imageWidth": 1024,
       "imageHeight": 64,
       "animations": {
@@ -281,7 +281,7 @@ export const MAP_DATA = {
       "tileHeight": 64,
       "tileCount": 1,
       "columns": 1,
-      "image": "/assets/tinywar/map/images/decorations/Rock4.png",
+      "image": "assets/tinywar/map/images/decorations/Rock4.png",
       "imageWidth": 64,
       "imageHeight": 64,
       "animations": {}
@@ -294,7 +294,7 @@ export const MAP_DATA = {
       "tileHeight": 64,
       "tileCount": 1,
       "columns": 1,
-      "image": "/assets/tinywar/map/images/decorations/Rock1.png",
+      "image": "assets/tinywar/map/images/decorations/Rock1.png",
       "imageWidth": 64,
       "imageHeight": 64,
       "animations": {}
@@ -307,7 +307,7 @@ export const MAP_DATA = {
       "tileHeight": 128,
       "tileCount": 8,
       "columns": 8,
-      "image": "/assets/tinywar/map/images/decorations/Bushe2.png",
+      "image": "assets/tinywar/map/images/decorations/Bushe2.png",
       "imageWidth": 1024,
       "imageHeight": 128,
       "animations": {
@@ -355,7 +355,7 @@ export const MAP_DATA = {
       "tileHeight": 128,
       "tileCount": 8,
       "columns": 8,
-      "image": "/assets/tinywar/map/images/decorations/Bushe4.png",
+      "image": "assets/tinywar/map/images/decorations/Bushe4.png",
       "imageWidth": 1024,
       "imageHeight": 128,
       "animations": {
@@ -399,7 +399,7 @@ export const MAP_DATA = {
       "tileHeight": 256,
       "tileCount": 8,
       "columns": 8,
-      "image": "/assets/tinywar/map/images/decorations/Tree1.png",
+      "image": "assets/tinywar/map/images/decorations/Tree1.png",
       "imageWidth": 1536,
       "imageHeight": 256,
       "animations": {
@@ -447,7 +447,7 @@ export const MAP_DATA = {
       "tileHeight": 192,
       "tileCount": 8,
       "columns": 8,
-      "image": "/assets/tinywar/map/images/decorations/Tree3.png",
+      "image": "assets/tinywar/map/images/decorations/Tree3.png",
       "imageWidth": 1536,
       "imageHeight": 192,
       "animations": {
@@ -495,7 +495,7 @@ export const MAP_DATA = {
       "tileHeight": 128,
       "tileCount": 6,
       "columns": 6,
-      "image": "/assets/tinywar/map/images/decorations/Sheep_Idle.png",
+      "image": "assets/tinywar/map/images/decorations/Sheep_Idle.png",
       "imageWidth": 768,
       "imageHeight": 128,
       "animations": {
@@ -535,7 +535,7 @@ export const MAP_DATA = {
       "tileHeight": 256,
       "tileCount": 8,
       "columns": 8,
-      "image": "/assets/tinywar/map/images/decorations/Tree2.png",
+      "image": "assets/tinywar/map/images/decorations/Tree2.png",
       "imageWidth": 1536,
       "imageHeight": 256,
       "animations": {
@@ -583,7 +583,7 @@ export const MAP_DATA = {
       "tileHeight": 128,
       "tileCount": 8,
       "columns": 8,
-      "image": "/assets/tinywar/map/images/decorations/Bushe1.png",
+      "image": "assets/tinywar/map/images/decorations/Bushe1.png",
       "imageWidth": 1024,
       "imageHeight": 128,
       "animations": {
@@ -631,7 +631,7 @@ export const MAP_DATA = {
       "tileHeight": 64,
       "tileCount": 12,
       "columns": 3,
-      "image": "/assets/tinywar/map/images/decorations/Stump 1.png",
+      "image": "assets/tinywar/map/images/decorations/Stump 1.png",
       "imageWidth": 192,
       "imageHeight": 256,
       "animations": {}
@@ -644,7 +644,7 @@ export const MAP_DATA = {
       "tileHeight": 128,
       "tileCount": 8,
       "columns": 8,
-      "image": "/assets/tinywar/map/images/decorations/Bushe3.png",
+      "image": "assets/tinywar/map/images/decorations/Bushe3.png",
       "imageWidth": 1024,
       "imageHeight": 128,
       "animations": {
@@ -692,7 +692,7 @@ export const MAP_DATA = {
       "tileHeight": 64,
       "tileCount": 16,
       "columns": 16,
-      "image": "/assets/tinywar/map/images/decorations/Water Rocks_03.png",
+      "image": "assets/tinywar/map/images/decorations/Water Rocks_03.png",
       "imageWidth": 1024,
       "imageHeight": 64,
       "animations": {
@@ -772,7 +772,7 @@ export const MAP_DATA = {
       "tileHeight": 64,
       "tileCount": 16,
       "columns": 16,
-      "image": "/assets/tinywar/map/images/decorations/Water Rocks_04.png",
+      "image": "assets/tinywar/map/images/decorations/Water Rocks_04.png",
       "imageWidth": 1024,
       "imageHeight": 64,
       "animations": {
@@ -852,7 +852,7 @@ export const MAP_DATA = {
       "tileHeight": 64,
       "tileCount": 12,
       "columns": 3,
-      "image": "/assets/tinywar/map/images/decorations/Stump 3.png",
+      "image": "assets/tinywar/map/images/decorations/Stump 3.png",
       "imageWidth": 192,
       "imageHeight": 256,
       "animations": {}
@@ -865,7 +865,7 @@ export const MAP_DATA = {
       "tileHeight": 64,
       "tileCount": 54,
       "columns": 9,
-      "image": "/assets/tinywar/map/images/tiles/Tilemap_color1.png",
+      "image": "assets/tinywar/map/images/tiles/Tilemap_color1.png",
       "imageWidth": 576,
       "imageHeight": 384,
       "animations": {}
@@ -878,7 +878,7 @@ export const MAP_DATA = {
       "tileHeight": 192,
       "tileCount": 16,
       "columns": 16,
-      "image": "/assets/tinywar/map/images/tiles/Water Foam.png",
+      "image": "assets/tinywar/map/images/tiles/Water Foam.png",
       "imageWidth": 3072,
       "imageHeight": 192,
       "animations": {
@@ -946,7 +946,7 @@ export const MAP_DATA = {
       "tileHeight": 192,
       "tileCount": 16,
       "columns": 16,
-      "image": "/assets/tinywar/map/images/tiles/Water Foam.png",
+      "image": "assets/tinywar/map/images/tiles/Water Foam.png",
       "imageWidth": 3072,
       "imageHeight": 192,
       "animations": {
@@ -1014,7 +1014,7 @@ export const MAP_DATA = {
       "tileHeight": 64,
       "tileCount": 12,
       "columns": 3,
-      "image": "/assets/tinywar/map/images/decorations/Stump 1.png",
+      "image": "assets/tinywar/map/images/decorations/Stump 1.png",
       "imageWidth": 192,
       "imageHeight": 256,
       "animations": {}
@@ -1027,7 +1027,7 @@ export const MAP_DATA = {
       "tileHeight": 64,
       "tileCount": 12,
       "columns": 3,
-      "image": "/assets/tinywar/map/images/decorations/Stump 3.png",
+      "image": "assets/tinywar/map/images/decorations/Stump 3.png",
       "imageWidth": 192,
       "imageHeight": 256,
       "animations": {}
@@ -1040,7 +1040,7 @@ export const MAP_DATA = {
       "tileHeight": 64,
       "tileCount": 54,
       "columns": 9,
-      "image": "/assets/tinywar/map/images/tiles/Tilemap_color3.png",
+      "image": "assets/tinywar/map/images/tiles/Tilemap_color3.png",
       "imageWidth": 576,
       "imageHeight": 384,
       "animations": {}

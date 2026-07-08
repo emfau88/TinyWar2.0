@@ -1,4 +1,6 @@
-const ROOT = "/assets/tinywar";
+// Relative to the page URL so the game also works under a sub-path deploy
+// (e.g. GitHub Pages at /TinyWar-HTML/).
+const ROOT = "assets/tinywar";
 
 export const ASSETS = {
   background: {
