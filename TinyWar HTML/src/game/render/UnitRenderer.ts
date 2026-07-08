@@ -106,13 +106,34 @@ export class UnitRenderer {
     return unit.moving ? "Run" : "Idle";
   }
 
+  // The frame of the turtle guard sheet where it is fully tucked into its
+  // shell; the original freezes on this atlas index during guard.
+  private static readonly TURTLE_SHELL_FRAME = 5;
+
   private static playUnitAction(
     sprite: Phaser.GameObjects.Sprite,
     unit: UnitInstance,
     action: UnitAction
   ): void {
     const key = unitAnimationKey(unit.color, unit.name, action);
-    if (sprite.scene.anims.exists(key) && sprite.anims.currentAnim?.key !== key) {
+    if (!sprite.scene.anims.exists(key)) {
+      return;
+    }
+
+    // Turtles stay in the shell during guard: hold the tucked-in frame
+    // instead of looping the guard animation.
+    if (unit.name === "Turtle" && action === "Guard") {
+      if (sprite.anims.currentAnim?.key !== key) {
+        sprite.play(key);
+      }
+      const anim = sprite.anims.currentAnim;
+      if (anim && sprite.anims.isPlaying) {
+        sprite.anims.pause(anim.frames[UnitRenderer.TURTLE_SHELL_FRAME]);
+      }
+      return;
+    }
+
+    if (sprite.anims.currentAnim?.key !== key) {
       sprite.play(key);
     }
   }
