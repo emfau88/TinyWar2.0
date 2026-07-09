@@ -15,6 +15,7 @@ import { WILDNIS_MAP } from "../../core/map/wildnisMap";
 import { tileToWorld } from "../../core/map/mapGeometry";
 import type { PlayerColor } from "../../core/buildings/buildingData";
 import {
+  activeQueueUnit,
   createBoostState,
   selectBoost,
   setBoostDraftInterval,
@@ -24,14 +25,22 @@ import {
 } from "../../core/boosts/boostState";
 import type { BoostName } from "../../core/boosts/boostData";
 import {
+  applyConvertGoblins,
+  applyConvertSharks,
+  applyGnomesBasic,
   applyInstantHealing,
   applyLightning,
   applyRepair,
   bearDefenderRequests,
   cloneRequests,
   instantArmyRequests,
+  minotaurRageRequests,
+  skullSwarmRequests,
   snakeSwarmRequests,
+  spiderSwarmRequests,
   trollRequests,
+  turtleRequests,
+  type ConversionResult,
   type SpawnRequest
 } from "../../core/boosts/instantBoosts";
 import {
@@ -62,7 +71,7 @@ import {
   type StrategyState
 } from "../../core/player/playerStrategy";
 import { enqueueUnit, createQueue, tickQueue, type UnitQueue } from "../../core/queue/unitQueue";
-import { UNITS as UNIT_DEFINITIONS, type UnitName } from "../../core/units/unitData";
+import { UNITS as UNIT_DEFINITIONS, isMonsterUnit, type UnitName } from "../../core/units/unitData";
 import {
   CameraDragController,
   DESKTOP_MIN_ZOOM,
@@ -498,6 +507,27 @@ export class GameScene extends Phaser.Scene {
       case "BearDefender":
         this.fulfilSpawnRequests(bearDefenderRequests(this.debugUnits, "Blue"));
         break;
+      case "Skulls":
+        this.fulfilSpawnRequests(skullSwarmRequests("Blue"));
+        break;
+      case "Spiders":
+        this.fulfilSpawnRequests(spiderSwarmRequests("Blue"));
+        break;
+      case "SpawnTurtles":
+        this.fulfilSpawnRequests(turtleRequests("Blue"));
+        break;
+      case "MinotaurRage":
+        this.fulfilSpawnRequests(minotaurRageRequests(this.debugUnits, "Blue"));
+        break;
+      case "ConvertGoblins":
+        this.applyConversion(applyConvertGoblins(this.debugUnits, "Blue"));
+        break;
+      case "ConvertSharks":
+        this.applyConversion(applyConvertSharks(this.debugUnits, "Blue"));
+        break;
+      case "GnomesBasic":
+        this.applyConversion(applyGnomesBasic(this.debugUnits, "Blue"));
+        break;
       default:
         break;
     }
@@ -506,6 +536,23 @@ export class GameScene extends Phaser.Scene {
   private fulfilSpawnRequests(requests: readonly SpawnRequest[]): void {
     for (const request of requests) {
       this.spawnQueuedUnit(request.unit, request.color, request.position);
+    }
+  }
+
+  /** Swap converted units in place and rebuild their sprites (texture changes). */
+  private applyConversion(result: ConversionResult): void {
+    this.debugUnits = result.units as MovingUnit[];
+    const renderer = new UnitRenderer(this);
+    for (const id of result.changedIds) {
+      const handle = this.debugUnitSprites.get(id);
+      if (handle) {
+        UnitRenderer.destroyHandle(handle);
+        this.debugUnitSprites.delete(id);
+      }
+      const unit = this.debugUnits.find((candidate) => candidate.id === id);
+      if (unit) {
+        this.debugUnitSprites.set(id, renderer.renderUnit(unit, unit.moving ? "Run" : "Idle"));
+      }
     }
   }
 
@@ -529,6 +576,12 @@ export class GameScene extends Phaser.Scene {
 
   private queueUnit(unitName: UnitName): void {
     if (this.paused || this.hud?.isUnitInfoVisible) {
+      return;
+    }
+
+    // Monsters are only recruitable while their queue boost is running.
+    if (isMonsterUnit(unitName) && activeQueueUnit(this.boosts) !== unitName) {
+      this.audio?.play("error");
       return;
     }
 

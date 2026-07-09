@@ -1,9 +1,12 @@
 import {
   CORE_BOOST_NAMES,
   boostDefinition,
+  isQueueBoost,
   isTimedBoost,
+  queueBoostUnit,
   type BoostName
 } from "./boostData";
+import type { UnitName } from "../units/unitData";
 
 export const BOOST_DRAFT_INTERVAL_MS = 30000;
 export const BOOST_DRAFT_CHOICES = 3;
@@ -76,16 +79,33 @@ export function tickBoosts(
 
 /**
  * Pick BOOST_DRAFT_CHOICES boosts. Boosts that are already active as a timed
- * buff are excluded so an offer never wastes a slot on a running effect.
+ * buff are excluded so an offer never wastes a slot on a running effect, and
+ * while a queue boost runs no other queue boost is offered (original
+ * condition: at most one queue unlock at a time).
  */
 export function rollOffer(
   active: readonly ActiveBoost[],
   random: () => number = Math.random
 ): readonly BoostName[] {
   const activeTimed = new Set(active.map((boost) => boost.name));
-  const pool = CORE_BOOST_NAMES.filter((name) => !(isTimedBoost(name) && activeTimed.has(name)));
+  const queueBoostActive = active.some((boost) => isQueueBoost(boost.name));
+  const pool = CORE_BOOST_NAMES.filter(
+    (name) =>
+      !(isTimedBoost(name) && activeTimed.has(name)) && !(queueBoostActive && isQueueBoost(name))
+  );
   const shuffled = shuffle(pool, random);
   return shuffled.slice(0, Math.min(BOOST_DRAFT_CHOICES, shuffled.length));
+}
+
+/** The monster currently recruitable through an active queue boost, if any. */
+export function activeQueueUnit(state: BoostState): UnitName | undefined {
+  for (const boost of state.active) {
+    const unit = queueBoostUnit(boost.name);
+    if (unit) {
+      return unit;
+    }
+  }
+  return undefined;
 }
 
 export interface SelectResult {

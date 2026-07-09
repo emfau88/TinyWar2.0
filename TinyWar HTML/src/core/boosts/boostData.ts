@@ -1,7 +1,8 @@
-// The core-package boost catalogue for TinyWar HTML. Only the "core pack"
-// boosts are modelled here - the ones we can fully implement with the units
-// and systems that already exist (Warrior/Lancer/Archer/Priest plus the
-// Snake/Bear/Troll monsters). Values mirror the original tinywar boosts.rs.
+// The boost catalogue for TinyWar HTML. Values mirror the original tinywar
+// boosts.rs; with the full bestiary in place this now includes the monster
+// boosts (queue unlocks, instant swarms and conversions).
+
+import type { UnitName } from "../units/unitData";
 
 export type BoostName =
   // Timed stat / tempo buffs
@@ -12,6 +13,12 @@ export type BoostName =
   | "Run"
   | "Penetration"
   | "Longbow"
+  // Timed queue unlocks (one monster becomes recruitable while active)
+  | "QueueGoblins"
+  | "QueueSharks"
+  | "QueueTurtles"
+  | "QueueMinotaurs"
+  | "QueueShamans"
   // Instant effects
   | "InstantHealing"
   | "Repair"
@@ -20,7 +27,14 @@ export type BoostName =
   | "Lightning"
   | "Snakes"
   | "SpawnTrolls"
-  | "BearDefender";
+  | "BearDefender"
+  | "Skulls"
+  | "Spiders"
+  | "SpawnTurtles"
+  | "ConvertGoblins"
+  | "ConvertSharks"
+  | "GnomesBasic"
+  | "MinotaurRage";
 
 export type BoostKind = "timed" | "instant";
 
@@ -33,6 +47,8 @@ export interface BoostDefinition {
   kind: BoostKind;
   /** Active duration in ms for timed boosts; 0 for instant boosts. */
   durationMs: number;
+  /** For queue boosts: the monster the player may recruit while active. */
+  unlocksUnit?: UnitName;
 }
 
 export const CORE_BOOSTS: Record<BoostName, BoostDefinition> = {
@@ -140,6 +156,95 @@ export const CORE_BOOSTS: Record<BoostName, BoostDefinition> = {
     description: "Jeder deiner Priester beschwört einen Bären.",
     kind: "instant",
     durationMs: 0
+  },
+  QueueGoblins: {
+    name: "QueueGoblins",
+    title: "Goblin-Pakt",
+    description: "Goblins sind vorübergehend rekrutierbar - ihr Speer durchbohrt jede Rüstung.",
+    kind: "timed",
+    durationMs: 40000,
+    unlocksUnit: "Goblin"
+  },
+  QueueSharks: {
+    name: "QueueSharks",
+    title: "Hai-Pakt",
+    description: "Haie sind vorübergehend rekrutierbar - Fernkämpfer mit tödlichen Harpunen.",
+    kind: "timed",
+    durationMs: 40000,
+    unlocksUnit: "Shark"
+  },
+  QueueTurtles: {
+    name: "QueueTurtles",
+    title: "Schildkröten-Pakt",
+    description: "Schildkröten sind vorübergehend rekrutierbar - langsame, fast unzerstörbare Blocker.",
+    kind: "timed",
+    durationMs: 40000,
+    unlocksUnit: "Turtle"
+  },
+  QueueMinotaurs: {
+    name: "QueueMinotaurs",
+    title: "Minotaurus-Pakt",
+    description: "Minotauren sind vorübergehend rekrutierbar - stark in Angriff und Verteidigung.",
+    kind: "timed",
+    durationMs: 40000,
+    unlocksUnit: "Minotaur"
+  },
+  QueueShamans: {
+    name: "QueueShamans",
+    title: "Schamanen-Pakt",
+    description: "Schamanen sind vorübergehend rekrutierbar - zerstörerische Magie aus der Distanz.",
+    kind: "timed",
+    durationMs: 40000,
+    unlocksUnit: "Shaman"
+  },
+  Skulls: {
+    name: "Skulls",
+    title: "Totenschwarm",
+    description: "Beschwört einen Schwarm Schädel für dich.",
+    kind: "instant",
+    durationMs: 0
+  },
+  Spiders: {
+    name: "Spiders",
+    title: "Spinnenplage",
+    description: "Beschwört giftige Riesenspinnen für dich.",
+    kind: "instant",
+    durationMs: 0
+  },
+  SpawnTurtles: {
+    name: "SpawnTurtles",
+    title: "Panzer-Vorstoß",
+    description: "Beschwört Schildkröten, die für dich vorrücken.",
+    kind: "instant",
+    durationMs: 0
+  },
+  ConvertGoblins: {
+    name: "ConvertGoblins",
+    title: "Goblin-Verwandlung",
+    description: "Verwandelt alle deine Lancers in Goblins.",
+    kind: "instant",
+    durationMs: 0
+  },
+  ConvertSharks: {
+    name: "ConvertSharks",
+    title: "Hai-Verwandlung",
+    description: "Verwandelt alle deine Archer am Boden in Haie.",
+    kind: "instant",
+    durationMs: 0
+  },
+  GnomesBasic: {
+    name: "GnomesBasic",
+    title: "Gnomen-Fluch",
+    description: "Verwandelt alle gegnerischen Basiseinheiten am Boden in Gnome.",
+    kind: "instant",
+    durationMs: 0
+  },
+  MinotaurRage: {
+    name: "MinotaurRage",
+    title: "Minotaurus-Zorn",
+    description: "Beschwört je 3 gegnerische Monster einen Minotaurus (mind. einen).",
+    kind: "instant",
+    durationMs: 0
   }
 };
 
@@ -151,4 +256,13 @@ export function boostDefinition(name: BoostName): BoostDefinition {
 
 export function isTimedBoost(name: BoostName): boolean {
   return CORE_BOOSTS[name].kind === "timed";
+}
+
+/** Queue boosts temporarily unlock one monster for recruitment. */
+export function isQueueBoost(name: BoostName): boolean {
+  return CORE_BOOSTS[name].unlocksUnit !== undefined;
+}
+
+export function queueBoostUnit(name: BoostName): UnitName | undefined {
+  return CORE_BOOSTS[name].unlocksUnit;
 }

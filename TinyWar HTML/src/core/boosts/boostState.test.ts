@@ -3,6 +3,7 @@ import {
   BOOST_DRAFT_CHOICES,
   BOOST_DRAFT_INTERVAL_MS,
   MAX_ACTIVE_BOOSTS,
+  activeQueueUnit,
   createBoostState,
   hasActiveBoost,
   rollOffer,
@@ -112,5 +113,29 @@ describe("boostState", () => {
     const skipped = skipOffer(state);
     expect(skipped.offer).toBeNull();
     expect(skipped.draftTimerMs).toBe(BOOST_DRAFT_INTERVAL_MS);
+  });
+
+  it("never offers a queue boost while another queue boost is active", () => {
+    const active = [{ name: "QueueGoblins" as const, remainingMs: 20000 }];
+    // Across many shuffle rolls, no offer may surface any queue boost.
+    for (const roll of [0, 0.2, 0.4, 0.6, 0.8, 0.99]) {
+      const offer = rollOffer(active, () => roll);
+      for (const name of offer) {
+        expect(name.startsWith("Queue"), `offered ${name}`).toBe(false);
+      }
+    }
+  });
+
+  it("reports the monster unlocked by the active queue boost", () => {
+    const state: BoostState = {
+      draftTimerMs: 0,
+      offer: null,
+      active: [
+        { name: "Run", remainingMs: 4000 },
+        { name: "QueueTurtles", remainingMs: 20000 }
+      ]
+    };
+    expect(activeQueueUnit(state)).toBe("Turtle");
+    expect(activeQueueUnit({ ...state, active: [{ name: "Run", remainingMs: 1 }] })).toBeUndefined();
   });
 });

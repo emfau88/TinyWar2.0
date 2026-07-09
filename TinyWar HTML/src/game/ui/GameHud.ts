@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { UNIT_COSTS, canAfford, displayGold, type GoldState } from "../../core/economy/goldEconomy";
 import type { BoostName } from "../../core/boosts/boostData";
-import type { BoostState } from "../../core/boosts/boostState";
+import { activeQueueUnit, type BoostState } from "../../core/boosts/boostState";
 import { BoostHud } from "./BoostHud";
 import { PLAYER_STRATEGIES, strategyHotkey } from "../../core/player/playerStrategy";
 import { UNITS as UNIT_DEFINITIONS, unitCycleDurationMs } from "../../core/units/unitData";
@@ -122,6 +122,7 @@ export class GameHud {
   private readonly shopRibbonPieces: Phaser.GameObjects.Image[] = [];
   private readonly strategyRibbonPieces: Phaser.GameObjects.Image[] = [];
   private readonly shopButtons: UnitShopButton[] = [];
+  private monsterShopButton?: UnitShopButton;
   private readonly unitInfoButtons: UnitInfoButton[] = [];
   private readonly unitInfoBackdrop: Phaser.GameObjects.Rectangle;
   private readonly unitInfoPanel: Phaser.GameObjects.Rectangle;
@@ -524,6 +525,14 @@ export class GameHud {
       ...this.shopRibbonPieces,
       ...this.strategyRibbonPieces,
       ...this.shopButtons.flatMap((button) => [button.rect, button.icon, button.label, button.cost]),
+      ...(this.monsterShopButton
+        ? [
+            this.monsterShopButton.rect,
+            this.monsterShopButton.icon,
+            this.monsterShopButton.label,
+            this.monsterShopButton.cost
+          ]
+        : []),
       ...this.unitInfoButtons.flatMap((button) => [button.rect, button.icon, button.label]),
       ...PLAYER_STRATEGIES.flatMap((strategy) => {
         const button = this.strategyButtons.get(strategy);
@@ -555,7 +564,10 @@ export class GameHud {
 
   updateGold(gold: GoldState): void {
     this.goldText.setText(`Gold: ${displayGold(gold)}`);
-    for (const button of this.shopButtons) {
+    const buttons = this.monsterShopButton?.rect.visible
+      ? [...this.shopButtons, this.monsterShopButton]
+      : this.shopButtons;
+    for (const button of buttons) {
       const affordable = canAfford(gold, button.unit);
       button.icon.setAlpha(affordable ? 1 : 0.4);
       if (affordable) {
@@ -569,6 +581,7 @@ export class GameHud {
 
   updateBoosts(state: BoostState): void {
     this.lastBoostState = state;
+    this.syncMonsterShopButton(activeQueueUnit(state));
     this.boostHud.update(state, this.scene.scale.width, this.scene.scale.height);
   }
 
@@ -710,6 +723,11 @@ export class GameHud {
     this.scene.input.keyboard?.on("keydown-X", () => callbacks.onQueueUnit("Lancer"));
     this.scene.input.keyboard?.on("keydown-C", () => callbacks.onQueueUnit("Archer"));
     this.scene.input.keyboard?.on("keydown-V", () => callbacks.onQueueUnit("Priest"));
+    this.scene.input.keyboard?.on("keydown-B", () => {
+      if (this.monsterShopButton?.rect.visible) {
+        callbacks.onQueueUnit(this.monsterShopButton.unit);
+      }
+    });
     this.scene.input.keyboard?.on("keydown-T", () => callbacks.onSelectStrategy("Attack"));
     this.scene.input.keyboard?.on("keydown-Y", () => callbacks.onSelectStrategy("Guard"));
     this.scene.input.keyboard?.on("keydown-U", () => callbacks.onSelectStrategy("March"));
@@ -778,6 +796,90 @@ export class GameHud {
         .setDepth(102);
       this.shopButtons.push({ rect, icon, label, cost, unit });
     });
+
+    this.createMonsterShopButton(callbacks);
+  }
+
+  /**
+   * A fifth, initially hidden shop slot below the basic units. While a queue
+   * boost is active it shows the unlocked monster and lets the player recruit
+   * it like any other unit.
+   */
+  private createMonsterShopButton(callbacks: GameHudCallbacks): void {
+    const rect = this.scene.add
+      .rectangle(30, 0, 44, 44, 0x111827, 0.72)
+      .setFillStyle(0x111827, 0)
+      .setStrokeStyle(0, 0xf8fafc, 0)
+      .setScrollFactor(0)
+      .setDepth(100)
+      .setVisible(false)
+      .setInteractive({ useHandCursor: true });
+    rect.on("pointerdown", () => {
+      if (this.monsterShopButton?.rect.visible) {
+        callbacks.onQueueUnit(this.monsterShopButton.unit);
+      }
+    });
+
+    const icon = this.scene.add
+      .image(30, 0, UNIT_ASSET_KEYS.Goblin)
+      .setDisplaySize(38, 38)
+      .setScrollFactor(0)
+      .setDepth(101)
+      .setVisible(false);
+
+    const label = this.scene.add
+      .text(44, 12, this.hotkeyForUnit("Goblin"), {
+        fontFamily: "TinyWar Fira Sans",
+        fontSize: "11px",
+        color: "#f8fafc",
+        backgroundColor: "rgba(15, 23, 42, 0.78)",
+        padding: { x: 2, y: 0 }
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(102)
+      .setVisible(false);
+
+    const cost = this.scene.add
+      .text(18, -14, `${UNIT_COSTS.Goblin}`, {
+        fontFamily: "TinyWar Fira Mono",
+        fontSize: "10px",
+        color: "#fbbf24",
+        backgroundColor: "rgba(15, 23, 42, 0.78)",
+        padding: { x: 2, y: 0 }
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(102)
+      .setVisible(false);
+
+    this.monsterShopButton = { rect, icon, label, cost, unit: "Goblin" };
+  }
+
+  /** Show/hide and restyle the monster slot to match the active queue boost. */
+  private syncMonsterShopButton(unit: UnitName | undefined): void {
+    const button = this.monsterShopButton;
+    if (!button) {
+      return;
+    }
+
+    const visible = unit !== undefined;
+    if (visible === button.rect.visible && (!unit || unit === button.unit)) {
+      return;
+    }
+
+    if (unit) {
+      button.unit = unit;
+      button.icon.setTexture(UNIT_ASSET_KEYS[unit]);
+      button.cost.setText(`${UNIT_COSTS[unit]}`);
+    }
+    button.rect.setVisible(visible);
+    button.icon.setVisible(visible);
+    button.cost.setVisible(visible);
+    // The hotkey label additionally respects the viewport's keyboard hints,
+    // which layoutShopButtons applies right below.
+    button.label.setVisible(visible);
+    this.layoutShopButtons(this.scene.scale.width, this.scene.scale.height);
   }
 
   private createUnitInfoButtons(): void {
@@ -1087,19 +1189,23 @@ export class GameHud {
     const metrics = this.viewportMetrics(width, height);
     const buttonSize = metrics.sideButtonSize;
     const gap = metrics.sideButtonGap;
-    const totalHeight = this.shopButtons.length * buttonSize + (this.shopButtons.length - 1) * gap;
+    const monsterVisible = this.monsterShopButton?.rect.visible ?? false;
+    const buttons = monsterVisible && this.monsterShopButton
+      ? [...this.shopButtons, this.monsterShopButton]
+      : this.shopButtons;
+    const totalHeight = buttons.length * buttonSize + (buttons.length - 1) * gap;
     const startY = height / 2 - totalHeight / 2;
     const x = metrics.mobile ? 28 : 30;
 
     this.layoutSideRibbon(this.shopRibbonPieces, x, height, metrics);
-    this.shopButtons.forEach((button, index) => {
+    buttons.forEach((button, index) => {
       const y = startY + index * (buttonSize + gap) + buttonSize / 2;
       button.rect.setPosition(x, y).setSize(buttonSize, buttonSize);
       button.icon
         .setPosition(x, y - 2)
         .setDisplaySize(metrics.shopIconSize, metrics.shopIconSize);
       button.label
-        .setVisible(metrics.showKeyboardHints)
+        .setVisible(metrics.showKeyboardHints && button.rect.visible)
         .setPosition(x + 14, y + 12);
       button.cost.setPosition(x - buttonSize / 2 + 10, y - buttonSize / 2 + 6);
     });
@@ -1337,6 +1443,7 @@ export class GameHud {
   }
 
   private hotkeyForUnit(unit: UnitName): string {
+    // Monsters share the original's B key while their queue boost is active.
     return (
       {
         Warrior: "Z",
@@ -1344,7 +1451,7 @@ export class GameHud {
         Archer: "C",
         Priest: "V"
       } as Partial<Record<UnitName, string>>
-    )[unit] ?? "";
+    )[unit] ?? "B";
   }
 
   private advanceLabel(share: number, power: number): string {
