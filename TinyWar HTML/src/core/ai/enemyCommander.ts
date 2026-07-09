@@ -24,7 +24,10 @@ export const MAX_ESCALATION = 2.5;
 const FRONTLINE_UNITS: readonly UnitName[] = ["Warrior", "Lancer"];
 const MAX_PRIESTS_PER_WAVE = 1;
 
-// Monsters have weight 0: the classic opponent never queues them.
+/** From this point the classic opponent mixes a few monsters into its waves. */
+export const MONSTER_MIX_UNLOCK_MS = 5 * 60000;
+
+// Basic units dominate throughout; monsters not listed here are never queued.
 const WAVE_WEIGHTS: Record<UnitName, number> = {
   Warrior: 3,
   Lancer: 3,
@@ -44,6 +47,21 @@ const WAVE_WEIGHTS: Record<UnitName, number> = {
   Spider: 0,
   Turtle: 0
 };
+
+// Small late-game weights: an occasional goblin, skull or gnoll keeps waves
+// varied without displacing the basic-unit core (weights 3/3/2/1 above).
+const LATE_MONSTER_WEIGHTS: Partial<Record<UnitName, number>> = {
+  Goblin: 1,
+  Skull: 1,
+  Gnoll: 1
+};
+
+function waveWeight(unit: UnitName, elapsedMs: number): number {
+  if (WAVE_WEIGHTS[unit] > 0) {
+    return WAVE_WEIGHTS[unit];
+  }
+  return elapsedMs >= MONSTER_MIX_UNLOCK_MS ? LATE_MONSTER_WEIGHTS[unit] ?? 0 : 0;
+}
 
 export type EnemyPhase = "saving" | "spawning" | "resting";
 
@@ -79,12 +97,16 @@ export function rollRestDuration(random = Math.random): number {
   return REST_MIN_MS + random() * REST_VARIANCE_MS;
 }
 
-function pickWeighted(candidates: readonly UnitName[], random: () => number): UnitName {
-  const totalWeight = candidates.reduce((sum, unit) => sum + WAVE_WEIGHTS[unit], 0);
+function pickWeighted(
+  candidates: readonly UnitName[],
+  elapsedMs: number,
+  random: () => number
+): UnitName {
+  const totalWeight = candidates.reduce((sum, unit) => sum + waveWeight(unit, elapsedMs), 0);
   let cursor = random() * totalWeight;
 
   for (const unit of candidates) {
-    cursor -= WAVE_WEIGHTS[unit];
+    cursor -= waveWeight(unit, elapsedMs);
     if (cursor <= 0) {
       return unit;
     }
@@ -93,15 +115,19 @@ function pickWeighted(candidates: readonly UnitName[], random: () => number): Un
   return candidates[candidates.length - 1];
 }
 
-export function composeWave(budget: number, random = Math.random): readonly UnitName[] {
-  const wave: UnitName[] = [pickWeighted(FRONTLINE_UNITS, random)];
+export function composeWave(
+  budget: number,
+  elapsedMs: number,
+  random = Math.random
+): readonly UnitName[] {
+  const wave: UnitName[] = [pickWeighted(FRONTLINE_UNITS, elapsedMs, random)];
   let remaining = budget - UNIT_COSTS[wave[0]];
 
   while (wave.length < MAX_QUEUE_LENGTH) {
     const priests = wave.filter((unit) => unit === "Priest").length;
     const candidates = (Object.keys(WAVE_WEIGHTS) as UnitName[]).filter(
       (unit) =>
-        WAVE_WEIGHTS[unit] > 0 &&
+        waveWeight(unit, elapsedMs) > 0 &&
         UNIT_COSTS[unit] <= remaining &&
         (unit !== "Priest" || priests < MAX_PRIESTS_PER_WAVE)
     );
@@ -109,7 +135,7 @@ export function composeWave(budget: number, random = Math.random): readonly Unit
       break;
     }
 
-    const pick = pickWeighted(candidates, random);
+    const pick = pickWeighted(candidates, elapsedMs, random);
     wave.push(pick);
     remaining -= UNIT_COSTS[pick];
   }
@@ -134,7 +160,7 @@ export function tickEnemyCommander(
   let restRemainingMs = state.restRemainingMs;
 
   if (phase === "saving" && gold.gold >= waveBudget) {
-    for (const unit of composeWave(waveBudget, random)) {
+    for (const unit of composeWave(waveBudget, elapsedMs, random)) {
       const spent = spendForUnit(gold, unit);
       if (!spent.spent) {
         break;

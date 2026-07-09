@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   BASE_WAVE_BUDGET,
   MAX_ESCALATION,
+  MONSTER_MIX_UNLOCK_MS,
   composeWave,
   createEnemyCommander,
   escalationFactor,
@@ -74,12 +75,33 @@ describe("enemyCommander", () => {
 
   it("always leads a wave with a frontline unit and respects the priest cap", () => {
     for (const roll of [0, 0.25, 0.5, 0.75, 0.99]) {
-      const wave = composeWave(400, fixedRandom(roll));
+      const wave = composeWave(400, 0, fixedRandom(roll));
       expect(["Warrior", "Lancer"]).toContain(wave[0]);
       expect(wave.filter((unit) => unit === "Priest").length).toBeLessThanOrEqual(1);
       const cost = wave.reduce((sum, unit) => sum + UNIT_COSTS[unit], 0);
       expect(cost).toBeLessThanOrEqual(400);
     }
+  });
+
+  it("fields no monsters before the late-game mix unlocks", () => {
+    const monsters = ["Goblin", "Skull", "Gnoll"];
+    for (const roll of [0, 0.3, 0.6, 0.9, 0.99]) {
+      const wave = composeWave(600, MONSTER_MIX_UNLOCK_MS - 1, fixedRandom(roll));
+      expect(wave.some((unit) => monsters.includes(unit))).toBe(false);
+    }
+  });
+
+  it("occasionally mixes goblins, skulls or gnolls into late waves", () => {
+    const monsters = ["Goblin", "Skull", "Gnoll"];
+    const lateWaves = [0, 0.3, 0.6, 0.9, 0.99].flatMap((roll) => [
+      ...composeWave(600, MONSTER_MIX_UNLOCK_MS, fixedRandom(roll))
+    ]);
+    expect(lateWaves.some((unit) => monsters.includes(unit))).toBe(true);
+    // Basic units must still dominate the mix.
+    const basics = lateWaves.filter((unit) =>
+      ["Warrior", "Lancer", "Archer", "Priest"].includes(unit)
+    );
+    expect(basics.length).toBeGreaterThan(lateWaves.length / 2);
   });
 
   it("uses the same starting economy as the player", () => {
