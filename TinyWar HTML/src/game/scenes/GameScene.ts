@@ -71,7 +71,12 @@ import {
   type StrategyState
 } from "../../core/player/playerStrategy";
 import { enqueueUnit, createQueue, tickQueue, type UnitQueue } from "../../core/queue/unitQueue";
-import { UNITS as UNIT_DEFINITIONS, isMonsterUnit, type UnitName } from "../../core/units/unitData";
+import {
+  MONSTER_UNITS,
+  UNITS as UNIT_DEFINITIONS,
+  isMonsterUnit,
+  type UnitName
+} from "../../core/units/unitData";
 import {
   CameraDragController,
   DESKTOP_MIN_ZOOM,
@@ -213,6 +218,26 @@ export class GameScene extends Phaser.Scene {
     this.scale.off("resize", this.layout, this);
     this.scale.on("resize", this.layout, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.shutdown());
+
+    // Dev aid: ?zoo spawns every monster for both sides and unlocks a queue
+    // boost, so animations, projectiles and the monster shop button can be
+    // inspected visually without playing a full match. ?zoo=ranged fields
+    // only the three projectile monsters against warriors.
+    const zoo =
+      typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("zoo") : null;
+    if (zoo !== null) {
+      const blueUnits: readonly UnitName[] =
+        zoo === "ranged" ? ["Gnoll", "Gnoll", "Shaman", "Shaman", "Shark", "Shark"] : MONSTER_UNITS;
+      const redUnits: readonly UnitName[] =
+        zoo === "ranged" ? Array.from({ length: 6 }, () => "Warrior" as UnitName) : MONSTER_UNITS;
+      for (const unit of blueUnits) {
+        this.spawnQueuedUnit(unit, "Blue");
+      }
+      for (const unit of redUnits) {
+        this.spawnQueuedUnit(unit, this.opponentColor);
+      }
+      this.boosts = { ...this.boosts, active: [{ name: "QueueGoblins", remainingMs: 600000 }] };
+    }
   }
 
   update(_time: number, delta: number): void {
