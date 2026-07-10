@@ -1,5 +1,7 @@
 import type { BuildingInstance, PlayerColor } from "../buildings/buildingData";
 import type { CombatUnit } from "../combat/combatSystem";
+import { getActiveMap } from "../map/activeMap";
+import { getLaneWorldPath, type LaneName } from "../map/pathfinding";
 import { UNITS, isMonsterUnit, type UnitName } from "../units/unitData";
 import type { BoostName } from "./boostData";
 
@@ -27,6 +29,38 @@ export interface SpawnRequest {
   color: PlayerColor;
   /** Optional world position; when omitted the scene spawns at the base door. */
   position?: { x: number; y: number };
+  /** Optional lane; keeps a scattered spawn walking the path it spawned on. */
+  lane?: LaneName;
+}
+
+/**
+ * Scatter swarm spawns along the map's lane paths, like the original's
+ * "randomly over the map" summons - one request per unit at a random path
+ * point (away from both ends) with a little jitter so nothing stacks.
+ */
+function scatteredRequests(
+  unit: UnitName,
+  count: number,
+  color: PlayerColor,
+  random: () => number = Math.random
+): readonly SpawnRequest[] {
+  const lanes = getActiveMap().availableLanes;
+  return Array.from({ length: count }, () => {
+    const lane = lanes[Math.floor(random() * lanes.length)] ?? lanes[0];
+    const path = getLaneWorldPath(lane);
+    const margin = Math.min(3, Math.floor((path.length - 1) / 3));
+    const span = Math.max(1, path.length - 2 * margin);
+    const point = path[Math.min(path.length - 1, margin + Math.floor(random() * span))];
+    return {
+      unit,
+      color,
+      lane,
+      position: {
+        x: point.x + (random() - 0.5) * 56,
+        y: point.y + (random() - 0.5) * 40
+      }
+    };
+  });
 }
 
 export interface InstantBoostResult {
@@ -89,9 +123,12 @@ export function cloneRequests(
     }));
 }
 
-/** Spawn requests for a snake swarm marching from the color's base. */
-export function snakeSwarmRequests(color: PlayerColor): readonly SpawnRequest[] {
-  return Array.from({ length: SNAKE_SWARM_COUNT }, () => ({ unit: "Snake" as UnitName, color }));
+/** Spawn requests for a snake swarm scattered along the paths. */
+export function snakeSwarmRequests(
+  color: PlayerColor,
+  random: () => number = Math.random
+): readonly SpawnRequest[] {
+  return scatteredRequests("Snake", SNAKE_SWARM_COUNT, color, random);
 }
 
 /** Spawn requests for trolls marching from the color's base. */
@@ -113,14 +150,20 @@ export function bearDefenderRequests(
     }));
 }
 
-/** Spawn requests for a skull swarm marching from the color's base. */
-export function skullSwarmRequests(color: PlayerColor): readonly SpawnRequest[] {
-  return Array.from({ length: SKULL_SWARM_COUNT }, () => ({ unit: "Skull" as UnitName, color }));
+/** Spawn requests for a skull swarm scattered along the paths. */
+export function skullSwarmRequests(
+  color: PlayerColor,
+  random: () => number = Math.random
+): readonly SpawnRequest[] {
+  return scatteredRequests("Skull", SKULL_SWARM_COUNT, color, random);
 }
 
-/** Spawn requests for a spider swarm marching from the color's base. */
-export function spiderSwarmRequests(color: PlayerColor): readonly SpawnRequest[] {
-  return Array.from({ length: SPIDER_SWARM_COUNT }, () => ({ unit: "Spider" as UnitName, color }));
+/** Spawn requests for a spider swarm scattered along the paths. */
+export function spiderSwarmRequests(
+  color: PlayerColor,
+  random: () => number = Math.random
+): readonly SpawnRequest[] {
+  return scatteredRequests("Spider", SPIDER_SWARM_COUNT, color, random);
 }
 
 /** Spawn requests for turtles marching from the color's base. */

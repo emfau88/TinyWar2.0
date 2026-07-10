@@ -93,6 +93,19 @@ describe("instant boosts", () => {
     expect(trollRequests("Blue").every((r) => r.unit === "Troll")).toBe(true);
   });
 
+  it("scatters swarms along lane paths instead of stacking at the base", () => {
+    const requests = snakeSwarmRequests("Blue");
+    for (const request of requests) {
+      expect(request.position).toBeDefined();
+      expect(request.lane).toBeDefined();
+    }
+    // With a real random source the spawn points must not all coincide.
+    const uniquePositions = new Set(
+      requests.map((r) => `${Math.round(r.position!.x)}:${Math.round(r.position!.y)}`)
+    );
+    expect(uniquePositions.size).toBeGreaterThan(1);
+  });
+
   it("classifies spawning vs pure-transform instant boosts", () => {
     expect(isSpawningBoost("InstantArmy")).toBe(true);
     expect(isSpawningBoost("BearDefender")).toBe(true);

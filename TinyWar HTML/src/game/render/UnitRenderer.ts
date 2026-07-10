@@ -45,13 +45,15 @@ export class UnitRenderer {
       const healthBack = this.scene.add
         .rectangle(position.x, healthY, healthWidth, 6, 0x000000, 0.7)
         .setDepth(40);
+      // Team-colored bars: monsters share one neutral sprite set, so the bar
+      // is the reliable tell of who a unit belongs to.
       const healthFill = this.scene.add
         .rectangle(
           snap(unit.position.x - healthWidth / 2 + 1),
           healthY,
           healthWidth - 2,
           4,
-          0x32cd32,
+          unit.color === "Blue" ? 0x32cd32 : 0xef4444,
           1
         )
         .setOrigin(0, 0.5)

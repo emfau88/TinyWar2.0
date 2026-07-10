@@ -13,6 +13,7 @@ import { setActiveMap, getActiveMap } from "../../core/map/activeMap";
 import { CLASSIC_MAP, type MapId } from "../../core/map/mapDefinition";
 import { WILDNIS_MAP } from "../../core/map/wildnisMap";
 import { tileToWorld } from "../../core/map/mapGeometry";
+import type { LaneName } from "../../core/map/pathfinding";
 import type { PlayerColor } from "../../core/buildings/buildingData";
 import {
   activeQueueUnit,
@@ -451,17 +452,25 @@ export class GameScene extends Phaser.Scene {
     );
   }
 
-  private spawnQueuedUnit(unitName: UnitName, color: PlayerColor, atPosition?: { x: number; y: number }): void {
+  private spawnQueuedUnit(
+    unitName: UnitName,
+    color: PlayerColor,
+    atPosition?: { x: number; y: number },
+    atLane?: LaneName,
+    jitter?: { dx: number; dy: number }
+  ): void {
     const renderer = new UnitRenderer(this);
     const base = this.buildings.find((building) => building.isBase && building.color === color);
     const enemyBase = this.buildings.find((building) => building.isBase && building.color !== color);
     const baseDoor = base ? getBuildingDoorSpawnPosition(base) : undefined;
-    const spawnPosition = atPosition ?? baseDoor;
+    const anchor = atPosition ?? baseDoor;
+    const spawnPosition =
+      anchor && jitter ? { x: anchor.x + jitter.dx, y: anchor.y + jitter.dy } : anchor;
     const terminalPosition = enemyBase ? getBuildingDoorSpawnPosition(enemyBase) : undefined;
     // Original parity: each spawn places one unit on a random lane from the
     // direction's lane set, restricted to lanes that exist on the active map.
     const direction = color === "Blue" ? this.selectedDirection : "Any";
-    const lane = randomLaneForDirection(direction, Math.random, getActiveMap().availableLanes);
+    const lane = atLane ?? randomLaneForDirection(direction, Math.random, getActiveMap().availableLanes);
     const unit = createLaneUnit(
       unitName,
       lane,
@@ -560,7 +569,14 @@ export class GameScene extends Phaser.Scene {
 
   private fulfilSpawnRequests(requests: readonly SpawnRequest[]): void {
     for (const request of requests) {
-      this.spawnQueuedUnit(request.unit, request.color, request.position);
+      // Base-door group spawns get a small jitter so simultaneous summons
+      // (trolls, turtles, minotaurs, instant army) don't stack invisibly on
+      // one point - scattered requests already carry their own position.
+      const jitter =
+        requests.length > 1 && !request.position
+          ? { dx: (Math.random() - 0.5) * 72, dy: (Math.random() - 0.5) * 48 }
+          : undefined;
+      this.spawnQueuedUnit(request.unit, request.color, request.position, request.lane, jitter);
     }
   }
 
