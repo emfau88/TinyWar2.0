@@ -61,6 +61,10 @@ export class PreloadScene extends Phaser.Scene {
     for (const portrait of Object.values(ASSETS.monsterPortraits)) {
       this.load.image(portrait.key, portrait.path);
     }
+    this.load.image(ASSETS.boostCards.frame.key, ASSETS.boostCards.frame.path);
+    for (const art of Object.values(ASSETS.boostCards.art)) {
+      this.load.image(art.key, art.path);
+    }
     this.load.audio(ASSETS.audio.button.key, ASSETS.audio.button.path);
     this.load.audio(ASSETS.audio.click.key, ASSETS.audio.click.path);
     this.load.audio(ASSETS.audio.error.key, ASSETS.audio.error.path);

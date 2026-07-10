@@ -1,15 +1,25 @@
 import Phaser from "phaser";
 import { boostDefinition, type BoostName } from "../../core/boosts/boostData";
 import type { BoostState } from "../../core/boosts/boostState";
+import { ASSETS } from "../../data/assetManifest";
 
-const CARD_W = 150;
-const CARD_H = 176;
-const CARD_GAP = 14;
+// The original card frame (boost.png) is 342x565; keep its aspect ratio.
+const CARD_W = 176;
+const CARD_H = Math.round((CARD_W * 565) / 342);
+const CARD_GAP = 20;
 const PILL_H = 22;
+// Artwork window and parchment area of the frame, as fractions of the card.
+const ART_WIDTH = 0.8;
+const ART_HEIGHT = 0.36;
+const ART_CENTER_Y = -0.085;
+// The parchment field of the frame spans roughly 0.155..0.39 of the card
+// height below its center; keep title and description inside it.
+const TEXT_TOP_Y = 0.155;
 
 interface CardHandle {
   container: Phaser.GameObjects.Container;
-  bg: Phaser.GameObjects.Rectangle;
+  frame: Phaser.GameObjects.Image;
+  art: Phaser.GameObjects.Image;
   title: Phaser.GameObjects.Text;
   desc: Phaser.GameObjects.Text;
   hint: Phaser.GameObjects.Text;
@@ -88,43 +98,53 @@ export class BoostHud {
 
   private createCard(): CardHandle {
     const container = this.scene.add.container(0, 0).setScrollFactor(0).setDepth(183).setVisible(false);
-    const bg = this.scene.add
-      .rectangle(0, 0, CARD_W, CARD_H, 0x1f2937, 0.98)
-      .setStrokeStyle(2, 0xfbbf24, 0.85)
+    // Artwork first so the frame's window overlaps its edges, like the original.
+    const art = this.scene.add
+      .image(0, CARD_H * ART_CENTER_Y, ASSETS.boostCards.frame.key)
+      .setDisplaySize(CARD_W * ART_WIDTH, CARD_H * ART_HEIGHT);
+    const frame = this.scene.add
+      .image(0, 0, ASSETS.boostCards.frame.key)
+      .setDisplaySize(CARD_W, CARD_H)
       .setInteractive({ useHandCursor: true });
     const title = this.scene.add
-      .text(0, -CARD_H / 2 + 26, "", {
+      .text(0, CARD_H * TEXT_TOP_Y, "", {
         fontFamily: "TinyWar Fira Sans",
-        fontSize: "17px",
-        color: "#fbbf24",
+        fontSize: "13px",
+        color: "#78350f",
         align: "center",
-        wordWrap: { width: CARD_W - 20 }
+        wordWrap: { width: CARD_W * 0.68 }
       })
       .setOrigin(0.5, 0);
     const desc = this.scene.add
-      .text(0, -6, "", {
+      .text(0, CARD_H * TEXT_TOP_Y + 19, "", {
         fontFamily: "TinyWar Fira Sans",
-        fontSize: "12px",
-        color: "#e2e8f0",
+        fontSize: "10px",
+        color: "#1f2937",
         align: "center",
-        wordWrap: { width: CARD_W - 22 }
+        lineSpacing: 1,
+        wordWrap: { width: CARD_W * 0.66 }
       })
-      .setOrigin(0.5, 0.5);
+      .setOrigin(0.5, 0);
+    // Duration badge in the artwork's lower-right corner.
     const hint = this.scene.add
-      .text(0, CARD_H / 2 - 20, "Wählen", {
-        fontFamily: "TinyWar Fira Sans",
-        fontSize: "12px",
-        color: "#94a3b8"
+      .text(CARD_W * (ART_WIDTH / 2), CARD_H * (ART_CENTER_Y + ART_HEIGHT / 2), "", {
+        fontFamily: "TinyWar Fira Mono",
+        fontSize: "11px",
+        color: "#fef3c7",
+        backgroundColor: "rgba(15,23,42,0.72)",
+        padding: { x: 4, y: 1 }
       })
-      .setOrigin(0.5);
-    container.add([bg, title, desc, hint]);
-    bg.on("pointerdown", () => {
-      const handle = this.cards.find((c) => c.bg === bg);
+      .setOrigin(1, 1);
+    container.add([art, frame, title, desc, hint]);
+    frame.on("pointerdown", () => {
+      const handle = this.cards.find((c) => c.frame === frame);
       if (handle?.name) {
         this.onChoose(handle.name);
       }
     });
-    return { container, bg, title, desc, hint };
+    frame.on("pointerover", () => container.setScale(1.05));
+    frame.on("pointerout", () => container.setScale(1));
+    return { container, frame, art, title, desc, hint };
   }
 
   private createPill(): PillHandle {
@@ -183,11 +203,14 @@ export class BoostHud {
       }
       const def = boostDefinition(name);
       card.name = name;
+      card.art.setTexture(ASSETS.boostCards.art[name].key);
+      card.art.setDisplaySize(CARD_W * ART_WIDTH, CARD_H * ART_HEIGHT);
       card.title.setText(def.title);
       card.desc.setText(def.description);
-      card.hint.setText(def.kind === "instant" ? "Sofort-Effekt" : `${def.durationMs / 1000}s aktiv`);
+      card.hint.setText(def.kind === "instant" ? "Sofort" : `${def.durationMs / 1000}s`);
       card.container
         .setVisible(true)
+        .setScale(1)
         .setPosition(startX + index * (CARD_W + CARD_GAP), height / 2);
     });
   }

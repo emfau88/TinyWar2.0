@@ -160,7 +160,7 @@ export const CORE_BOOSTS: Record<BoostName, BoostDefinition> = {
   QueueGoblins: {
     name: "QueueGoblins",
     title: "Goblin-Pakt",
-    description: "Goblins sind vorübergehend rekrutierbar - ihr Speer durchbohrt jede Rüstung.",
+    description: "Goblins rekrutierbar - ihr Speer durchbohrt jede Rüstung.",
     kind: "timed",
     durationMs: 40000,
     unlocksUnit: "Goblin"
@@ -168,7 +168,7 @@ export const CORE_BOOSTS: Record<BoostName, BoostDefinition> = {
   QueueSharks: {
     name: "QueueSharks",
     title: "Hai-Pakt",
-    description: "Haie sind vorübergehend rekrutierbar - Fernkämpfer mit tödlichen Harpunen.",
+    description: "Haie rekrutierbar - Fernkampf mit tödlichen Harpunen.",
     kind: "timed",
     durationMs: 40000,
     unlocksUnit: "Shark"
@@ -176,7 +176,7 @@ export const CORE_BOOSTS: Record<BoostName, BoostDefinition> = {
   QueueTurtles: {
     name: "QueueTurtles",
     title: "Schildkröten-Pakt",
-    description: "Schildkröten sind vorübergehend rekrutierbar - langsame, fast unzerstörbare Blocker.",
+    description: "Schildkröten rekrutierbar - fast unzerstörbare Blocker.",
     kind: "timed",
     durationMs: 40000,
     unlocksUnit: "Turtle"
@@ -184,7 +184,7 @@ export const CORE_BOOSTS: Record<BoostName, BoostDefinition> = {
   QueueMinotaurs: {
     name: "QueueMinotaurs",
     title: "Minotaurus-Pakt",
-    description: "Minotauren sind vorübergehend rekrutierbar - stark in Angriff und Verteidigung.",
+    description: "Minotauren rekrutierbar - stark in Angriff und Abwehr.",
     kind: "timed",
     durationMs: 40000,
     unlocksUnit: "Minotaur"
@@ -192,7 +192,7 @@ export const CORE_BOOSTS: Record<BoostName, BoostDefinition> = {
   QueueShamans: {
     name: "QueueShamans",
     title: "Schamanen-Pakt",
-    description: "Schamanen sind vorübergehend rekrutierbar - zerstörerische Magie aus der Distanz.",
+    description: "Schamanen rekrutierbar - verheerende Magie auf Distanz.",
     kind: "timed",
     durationMs: 40000,
     unlocksUnit: "Shaman"
@@ -235,14 +235,14 @@ export const CORE_BOOSTS: Record<BoostName, BoostDefinition> = {
   GnomesBasic: {
     name: "GnomesBasic",
     title: "Gnomen-Fluch",
-    description: "Verwandelt alle gegnerischen Basiseinheiten am Boden in Gnome.",
+    description: "Verwandelt gegnerische Basiseinheiten am Boden in Gnome.",
     kind: "instant",
     durationMs: 0
   },
   MinotaurRage: {
     name: "MinotaurRage",
     title: "Minotaurus-Zorn",
-    description: "Beschwört je 3 gegnerische Monster einen Minotaurus (mind. einen).",
+    description: "Je 3 Gegner-Monster: ein Minotaurus (mind. einer).",
     kind: "instant",
     durationMs: 0
   }

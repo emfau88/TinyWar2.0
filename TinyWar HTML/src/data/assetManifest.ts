@@ -1,8 +1,15 @@
 import { MONSTER_UNITS } from "../core/units/unitData";
+import { CORE_BOOST_NAMES, type BoostName } from "../core/boosts/boostData";
 
 // Relative to the page URL so the game also works under a sub-path deploy
 // (e.g. GitHub Pages at /TinyWar-HTML/).
 const ROOT = "assets/tinywar";
+
+// Boost artwork files use the original's naming: camel case split into
+// lowercase words ("QueueGoblins" -> "queue goblins").
+function boostArtFileName(name: BoostName): string {
+  return name.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
+}
 
 export const ASSETS = {
   background: {
@@ -158,6 +165,24 @@ export const ASSETS = {
       key: "projectile-harpoon",
       path: `${ROOT}/images/units/harpoon.png`
     }
+  },
+  boostCards: {
+    frame: {
+      key: "boost-card-frame",
+      path: `${ROOT}/images/boosts/boost.png`
+    },
+    // Downscaled JPEG copies of the original card artworks (the source PNGs
+    // are ~1.7MB each - far too heavy to preload on mobile).
+    art: CORE_BOOST_NAMES.reduce(
+      (art, name) => ({
+        ...art,
+        [name]: {
+          key: `boost-art-${boostArtFileName(name).replace(/ /g, "-")}`,
+          path: `${ROOT}/images/boosts/small/${boostArtFileName(name)}.jpg`
+        }
+      }),
+      {} as Record<BoostName, { key: string; path: string }>
+    )
   },
   monsterPortraits: MONSTER_UNITS.reduce(
     (portraits, name) => ({
