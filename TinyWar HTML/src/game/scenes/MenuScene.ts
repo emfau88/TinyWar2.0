@@ -3,10 +3,15 @@ import type { MapId } from "../../core/map/mapDefinition";
 import { ASSETS } from "../../data/assetManifest";
 
 interface ModeButton {
-  panel: Phaser.GameObjects.Rectangle;
+  banner: Phaser.GameObjects.Image;
   label: Phaser.GameObjects.Text;
   subtitle: Phaser.GameObjects.Text;
 }
+
+// The banner art is 899x856; keep its parchment-scroll proportions.
+const BANNER_HEIGHT = 150;
+const BANNER_WIDTH = Math.round((BANNER_HEIGHT * 899) / 856);
+const BANNER_GAP = 44;
 
 export class MenuScene extends Phaser.Scene {
   private cover?: Phaser.GameObjects.Image;
@@ -29,14 +34,12 @@ export class MenuScene extends Phaser.Scene {
 
     this.classicButton = this.createModeButton(
       "Classic",
-      "3 Lanes - Duel vs AI",
-      0x1d4ed8,
+      "3 Lanes - Duell vs KI",
       () => this.startGame("classic")
     );
     this.wildnisButton = this.createModeButton(
       "Wildnis",
-      "1 Path - Monster Hunt",
-      0x14532d,
+      "1 Pfad - Monsterjagd",
       () => this.startGame("wildnis")
     );
 
@@ -53,36 +56,51 @@ export class MenuScene extends Phaser.Scene {
   private createModeButton(
     title: string,
     subtitleText: string,
-    color: number,
     onSelect: () => void
   ): ModeButton {
-    const panel = this.add
-      .rectangle(0, 0, 250, 72, color, 0.88)
-      .setStrokeStyle(2, 0xf8fafc, 0.75)
+    const banner = this.add
+      .image(0, 0, ASSETS.ui.banner.key)
+      .setDisplaySize(BANNER_WIDTH, BANNER_HEIGHT)
       .setInteractive({ useHandCursor: true });
-    panel.on("pointerdown", onSelect);
 
     const label = this.add
       .text(0, 0, title, {
         fontFamily: "TinyWar Fira Sans",
         fontSize: "26px",
-        color: "#f8fafc"
+        color: "#4a2c12"
       })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-    label.on("pointerdown", onSelect);
+      .setOrigin(0.5);
 
     const subtitle = this.add
       .text(0, 0, subtitleText, {
         fontFamily: "TinyWar Fira Sans",
-        fontSize: "13px",
-        color: "#e2e8f0"
+        fontSize: "12px",
+        color: "#6b4a24"
       })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-    subtitle.on("pointerdown", onSelect);
+      .setOrigin(0.5);
 
-    return { panel, label, subtitle };
+    const button: ModeButton = { banner, label, subtitle };
+    const parts: (Phaser.GameObjects.Image | Phaser.GameObjects.Text)[] = [banner, label, subtitle];
+    for (const part of parts) {
+      part.setInteractive({ useHandCursor: true });
+      part.on("pointerdown", onSelect);
+      part.on("pointerover", () => this.setButtonHover(button, true));
+      part.on("pointerout", () => this.setButtonHover(button, false));
+    }
+
+    return button;
+  }
+
+  private setButtonHover(button: ModeButton, hovered: boolean): void {
+    const scale = hovered ? 1.06 : 1;
+    button.banner.setDisplaySize(BANNER_WIDTH * scale, BANNER_HEIGHT * scale);
+    button.label.setScale(scale);
+    button.subtitle.setScale(scale);
+    if (hovered) {
+      button.banner.setTint(0xffe9b8);
+    } else {
+      button.banner.clearTint();
+    }
   }
 
   private onResize(gameSize: Phaser.Structs.Size): void {
@@ -98,10 +116,17 @@ export class MenuScene extends Phaser.Scene {
     }
 
     // The cover art's TinyWar shield sits around the vertical center; keep
-    // the mode buttons in the lower quarter so the title stays fully visible.
-    const buttonsTop = Math.min(height * 0.74, height - 150);
-    this.layoutModeButton(this.classicButton, width / 2, buttonsTop);
-    this.layoutModeButton(this.wildnisButton, width / 2, buttonsTop + 88);
+    // the mode banners in the lower quarter so the title stays fully visible.
+    const y = Math.min(height * 0.78, height - BANNER_HEIGHT / 2 - 16);
+    const sideBySide = width >= BANNER_WIDTH * 2 + BANNER_GAP + 32;
+    if (sideBySide) {
+      this.layoutModeButton(this.classicButton, width / 2 - BANNER_WIDTH / 2 - BANNER_GAP / 2, y);
+      this.layoutModeButton(this.wildnisButton, width / 2 + BANNER_WIDTH / 2 + BANNER_GAP / 2, y);
+    } else {
+      const stackedTop = Math.min(height * 0.62, height - BANNER_HEIGHT - 90);
+      this.layoutModeButton(this.classicButton, width / 2, stackedTop);
+      this.layoutModeButton(this.wildnisButton, width / 2, stackedTop + BANNER_HEIGHT + 12);
+    }
   }
 
   private layoutModeButton(button: ModeButton | undefined, x: number, y: number): void {
@@ -109,9 +134,10 @@ export class MenuScene extends Phaser.Scene {
       return;
     }
 
-    button.panel.setPosition(x, y);
-    button.label.setPosition(x, y - 12);
-    button.subtitle.setPosition(x, y + 18);
+    button.banner.setPosition(x, y);
+    // The parchment area sits slightly above the banner's curled bottom edge.
+    button.label.setPosition(x, y - 16);
+    button.subtitle.setPosition(x, y + 12);
   }
 
   private startGame(mode: MapId): void {
