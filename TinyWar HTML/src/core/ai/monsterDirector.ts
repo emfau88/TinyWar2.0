@@ -14,14 +14,13 @@ import {
 } from "../queue/unitQueue";
 import type { UnitName } from "../units/unitData";
 
-// Pacing knobs for the wildnis mode. Monsters attack in distinct pulses with
+// Pacing knobs for the survival mode. Monsters attack in distinct pulses with
 // clear pauses; bosses are rare, announced events - never spammed.
 export const MONSTER_BASE_WAVE_BUDGET = 110;
 export const MONSTER_WAVE_BUDGET_VARIANCE = 70;
 export const MONSTER_REST_MIN_MS = 8000;
 export const MONSTER_REST_VARIANCE_MS = 6000;
 export const MONSTER_ESCALATION_PER_MINUTE = 0.12;
-export const MONSTER_MAX_ESCALATION = 3;
 export const BOSS_INTERVAL_MS = 3 * 60000;
 /** Grace period before the forest stirs - the player builds a first line. */
 export const INITIAL_GRACE_MS = 25000;
@@ -61,6 +60,8 @@ export interface MonsterDirectorState {
   readonly nextBossAtMs: number;
   /** How many boss events have been queued - drives the Troll/Minotaur rotation. */
   readonly bossCount: number;
+  /** How many waves have been sent - the survival score alongside elapsedMs. */
+  readonly waveCount: number;
 }
 
 export interface MonsterDirectorResult {
@@ -79,12 +80,16 @@ export function createMonsterDirector(incomeMultiplier = 1): MonsterDirectorStat
     restRemainingMs: INITIAL_GRACE_MS,
     elapsedMs: 0,
     nextBossAtMs: BOSS_INTERVAL_MS,
-    bossCount: 0
+    bossCount: 0,
+    waveCount: 0
   };
 }
 
 export function monsterEscalationFactor(elapsedMs: number): number {
-  return Math.min(MONSTER_MAX_ESCALATION, 1 + (elapsedMs / 60000) * MONSTER_ESCALATION_PER_MINUTE);
+  // Uncapped on purpose: survival keeps ramping until the defense breaks -
+  // the run ends in a score, not a stalemate. Wave size stays bounded by the
+  // queue limit; escalation shifts the budget toward heavier monsters.
+  return 1 + (elapsedMs / 60000) * MONSTER_ESCALATION_PER_MINUTE;
 }
 
 export function rollMonsterWaveBudget(elapsedMs: number, random = Math.random): number {
@@ -189,6 +194,7 @@ export function tickMonsterDirector(
   let restRemainingMs = state.restRemainingMs;
   let nextBossAtMs = state.nextBossAtMs;
   let bossCount = state.bossCount;
+  let waveCount = state.waveCount;
   let bossWarning = false;
 
   if (phase === "saving" && gold.gold >= waveBudget) {
@@ -204,6 +210,7 @@ export function tickMonsterDirector(
       bossCount += 1;
       nextBossAtMs = elapsedMs + BOSS_INTERVAL_MS;
     }
+    waveCount += 1;
     phase = "spawning";
   }
 
@@ -235,7 +242,8 @@ export function tickMonsterDirector(
       restRemainingMs,
       elapsedMs,
       nextBossAtMs,
-      bossCount
+      bossCount,
+      waveCount
     },
     spawned,
     bossWarning

@@ -38,8 +38,8 @@ export class MenuScene extends Phaser.Scene {
       () => this.startGame("classic")
     );
     this.wildnisButton = this.createModeButton(
-      "Wildnis",
-      "1 Pfad - Monsterjagd",
+      "Survival",
+      "Überlebe die Monsterflut",
       () => this.startGame("wildnis")
     );
 

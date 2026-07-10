@@ -7,6 +7,7 @@ import {
   availableArchetypes,
   composeMonsterWave,
   createMonsterDirector,
+  monsterEscalationFactor,
   rollBoss,
   tickMonsterDirector,
   unlockedMonsters,
@@ -139,6 +140,23 @@ describe("monsterDirector", () => {
     expect(bosses).toEqual(["Troll"]);
     expect(state.nextBossAtMs).toBeGreaterThan(BOSS_INTERVAL_MS);
     expect(state.bossCount).toBe(1);
+  });
+
+  it("escalates without a cap so survival always ends eventually", () => {
+    expect(monsterEscalationFactor(0)).toBe(1);
+    expect(monsterEscalationFactor(10 * 60000)).toBeCloseTo(2.2);
+    // Beyond the old cap of 3: minute 30 is 4.6, minute 60 is 8.2.
+    expect(monsterEscalationFactor(30 * 60000)).toBeCloseTo(4.6);
+    expect(monsterEscalationFactor(60 * 60000)).toBeCloseTo(8.2);
+  });
+
+  it("counts each sent wave for the survival score", () => {
+    const spawning = tickUntil(createMonsterDirector(), (s) => s.phase === "spawning");
+    expect(spawning.state.waveCount).toBe(1);
+
+    const resting = tickUntil(spawning.state, (s) => s.phase === "resting");
+    const secondWave = tickUntil(resting.state, (s) => s.phase === "spawning" && s.waveCount > 1);
+    expect(secondWave.state.waveCount).toBe(2);
   });
 
   it("rests between waves instead of streaming monsters continuously", () => {

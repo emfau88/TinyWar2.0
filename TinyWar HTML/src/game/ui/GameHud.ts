@@ -104,6 +104,7 @@ export class GameHud {
   private readonly unitInfoToggleLabel: Phaser.GameObjects.Text;
   private readonly queueText: Phaser.GameObjects.Text;
   private readonly goldText: Phaser.GameObjects.Text;
+  private readonly survivalText: Phaser.GameObjects.Text;
   private readonly speedText: Phaser.GameObjects.Text;
   private readonly winnerText: Phaser.GameObjects.Text;
   private readonly winnerBackdrop: Phaser.GameObjects.Rectangle;
@@ -260,6 +261,20 @@ export class GameHud {
       .setOrigin(0.5, 0)
       .setScrollFactor(0)
       .setDepth(102);
+
+    // Survival mode only: running wave/time score below the gold display.
+    this.survivalText = this.scene.add
+      .text(0, 0, "", {
+        fontFamily: "TinyWar Fira Sans",
+        fontSize: "13px",
+        color: "#e2e8f0",
+        backgroundColor: "rgba(17, 24, 39, 0.58)",
+        padding: { x: 7, y: 3 }
+      })
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(102)
+      .setVisible(false);
 
     this.speedText = this.scene.add
       .text(12, this.scene.scale.height - 14, "1x", {
@@ -507,6 +522,7 @@ export class GameHud {
       this.unitInfoToggleLabel,
       this.queueText,
       this.goldText,
+      this.survivalText,
       this.speedText,
       this.winnerText,
       this.winnerBackdrop,
@@ -682,14 +698,26 @@ export class GameHud {
     }
   }
 
-  showWinner(winner: string): void {
+  /** Show survival wave/time; pass null to hide (non-survival modes). */
+  updateSurvival(label: string | null): void {
+    if (label === null) {
+      this.survivalText.setVisible(false);
+      return;
+    }
+    this.survivalText.setText(label).setVisible(true);
+  }
+
+  showWinner(winner: string, subtitleOverride?: string): void {
     const victory = winner === "Blue";
     this.winnerText
       .setText(victory ? "Victory!" : "Defeat")
       .setColor(victory ? "#93c5fd" : "#fca5a5")
       .setVisible(true);
     this.winnerSubtitle
-      .setText(victory ? "The enemy base has fallen." : "Your base has been destroyed.")
+      .setText(
+        subtitleOverride ??
+          (victory ? "The enemy base has fallen." : "Your base has been destroyed.")
+      )
       .setVisible(true);
     this.winnerBackdrop.setVisible(true);
     this.winnerPanel.setVisible(true);
@@ -1136,6 +1164,7 @@ export class GameHud {
     // Centered below the advance banner: the only spot that stays clear of
     // the shop, strategy and queue bars on every viewport.
     this.goldText.setPosition(centerX, y + 26);
+    this.survivalText.setPosition(centerX, y + 52);
     this.blueAdvanceFill.setY(y);
     this.redAdvanceFill.setY(y);
     this.blueAdvanceStart.setY(y);

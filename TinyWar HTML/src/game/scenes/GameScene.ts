@@ -57,6 +57,7 @@ import {
 } from "../../core/buildings/buildingData";
 import type { ProjectileInstance } from "../../core/combat/projectileSystem";
 import { createInitialGameState } from "../../core/game/createInitialGameState";
+import { formatSurvivalTime, recordRun } from "../../core/game/survivalScore";
 import {
   createLaneUnit,
   stationaryBuildingUnit,
@@ -135,6 +136,7 @@ export class GameScene extends Phaser.Scene {
   private boosts: BoostState = createBoostState();
   private mode: MapId = "classic";
   private spawnCounter = 0;
+  private lastSurvivalLabel?: string;
 
   constructor() {
     super("GameScene");
@@ -170,6 +172,7 @@ export class GameScene extends Phaser.Scene {
     this.monsterDirector = createMonsterDirector();
     this.boosts = createBoostState();
     this.spawnCounter = 0;
+    this.lastSurvivalLabel = undefined;
 
     this.audio = new GameAudio(this);
     this.mapRenderer = new MapRenderer(this);
@@ -281,6 +284,11 @@ export class GameScene extends Phaser.Scene {
       for (const unitName of monsterResult.spawned) {
         this.spawnQueuedUnit(unitName, this.opponentColor);
       }
+      const survivalLabel = `Welle ${this.monsterDirector.waveCount} · ${formatSurvivalTime(this.monsterDirector.elapsedMs)}`;
+      if (survivalLabel !== this.lastSurvivalLabel) {
+        this.lastSurvivalLabel = survivalLabel;
+        this.hud?.updateSurvival(survivalLabel);
+      }
     } else {
       const enemyResult = tickEnemyCommander(this.enemyCommander, effectiveDelta);
       this.enemyCommander = enemyResult.state;
@@ -339,7 +347,7 @@ export class GameScene extends Phaser.Scene {
     this.projectiles = combat.projectiles;
 
     if (combat.winner) {
-      this.hud?.showWinner(combat.winner);
+      this.hud?.showWinner(combat.winner, this.survivalResultSubtitle(combat.winner));
     }
     this.updateAdvanceBanner();
     this.syncCameraMasks();
@@ -711,6 +719,29 @@ export class GameScene extends Phaser.Scene {
 
   private strategyForUnit(unit: MovingUnit): PlayerStrategy {
     return unit.color === "Blue" ? this.strategy.current : "Attack";
+  }
+
+  /**
+   * Survival end-screen line: the run's score, compared against (and stored
+   * as) the local best. Classic keeps the default subtitles.
+   */
+  private survivalResultSubtitle(winner: "Blue" | "Red"): string | undefined {
+    if (this.mode !== "wildnis") {
+      return undefined;
+    }
+
+    const score = {
+      timeMs: this.monsterDirector.elapsedMs,
+      waves: this.monsterDirector.waveCount
+    };
+    const run = recordRun(score);
+    const summary = `Welle ${score.waves} · ${formatSurvivalTime(score.timeMs)} überlebt`;
+    if (winner === "Blue") {
+      return `Lager zerstört! ${summary}${run.newBest ? " – Neuer Rekord!" : ""}`;
+    }
+    return run.newBest
+      ? `${summary} – Neuer Rekord!`
+      : `${summary} – Rekord: ${formatSurvivalTime(run.best.timeMs)}`;
   }
 
   private updateAdvanceBanner(): void {
