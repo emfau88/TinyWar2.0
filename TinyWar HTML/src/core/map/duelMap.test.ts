@@ -35,8 +35,8 @@ describe("duel map", () => {
     const direct =
       Math.abs(DUEL_MAP.end.x - DUEL_MAP.start.x) + Math.abs(DUEL_MAP.end.y - DUEL_MAP.start.y);
 
-    // The S over shoulders, flanks and arena must be a real detour.
-    expect(path.length).toBeGreaterThan(direct * 1.5);
+    // The dip over the stairs into the arena must stay a real detour.
+    expect(path.length).toBeGreaterThan(direct * 1.2);
   });
 
   it("lets a red unit walk the whole lane to the player's door", () => {

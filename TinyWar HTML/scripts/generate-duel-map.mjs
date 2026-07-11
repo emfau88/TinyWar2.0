@@ -16,49 +16,61 @@ import { dirname, resolve } from "node:path";
 // edge). Side transitions between levels are seamless grass-to-grass joins,
 // exactly like the classic base ramps.
 
-// Amphitheater layout: two high plateaus (2) in the north corners, side
-// shoulders (1) leading onto a mid-level ring (1) that wraps a sunken
-// center arena (0) with a village shoreline. All level changes along the
-// lane are side joins (same row, neighbouring column) because the tileset
-// only tells height through south-facing cliff walls.
+// Amphitheater layout: two high plateaus (2) in the north corners step down
+// over visible stair cascades onto two separate mid-level approach roads (1),
+// split in the middle by the north bay so there is exactly one meeting
+// ground: the sunken center arena (0) with its village shoreline. All lane
+// level changes run over STAIRS cascades (diagonal grass-over-cliff tiles),
+// like the classic map's base ramps.
 const HEIGHTS = [
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
   "~2222222~~~~~~~~~~~~~~2222222~",
   "~2222222~~~~~~~~~~~~~~2222222~",
-  "~222222211~~~~~~~~~~112222222~",
-  "~222222211~~~~~~~~~~112222222~",
+  "~2222222~~~~~~~~~~~~~~2222222~",
+  "~2222221~~~~~~~~~~~~~~1222222~",
+  "~~111111~~~~~~~~~~~~~~111111~~",
   "~~11111111~~~~~~~~~~11111111~~",
-  "~~11111111111111111111111111~~",
-  "~~11111111111111111111111111~~",
-  "~~11100000000000000000000111~~",
-  "~~11100000000000000000000111~~",
-  "~~11100000000000000000000111~~",
-  "~~11100000000000000000000111~~",
-  "~~~110000000000000000000011~~~",
+  "~~11111111~~~~~~~~~~11111111~~",
+  "~~00000000000000000000000000~~",
+  "~~00000000000000000000000000~~",
+  "~~~000000000000000000000000~~~",
   "~00~0000000000000000000000~00~",
+  "~~~~0000000000000000000000~~~~",
   "~~~~~~000000000000000000~~~~~~",
+  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 ];
 
-// Walkable corridor: door-to-door over the side shoulders, along the mid
-// ring, down the west/east flanks and through the arena. Cliff-wall rows
-// (the row south of every level edge) stay blocked; the south shore is the
-// decorative village strip.
+// Stair cascades: the top cell renders the diagonal grass tile (39 right /
+// 36 left), the cell below it the diagonal wall tile (48 / 45); both are
+// walkable so the lane visibly climbs the cliff.
+const STAIRS = [
+  { x: 7, y: 3, side: "right" }, // blue plateau, upper step
+  { x: 6, y: 4, side: "right" }, // blue plateau, lower step
+  { x: 22, y: 3, side: "left" }, // red plateau, upper step
+  { x: 23, y: 4, side: "left" }, // red plateau, lower step
+  { x: 9, y: 7, side: "right" }, // west road down into the arena (at the bay)
+  { x: 20, y: 7, side: "left" } // east road down into the arena
+];
+
+// Walkable corridor: door-to-door over the stair cascades, along the two
+// approach roads and through the arena. Cliff-wall rows (the row south of
+// every level edge) stay blocked; the south shore is the village strip.
 const WALKABLE = [
   "..............................",
   "...#......................#...",
   "...#......................#...",
+  "..######..............######..",
+  "..######..............######..",
+  "......##..............##......",
   "..########..........########..",
   "..########..........########..",
-  "........##..........##........",
-  "..##########################..",
-  "..##########################..",
-  "..###....................###..",
-  "..##########################..",
-  "..##########################..",
+  ".........############.........",
+  "...########################...",
+  "....######################....",
   ".....####################.....",
   "......##################......",
-  "........##############........",
+  "..............................",
   "..............................",
   ".............................."
 ];
@@ -73,20 +85,22 @@ const PLAYER_ROOF = { x: 3, y: 2 };
 const OPPONENT_BASE_ANCHOR = { x: 26, y: 1 };
 const OPPONENT_DOOR = { x: 26, y: 3 };
 const OPPONENT_ROOF = { x: 26, y: 2 };
-// Door -> east over the shoulder -> down to the mid ring -> west flank ->
-// sunken arena -> east flank -> shoulder -> door. Mirror-symmetric.
+// Door -> down the plateau stairs -> approach road -> arena stairs at the
+// bay -> village arena -> mirrored climb on the east side.
 const LANE_WAYPOINTS = [
-  { x: 8, y: 4 },
-  { x: 8, y: 6 },
-  { x: 4, y: 7 },
-  { x: 3, y: 9 },
-  { x: 6, y: 10 },
+  { x: 6, y: 3 },
+  { x: 7, y: 4 },
+  { x: 7, y: 6 },
+  { x: 9, y: 7 },
+  { x: 9, y: 8 },
+  { x: 11, y: 10 },
   { x: 14, y: 11 },
-  { x: 23, y: 10 },
-  { x: 26, y: 9 },
-  { x: 25, y: 7 },
-  { x: 21, y: 6 },
-  { x: 21, y: 4 }
+  { x: 18, y: 10 },
+  { x: 20, y: 8 },
+  { x: 20, y: 7 },
+  { x: 22, y: 6 },
+  { x: 22, y: 4 },
+  { x: 23, y: 3 }
 ];
 
 // Tile ids inside each 54-tile grass tileset (9 columns, 0-based), learned
@@ -123,7 +137,18 @@ const PLATEAU = {
   bottomRight: 25,
   wallLeft: 41,
   wall: 42,
-  wallRight: 43
+  wallRight: 43,
+  // Wall-foot row with the bright bottom outline, used where the wall meets
+  // open water (like the classic plateaus falling into the sea).
+  wallFootLeft: 50,
+  wallFoot: 51,
+  wallFootRight: 52,
+  // Stair diagonals: grass running out over the cliff (top) and the matching
+  // wall piece below - the classic map's walkable ramp look.
+  stairTopLeft: 36,
+  stairTopRight: 39,
+  stairWallLeft: 45,
+  stairWallRight: 48
 };
 
 // First gids copied from the original map.tmx tileset table.
@@ -162,11 +187,11 @@ const BUILDING_TILESETS = [
 // anchor tile = bottom-left of the sprite (Tiled convention). All buildings
 // line the blocked south shore below the village meadow.
 const BUILDING_SPOTS = [
-  { gid: 404, x: 6, y: 14 }, // archery range, west end of the shore
-  { gid: 400, x: 10, y: 14 }, // village houses
-  { gid: 401, x: 12, y: 14 },
-  { gid: 402, x: 16, y: 14 },
-  { gid: 403, x: 20, y: 14 } // monastery, east end of the shore
+  { gid: 404, x: 6, y: 13 }, // archery range, west end of the shore
+  { gid: 400, x: 10, y: 13 }, // village houses
+  { gid: 401, x: 12, y: 13 },
+  { gid: 402, x: 16, y: 13 },
+  { gid: 403, x: 20, y: 13 } // monastery, east end of the shore
 ];
 
 const projectRoot = resolve(import.meta.dirname, "..");
@@ -215,11 +240,26 @@ for (let y = 0; y < HEIGHT; y += 1) {
       if (!above && !below) errors.push(`1-tile-high level-${h} strip at ${x},${y}.`);
     }
     // Walkable must be on land and never on a cliff-wall tile (the cell south
-    // of a higher level's south edge).
+    // of a higher level's south edge) - unless a stair cascade sits there.
     if (isWalkable(x, y)) {
       if (!isLand(x, y)) errors.push(`Walkable on water at ${x},${y}.`);
-      if (heightAt(x, y - 1) > heightAt(x, y)) errors.push(`Walkable on cliff wall at ${x},${y}.`);
+      const stairAbove = STAIRS.some((s) => s.x === x && s.y === y - 1);
+      if (heightAt(x, y - 1) > heightAt(x, y) && !stairAbove) {
+        errors.push(`Walkable on cliff wall at ${x},${y}.`);
+      }
     }
+  }
+}
+
+// Stairs must sit on a south edge of their level, with walkable ramp cells.
+for (const stair of STAIRS) {
+  const h = heightAt(stair.x, stair.y);
+  if (h < 1) errors.push(`Stair at ${stair.x},${stair.y} is not on an elevated level.`);
+  if (heightAt(stair.x, stair.y + 1) >= h) {
+    errors.push(`Stair at ${stair.x},${stair.y} is not on a south edge.`);
+  }
+  if (!isLand(stair.x, stair.y + 1)) {
+    errors.push(`Stair at ${stair.x},${stair.y} runs into water.`);
   }
 }
 
@@ -325,19 +365,40 @@ function buildGroundLayer() {
 }
 
 // Levels 1 and 2: plateau family plus the cliff wall in the row below the
-// south edge.
+// south edge, with stair-diagonal overrides at the cascade cells.
 function buildLevelLayer(level, firstGid) {
   const inMask = (x, y) => heightAt(x, y) >= level;
+  const stairAt = (x, y) => STAIRS.find((s) => s.x === x && s.y === y && heightAt(x, y) === level);
   const data = new Array(WIDTH * HEIGHT).fill(0);
   for (let y = 0; y < HEIGHT; y += 1) {
     for (let x = 0; x < WIDTH; x += 1) {
       if (inMask(x, y)) {
-        data[y * WIDTH + x] = firstGid + plateauAutotile(inMask, x, y);
+        const stair = stairAt(x, y);
+        data[y * WIDTH + x] =
+          firstGid +
+          (stair
+            ? stair.side === "right"
+              ? PLATEAU.stairTopRight
+              : PLATEAU.stairTopLeft
+            : plateauAutotile(inMask, x, y));
       } else if (inMask(x, y - 1)) {
-        // Cliff wall hanging from the south edge above.
+        // Cliff wall hanging from the south edge above; a stair above turns
+        // it into the diagonal ramp piece, water below into the outlined
+        // wall-foot row.
+        const stairAbove = stairAt(x, y - 1);
+        if (stairAbove) {
+          data[y * WIDTH + x] =
+            firstGid + (stairAbove.side === "right" ? PLATEAU.stairWallRight : PLATEAU.stairWallLeft);
+          continue;
+        }
         const wallW = inMask(x - 1, y - 1) && !inMask(x - 1, y);
         const wallE = inMask(x + 1, y - 1) && !inMask(x + 1, y);
-        const id = !wallW ? PLATEAU.wallLeft : !wallE ? PLATEAU.wallRight : PLATEAU.wall;
+        const foot = !isLand(x, y);
+        const id = !wallW
+          ? foot ? PLATEAU.wallFootLeft : PLATEAU.wallLeft
+          : !wallE
+            ? foot ? PLATEAU.wallFootRight : PLATEAU.wallRight
+            : foot ? PLATEAU.wallFoot : PLATEAU.wall;
         data[y * WIDTH + x] = firstGid + id;
       }
     }
@@ -400,9 +461,19 @@ function buildDecorationLayer() {
       const key = `${x},${y}`;
       if (buildingCells.has(key)) continue;
 
+      // Decoration only sits on fill cells (all four neighbours on the same
+      // level) so nothing ever overlaps an edge or cliff tile.
+      const h = heightAt(x, y);
+      const isFill =
+        isLand(x, y) &&
+        heightAt(x, y - 1) === h &&
+        heightAt(x, y + 1) === h &&
+        heightAt(x - 1, y) === h &&
+        heightAt(x + 1, y) === h;
+
       // Blocked meadows get trees (where the canopy fits) or bushes.
-      if (isLand(x, y) && !isWalkable(x, y) && heightAt(x, y - 1) <= heightAt(x, y)) {
-        if (canopyClear(x, y) && isLand(x + 1, y) && hash(x, y, 1) < 0.62) {
+      if (isFill && !isWalkable(x, y)) {
+        if (canopyClear(x, y) && hash(x, y, 1) < 0.62) {
           data[y * WIDTH + x] = trees[Math.floor(hash(x, y, 2) * trees.length)];
           continue;
         }
@@ -413,7 +484,7 @@ function buildDecorationLayer() {
       }
 
       // Occasional rocks, stumps and small bushes on open walkable meadows.
-      if (isWalkable(x, y) && hash(x, y, 5) < 0.065) {
+      if (isFill && isWalkable(x, y) && hash(x, y, 5) < 0.065) {
         const roll = hash(x, y, 6);
         data[y * WIDTH + x] =
           roll < 0.35 ? GID.rock1 : roll < 0.7 ? GID.stump1 : bushes[Math.floor(hash(x, y, 11) * bushes.length)];
@@ -431,7 +502,7 @@ function buildDecorationLayer() {
   }
 
   // Sheep grazing next to the village.
-  for (const spot of [{ x: 9, y: 13 }, { x: 15, y: 13 }, { x: 19, y: 13 }]) {
+  for (const spot of [{ x: 9, y: 12 }, { x: 15, y: 12 }, { x: 19, y: 12 }]) {
     if (isLand(spot.x, spot.y) && !buildingCells.has(`${spot.x},${spot.y}`)) {
       data[spot.y * WIDTH + spot.x] = GID.sheep;
     }
