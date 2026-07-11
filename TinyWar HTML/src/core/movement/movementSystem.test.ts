@@ -90,6 +90,8 @@ describe("movementSystem", () => {
     expect(unit.pathIndex).toBeGreaterThan(1);
   });
 
+  // The 5000-frame walk regularly needs 3-6s wall time on a busy machine;
+  // give it explicit headroom instead of flaking at vitest's 5s default.
   it("eventually stops at the end of the lane", () => {
     let unit = createDebugMidLaneUnit();
 
@@ -99,5 +101,5 @@ describe("movementSystem", () => {
 
     expect(unit.moving).toBe(false);
     expect(unit.position.x).toBeGreaterThan(1700);
-  });
+  }, 20000);
 });

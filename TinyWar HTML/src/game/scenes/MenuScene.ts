@@ -16,33 +16,27 @@ const BANNER_GAP = 44;
 
 export class MenuScene extends Phaser.Scene {
   private cover?: Phaser.GameObjects.Image;
-  private classicButton?: ModeButton;
-  private wildnisButton?: ModeButton;
+  private modeButtons: ModeButton[] = [];
 
   constructor() {
     super("MenuScene");
   }
 
   create(): void {
-    // Dev shortcut: ?mode=classic|wildnis skips the menu (useful for testing).
+    // Dev shortcut: ?mode=classic|duel|wildnis skips the menu (useful for testing).
     const requestedMode = new URLSearchParams(window.location.search).get("mode");
-    if (requestedMode === "classic" || requestedMode === "wildnis") {
+    if (requestedMode === "classic" || requestedMode === "duel" || requestedMode === "wildnis") {
       this.startGame(requestedMode);
       return;
     }
 
     this.cover = this.add.image(0, 0, ASSETS.background.cover.key);
 
-    this.classicButton = this.createModeButton(
-      "Classic",
-      "3 Lanes - Duell vs KI",
-      () => this.startGame("classic")
-    );
-    this.wildnisButton = this.createModeButton(
-      "Survival",
-      "Überlebe die Monsterflut",
-      () => this.startGame("wildnis")
-    );
+    this.modeButtons = [
+      this.createModeButton("Classic", "3 Lanes - Duell vs KI", () => this.startGame("classic")),
+      this.createModeButton("Duell", "1 Lane - eine Front", () => this.startGame("duel")),
+      this.createModeButton("Survival", "Überlebe die Monsterflut", () => this.startGame("wildnis"))
+    ];
 
     this.input.keyboard?.on("keydown-ENTER", () => this.startGame("classic"));
 
@@ -120,15 +114,21 @@ export class MenuScene extends Phaser.Scene {
 
     // The cover art's TinyWar shield sits around the vertical center; keep
     // the mode banners in the lower quarter so the title stays fully visible.
+    const count = this.modeButtons.length;
     const y = Math.min(height * 0.78, height - BANNER_HEIGHT / 2 - 16);
-    const sideBySide = width >= BANNER_WIDTH * 2 + BANNER_GAP + 32;
-    if (sideBySide) {
-      this.layoutModeButton(this.classicButton, width / 2 - BANNER_WIDTH / 2 - BANNER_GAP / 2, y);
-      this.layoutModeButton(this.wildnisButton, width / 2 + BANNER_WIDTH / 2 + BANNER_GAP / 2, y);
+    const rowWidth = count * BANNER_WIDTH + (count - 1) * BANNER_GAP;
+    if (width >= rowWidth + 32) {
+      const startX = width / 2 - rowWidth / 2 + BANNER_WIDTH / 2;
+      this.modeButtons.forEach((button, index) => {
+        this.layoutModeButton(button, startX + index * (BANNER_WIDTH + BANNER_GAP), y);
+      });
     } else {
-      const stackedTop = Math.min(height * 0.62, height - BANNER_HEIGHT - 90);
-      this.layoutModeButton(this.classicButton, width / 2, stackedTop);
-      this.layoutModeButton(this.wildnisButton, width / 2, stackedTop + BANNER_HEIGHT + 12);
+      // Stacked with tighter spacing so three banners fit small screens.
+      const step = BANNER_HEIGHT - 22;
+      const stackedTop = Math.min(height * 0.5, height - step * count - 40);
+      this.modeButtons.forEach((button, index) => {
+        this.layoutModeButton(button, width / 2, stackedTop + index * step);
+      });
     }
   }
 

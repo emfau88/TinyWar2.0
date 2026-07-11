@@ -1,10 +1,12 @@
 import type { MapId } from "../core/map/mapDefinition";
+import { DUEL_MAP_DATA } from "./generated/duelMapData";
 import { MAP_DATA } from "./generated/mapData";
 import { WILDNIS_MAP_DATA } from "./generated/wildnisMapData";
 import type { TiledMapData } from "./mapTypes";
 
 const MAP_DATA_BY_ID: Record<MapId, TiledMapData> = {
   classic: MAP_DATA,
+  duel: DUEL_MAP_DATA,
   wildnis: WILDNIS_MAP_DATA
 };
 

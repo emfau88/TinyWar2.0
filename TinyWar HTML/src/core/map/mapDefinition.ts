@@ -1,6 +1,6 @@
 import type { TilePosition } from "./mapGeometry";
 
-export type MapId = "classic" | "wildnis";
+export type MapId = "classic" | "duel" | "wildnis";
 
 export type LaneName = "Top" | "Mid" | "Bot";
 

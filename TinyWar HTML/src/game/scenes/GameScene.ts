@@ -11,6 +11,7 @@ import {
 } from "../../core/ai/monsterDirector";
 import { setActiveMap, getActiveMap } from "../../core/map/activeMap";
 import { CLASSIC_MAP, type MapId } from "../../core/map/mapDefinition";
+import { DUEL_MAP } from "../../core/map/duelMap";
 import { WILDNIS_MAP } from "../../core/map/wildnisMap";
 import { tileToWorld } from "../../core/map/mapGeometry";
 import type { LaneName } from "../../core/map/pathfinding";
@@ -143,8 +144,13 @@ export class GameScene extends Phaser.Scene {
   }
 
   init(data: { mode?: MapId } = {}): void {
-    this.mode = data.mode === "wildnis" ? "wildnis" : "classic";
-    setActiveMap(this.mode === "wildnis" ? WILDNIS_MAP : CLASSIC_MAP);
+    this.mode = data.mode === "wildnis" || data.mode === "duel" ? data.mode : "classic";
+    const maps: Record<MapId, typeof CLASSIC_MAP> = {
+      classic: CLASSIC_MAP,
+      duel: DUEL_MAP,
+      wildnis: WILDNIS_MAP
+    };
+    setActiveMap(maps[this.mode]);
     // Dev aid: ?boostfast shortens the draft cadence for quick testing.
     if (typeof window !== "undefined" && new URLSearchParams(window.location.search).has("boostfast")) {
       setBoostDraftInterval(1500);

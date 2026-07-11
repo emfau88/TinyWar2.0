@@ -15,6 +15,12 @@ const MAPS = [
     out: "src/data/generated/wildnisMapData.ts",
     exportName: "WILDNIS_MAP_DATA",
     keyPrefix: "wildnis"
+  },
+  {
+    tmx: "public/assets/tinywar/map/duel.tmx",
+    out: "src/data/generated/duelMapData.ts",
+    exportName: "DUEL_MAP_DATA",
+    keyPrefix: "duel"
   }
 ];
 

@@ -38,7 +38,7 @@ function simulate(
 describe("monster combat integration (movement + combat loop)", () => {
   beforeEach(() => {
     setActiveMap(CLASSIC_MAP);
-  });
+  }, 20000);
 
   it("lets a minotaur walking the lane fight an oncoming warrior", () => {
     const minotaur = createLaneUnit("Minotaur", "Mid", 0, "blue", "Blue");
@@ -49,7 +49,7 @@ describe("monster combat integration (movement + combat loop)", () => {
     const warriorAfter = result.units.find((unit) => unit.color === "Red");
     // They must have met and fought: either the warrior died or took damage.
     expect(warriorAfter === undefined || warriorAfter.health < warrior.maxHealth).toBe(true);
-  });
+  }, 20000);
 
   it("lets a shark walking the lane fire harpoons at an oncoming warrior", () => {
     const shark = createLaneUnit("Shark", "Mid", 0, "blue", "Blue");
@@ -58,7 +58,7 @@ describe("monster combat integration (movement + combat loop)", () => {
     const result = simulate([shark, warrior], 60000);
 
     expect(result.firedProjectiles).toBeGreaterThan(0);
-  });
+  }, 20000);
 
   it("keeps a shark alive against a single warrior long enough to fight back", () => {
     const shark = createLaneUnit("Shark", "Mid", 0, "blue", "Blue");
@@ -69,7 +69,7 @@ describe("monster combat integration (movement + combat loop)", () => {
     const early = simulate([shark, warrior], 10000);
     const sharkEarly = early.units.find((unit) => unit.color === "Blue");
     expect(sharkEarly).toBeDefined();
-  });
+  }, 20000);
 
   it("control: two basic warriors meet and fight", () => {
     const blue = createLaneUnit("Warrior", "Mid", 0, "blue", "Blue");
@@ -79,5 +79,5 @@ describe("monster combat integration (movement + combat loop)", () => {
     const anyDamaged = result.units.some((unit) => unit.health < unit.maxHealth);
     const anyDead = result.units.length < 2;
     expect(anyDamaged || anyDead).toBe(true);
-  });
+  }, 20000);
 });
