@@ -66,16 +66,18 @@ export class MenuScene extends Phaser.Scene {
     const label = this.add
       .text(0, 0, title, {
         fontFamily: "TinyWar Fira Sans",
-        fontSize: "26px",
-        color: "#4a2c12"
+        fontSize: "27px",
+        fontStyle: "bold",
+        color: "#3d2410"
       })
       .setOrigin(0.5);
 
     const subtitle = this.add
       .text(0, 0, subtitleText, {
         fontFamily: "TinyWar Fira Sans",
-        fontSize: "12px",
-        color: "#6b4a24"
+        fontSize: "13px",
+        fontStyle: "bold",
+        color: "#59391a"
       })
       .setOrigin(0.5);
 
