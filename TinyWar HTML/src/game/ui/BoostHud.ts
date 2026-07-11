@@ -46,6 +46,9 @@ export class BoostHud {
   private readonly cards: CardHandle[] = [];
   private readonly pills: PillHandle[] = [];
   private offerVisible = false;
+  // Cards shrink as a whole on small viewports (mobile landscape) so the
+  // full draft including the skip button stays on screen.
+  private offerScale = 1;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -142,8 +145,8 @@ export class BoostHud {
         this.onChoose(handle.name);
       }
     });
-    frame.on("pointerover", () => container.setScale(1.05));
-    frame.on("pointerout", () => container.setScale(1));
+    frame.on("pointerover", () => container.setScale(this.offerScale * 1.05));
+    frame.on("pointerout", () => container.setScale(this.offerScale));
     return { container, frame, art, title, desc, hint };
   }
 
@@ -187,12 +190,28 @@ export class BoostHud {
     const offer = state.offer ?? [];
     this.offerVisible = offer.length > 0;
 
-    this.backdrop.setVisible(this.offerVisible).setSize(width, height);
-    this.heading.setVisible(this.offerVisible).setPosition(width / 2, height / 2 - CARD_H / 2 - 44);
-    this.skip.setVisible(this.offerVisible).setPosition(width / 2, height / 2 + CARD_H / 2 + 30);
+    // Fit the whole block (heading + card + skip) into the viewport: ~150px
+    // of vertical chrome around the card, and all three cards side by side.
+    this.offerScale = Math.min(
+      1,
+      height / (CARD_H + 150),
+      width / (3 * CARD_W + 2 * CARD_GAP + 24)
+    );
+    const scale = this.offerScale;
+    const cardW = CARD_W * scale;
+    const cardH = CARD_H * scale;
+    const gap = CARD_GAP * scale;
 
-    const total = offer.length * CARD_W + (offer.length - 1) * CARD_GAP;
-    const startX = width / 2 - total / 2 + CARD_W / 2;
+    this.backdrop.setVisible(this.offerVisible).setSize(width, height);
+    this.heading
+      .setVisible(this.offerVisible)
+      .setPosition(width / 2, height / 2 - cardH / 2 - 44 * scale);
+    this.skip
+      .setVisible(this.offerVisible)
+      .setPosition(width / 2, height / 2 + cardH / 2 + 30 * scale);
+
+    const total = offer.length * cardW + (offer.length - 1) * gap;
+    const startX = width / 2 - total / 2 + cardW / 2;
 
     this.cards.forEach((card, index) => {
       const name = offer[index];
@@ -210,8 +229,8 @@ export class BoostHud {
       card.hint.setText(def.kind === "instant" ? "Sofort" : `${def.durationMs / 1000}s`);
       card.container
         .setVisible(true)
-        .setScale(1)
-        .setPosition(startX + index * (CARD_W + CARD_GAP), height / 2);
+        .setScale(scale)
+        .setPosition(startX + index * (cardW + gap), height / 2);
     });
   }
 
