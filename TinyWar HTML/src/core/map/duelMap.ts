@@ -7,6 +7,8 @@ import {
   DUEL_PLAYER_DOOR,
   DUEL_PLAYER_ROOF,
   DUEL_SIZE,
+  DUEL_STAIR_TOPS,
+  DUEL_STAIR_WALLS,
   DUEL_WALKABLE
 } from "./generated/duelMapLayout";
 import type { MapDefinition } from "./mapDefinition";
@@ -21,6 +23,8 @@ export const DUEL_MAP: MapDefinition = {
     Mid: DUEL_LANE_WAYPOINTS
   },
   availableLanes: ["Mid"],
+  stairTops: DUEL_STAIR_TOPS,
+  stairWalls: DUEL_STAIR_WALLS,
   start: DUEL_PLAYER_DOOR,
   end: DUEL_OPPONENT_DOOR,
   bases: {

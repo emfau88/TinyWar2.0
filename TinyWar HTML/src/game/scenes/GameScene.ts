@@ -248,6 +248,18 @@ export class GameScene extends Phaser.Scene {
       }
       this.boosts = { ...this.boosts, active: [{ name: "QueueGoblins", remainingMs: 600000 }] };
     }
+
+    // Dev aid: ?endscreen=victory|defeat shows the end screen immediately.
+    const endscreen =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("endscreen")
+        : null;
+    if (endscreen === "victory" || endscreen === "defeat") {
+      this.hud?.showWinner(
+        endscreen === "victory" ? "Blue" : "Red",
+        this.survivalResultSubtitle(endscreen === "victory" ? "Blue" : "Red")
+      );
+    }
   }
 
   update(_time: number, delta: number): void {

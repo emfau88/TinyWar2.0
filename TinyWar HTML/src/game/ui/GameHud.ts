@@ -108,11 +108,11 @@ export class GameHud {
   private readonly speedText: Phaser.GameObjects.Text;
   private readonly winnerText: Phaser.GameObjects.Text;
   private readonly winnerBackdrop: Phaser.GameObjects.Rectangle;
-  private readonly winnerPanel: Phaser.GameObjects.Rectangle;
+  private readonly winnerPanel: Phaser.GameObjects.Image;
   private readonly winnerSubtitle: Phaser.GameObjects.Text;
-  private readonly winnerPlayPanel: Phaser.GameObjects.Rectangle;
+  private readonly winnerPlayPanel: Phaser.GameObjects.Image;
   private readonly winnerPlayLabel: Phaser.GameObjects.Text;
-  private readonly winnerMenuPanel: Phaser.GameObjects.Rectangle;
+  private readonly winnerMenuPanel: Phaser.GameObjects.Image;
   private readonly winnerMenuLabel: Phaser.GameObjects.Text;
   private readonly queueStart: Phaser.GameObjects.Image;
   private readonly queueEnd: Phaser.GameObjects.Image;
@@ -296,9 +296,11 @@ export class GameHud {
       .setInteractive()
       .setVisible(false);
 
+    // End screen: a large parchment banner carries title and score, two
+    // smaller parchment banners act as buttons - same look as the mode menu.
     this.winnerPanel = this.scene.add
-      .rectangle(0, 0, 340, 240, 0x0f172a, 0.96)
-      .setStrokeStyle(3, 0xf8fafc, 0.8)
+      .image(0, 0, ASSETS.ui.banner.key)
+      .setDisplaySize(430, 300)
       .setScrollFactor(0)
       .setDepth(201)
       .setVisible(false);
@@ -306,10 +308,9 @@ export class GameHud {
     this.winnerText = this.scene.add
       .text(this.scene.scale.width / 2, 84, "", {
         fontFamily: "TinyWar Fira Sans",
-        fontSize: "40px",
-        color: "#f8fafc",
-        stroke: "#020617",
-        strokeThickness: 6
+        fontSize: "38px",
+        fontStyle: "bold",
+        color: "#3d2410"
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
@@ -319,8 +320,11 @@ export class GameHud {
     this.winnerSubtitle = this.scene.add
       .text(0, 0, "", {
         fontFamily: "TinyWar Fira Sans",
-        fontSize: "15px",
-        color: "#cbd5f5"
+        fontSize: "14px",
+        fontStyle: "bold",
+        color: "#59391a",
+        align: "center",
+        wordWrap: { width: 330 }
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
@@ -328,19 +332,22 @@ export class GameHud {
       .setVisible(false);
 
     this.winnerPlayPanel = this.scene.add
-      .rectangle(0, 0, 220, 48, 0x1d4ed8, 0.92)
-      .setStrokeStyle(2, 0xf8fafc, 0.8)
+      .image(0, 0, ASSETS.ui.banner.key)
+      .setDisplaySize(210, 62)
       .setScrollFactor(0)
       .setDepth(202)
       .setInteractive({ useHandCursor: true })
       .setVisible(false);
     this.winnerPlayPanel.on("pointerdown", callbacks.onPlayAgain);
+    this.winnerPlayPanel.on("pointerover", () => this.winnerPlayPanel.setTint(0xffe9b8));
+    this.winnerPlayPanel.on("pointerout", () => this.winnerPlayPanel.clearTint());
 
     this.winnerPlayLabel = this.scene.add
-      .text(0, 0, "Play again", {
+      .text(0, 0, "Nochmal spielen", {
         fontFamily: "TinyWar Fira Sans",
-        fontSize: "20px",
-        color: "#f8fafc"
+        fontSize: "17px",
+        fontStyle: "bold",
+        color: "#3d2410"
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
@@ -350,19 +357,22 @@ export class GameHud {
     this.winnerPlayLabel.on("pointerdown", callbacks.onPlayAgain);
 
     this.winnerMenuPanel = this.scene.add
-      .rectangle(0, 0, 220, 48, 0x111827, 0.92)
-      .setStrokeStyle(2, 0xf8fafc, 0.6)
+      .image(0, 0, ASSETS.ui.banner.key)
+      .setDisplaySize(210, 62)
       .setScrollFactor(0)
       .setDepth(202)
       .setInteractive({ useHandCursor: true })
       .setVisible(false);
     this.winnerMenuPanel.on("pointerdown", callbacks.onExitToMenu);
+    this.winnerMenuPanel.on("pointerover", () => this.winnerMenuPanel.setTint(0xffe9b8));
+    this.winnerMenuPanel.on("pointerout", () => this.winnerMenuPanel.clearTint());
 
     this.winnerMenuLabel = this.scene.add
-      .text(0, 0, "Menu", {
+      .text(0, 0, "Menü", {
         fontFamily: "TinyWar Fira Sans",
-        fontSize: "20px",
-        color: "#f8fafc"
+        fontSize: "17px",
+        fontStyle: "bold",
+        color: "#3d2410"
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
@@ -710,13 +720,13 @@ export class GameHud {
   showWinner(winner: string, subtitleOverride?: string): void {
     const victory = winner === "Blue";
     this.winnerText
-      .setText(victory ? "Victory!" : "Defeat")
-      .setColor(victory ? "#93c5fd" : "#fca5a5")
+      .setText(victory ? "Sieg!" : "Niederlage")
+      .setColor(victory ? "#1d5c2e" : "#8a1c1c")
       .setVisible(true);
     this.winnerSubtitle
       .setText(
         subtitleOverride ??
-          (victory ? "The enemy base has fallen." : "Your base has been destroyed.")
+          (victory ? "Die feindliche Basis ist gefallen." : "Deine Basis wurde zerstört.")
       )
       .setVisible(true);
     this.winnerBackdrop.setVisible(true);
@@ -731,14 +741,16 @@ export class GameHud {
   private layoutWinnerOverlay(width: number, height: number): void {
     const centerX = width / 2;
     const centerY = height / 2;
+    // Shrink the parchment stack a little on short viewports (mobile).
+    const scale = Math.min(1, (height - 40) / 460);
     this.winnerBackdrop.setPosition(0, 0).setSize(width, height);
-    this.winnerPanel.setPosition(centerX, centerY);
-    this.winnerText.setPosition(centerX, centerY - 66);
-    this.winnerSubtitle.setPosition(centerX, centerY - 26);
-    this.winnerPlayPanel.setPosition(centerX, centerY + 22);
-    this.winnerPlayLabel.setPosition(centerX, centerY + 22);
-    this.winnerMenuPanel.setPosition(centerX, centerY + 80);
-    this.winnerMenuLabel.setPosition(centerX, centerY + 80);
+    this.winnerPanel.setPosition(centerX, centerY - 75 * scale).setDisplaySize(430 * scale, 260 * scale);
+    this.winnerText.setScale(scale).setPosition(centerX, centerY - 118 * scale);
+    this.winnerSubtitle.setScale(scale).setPosition(centerX, centerY - 62 * scale);
+    this.winnerPlayPanel.setPosition(centerX, centerY + 92 * scale).setDisplaySize(210 * scale, 62 * scale);
+    this.winnerPlayLabel.setScale(scale).setPosition(centerX, centerY + 90 * scale);
+    this.winnerMenuPanel.setPosition(centerX, centerY + 162 * scale).setDisplaySize(210 * scale, 62 * scale);
+    this.winnerMenuLabel.setScale(scale).setPosition(centerX, centerY + 160 * scale);
   }
 
   toggleUnitInfo(): void {

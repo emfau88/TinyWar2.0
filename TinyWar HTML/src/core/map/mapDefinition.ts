@@ -28,6 +28,13 @@ export interface MapDefinition {
   lanes: Readonly<Partial<Record<LaneName, readonly TilePosition[]>>>;
   /** Lanes that exist on this map. Classic has three, Wildnis a single one. */
   availableLanes: readonly LaneName[];
+  /**
+   * Stair cells (diagonal ramp tiles). Paths never cut diagonally through
+   * them, and the wall-side cell of each pair is traversed vertically only -
+   * this keeps units visibly walking the stairs instead of floating across.
+   */
+  stairTops?: readonly TilePosition[];
+  stairWalls?: readonly TilePosition[];
   /** Path endpoints (also the two base tiles: player first, opponent second). */
   start: TilePosition;
   end: TilePosition;

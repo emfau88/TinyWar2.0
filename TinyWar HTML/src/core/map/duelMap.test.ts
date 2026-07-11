@@ -69,6 +69,30 @@ describe("duel map", () => {
     expect(arrival).toBeLessThan(64);
   }, 20000);
 
+  it("walks stairs vertically instead of cutting across them", () => {
+    setActiveMap(DUEL_MAP);
+    const path = getLanePath("Mid");
+    const stairCells = [...(DUEL_MAP.stairTops ?? []), ...(DUEL_MAP.stairWalls ?? [])];
+    const isStair = (tile: { x: number; y: number }) =>
+      stairCells.some((stair) => stair.x === tile.x && stair.y === tile.y);
+    const isWall = (tile: { x: number; y: number }) =>
+      (DUEL_MAP.stairWalls ?? []).some((stair) => stair.x === tile.x && stair.y === tile.y);
+
+    // The lane must actually use a stair, and every step touching one is
+    // never diagonal; wall-side cells connect strictly vertically.
+    expect(path.some(isStair)).toBe(true);
+    for (let index = 1; index < path.length; index += 1) {
+      const from = path[index - 1];
+      const to = path[index];
+      if (isStair(from) || isStair(to)) {
+        expect(Math.abs(from.x - to.x) + Math.abs(from.y - to.y), `${from.x},${from.y} -> ${to.x},${to.y}`).toBe(1);
+      }
+      if (isWall(from) || isWall(to)) {
+        expect(from.x, `${from.x},${from.y} -> ${to.x},${to.y} must be vertical`).toBe(to.x);
+      }
+    }
+  });
+
   it("keeps both door and anchor tiles on walkable ground", () => {
     setActiveMap(DUEL_MAP);
     expect(isWalkable(DUEL_MAP.bases.player.door)).toBe(true);

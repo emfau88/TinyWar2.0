@@ -79,6 +79,17 @@ export function findPath(start: TilePosition, end: TilePosition): readonly TileP
   throw new Error(`Unable to find path from ${key(start)} to ${key(end)}.`);
 }
 
+function stairKind(tile: TilePosition): "top" | "wall" | undefined {
+  const map = getActiveMap();
+  if (map.stairWalls?.some((stair) => sameTile(stair, tile))) {
+    return "wall";
+  }
+  if (map.stairTops?.some((stair) => sameTile(stair, tile))) {
+    return "top";
+  }
+  return undefined;
+}
+
 function neighbors(tile: TilePosition): TilePosition[] {
   const moves = [
     [-1, 0],
@@ -94,6 +105,16 @@ function neighbors(tile: TilePosition): TilePosition[] {
   return moves.flatMap(([dx, dy]) => {
     const next = { x: tile.x + dx, y: tile.y + dy };
     if (!isWalkable(next)) {
+      return [];
+    }
+
+    // Stair ramps are climbed, not cut across: no diagonal step may touch a
+    // stair cell, and the wall-side cell only connects vertically.
+    const kinds = [stairKind(tile), stairKind(next)];
+    if (kinds.some((kind) => kind !== undefined) && dx !== 0 && dy !== 0) {
+      return [];
+    }
+    if (kinds.some((kind) => kind === "wall") && dx !== 0) {
       return [];
     }
 

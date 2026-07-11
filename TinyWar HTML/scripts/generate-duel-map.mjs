@@ -585,6 +585,9 @@ export const DUEL_OPPONENT_BASE_ANCHOR: TilePosition = ${JSON.stringify(OPPONENT
 export const DUEL_OPPONENT_DOOR: TilePosition = ${JSON.stringify(OPPONENT_DOOR)};
 export const DUEL_OPPONENT_ROOF: TilePosition = ${JSON.stringify(OPPONENT_ROOF)};
 export const DUEL_LANE_WAYPOINTS: readonly TilePosition[] = ${JSON.stringify(LANE_WAYPOINTS)};
+
+export const DUEL_STAIR_TOPS: readonly TilePosition[] = ${JSON.stringify(STAIRS.map(({ x, y }) => ({ x, y })))};
+export const DUEL_STAIR_WALLS: readonly TilePosition[] = ${JSON.stringify(STAIRS.map(({ x, y }) => ({ x, y: y + 1 })))};
 `;
 
 mkdirSync(dirname(layoutOutPath), { recursive: true });
