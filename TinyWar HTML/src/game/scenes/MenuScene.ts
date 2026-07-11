@@ -88,8 +88,10 @@ export class MenuScene extends Phaser.Scene {
     return button;
   }
 
+  private buttonScale = 1;
+
   private setButtonHover(button: ModeButton, hovered: boolean): void {
-    const scale = hovered ? 1.06 : 1;
+    const scale = this.buttonScale * (hovered ? 1.06 : 1);
     button.banner.setDisplaySize(BANNER_WIDTH * scale, BANNER_HEIGHT * scale);
     button.label.setScale(scale);
     button.subtitle.setScale(scale);
@@ -114,33 +116,35 @@ export class MenuScene extends Phaser.Scene {
 
     // The cover art's TinyWar shield sits around the vertical center; keep
     // the mode banners in the lower quarter so the title stays fully visible.
+    // All banners always share one row: on narrow/short viewports (mobile
+    // landscape) the whole row scales down instead of stacking off-screen.
     const count = this.modeButtons.length;
-    const y = Math.min(height * 0.78, height - BANNER_HEIGHT / 2 - 16);
     const rowWidth = count * BANNER_WIDTH + (count - 1) * BANNER_GAP;
-    if (width >= rowWidth + 32) {
-      const startX = width / 2 - rowWidth / 2 + BANNER_WIDTH / 2;
-      this.modeButtons.forEach((button, index) => {
-        this.layoutModeButton(button, startX + index * (BANNER_WIDTH + BANNER_GAP), y);
-      });
-    } else {
-      // Stacked with tighter spacing so three banners fit small screens.
-      const step = BANNER_HEIGHT - 22;
-      const stackedTop = Math.min(height * 0.5, height - step * count - 40);
-      this.modeButtons.forEach((button, index) => {
-        this.layoutModeButton(button, width / 2, stackedTop + index * step);
-      });
-    }
+    this.buttonScale = Math.min(1, (width - 24) / rowWidth, (height * 0.3) / BANNER_HEIGHT);
+    const scale = this.buttonScale;
+    const bannerWidth = BANNER_WIDTH * scale;
+    const gap = BANNER_GAP * scale;
+    const y = Math.min(height * 0.78, height - (BANNER_HEIGHT * scale) / 2 - 12);
+    const startX = width / 2 - (count * bannerWidth + (count - 1) * gap) / 2 + bannerWidth / 2;
+    this.modeButtons.forEach((button, index) => {
+      this.layoutModeButton(button, startX + index * (bannerWidth + gap), y, scale);
+    });
   }
 
-  private layoutModeButton(button: ModeButton | undefined, x: number, y: number): void {
+  private layoutModeButton(
+    button: ModeButton | undefined,
+    x: number,
+    y: number,
+    scale: number
+  ): void {
     if (!button) {
       return;
     }
 
-    button.banner.setPosition(x, y);
+    button.banner.setDisplaySize(BANNER_WIDTH * scale, BANNER_HEIGHT * scale).setPosition(x, y);
     // The parchment area sits slightly above the banner's curled bottom edge.
-    button.label.setPosition(x, y - 16);
-    button.subtitle.setPosition(x, y + 12);
+    button.label.setScale(scale).setPosition(x, y - 16 * scale);
+    button.subtitle.setScale(scale).setPosition(x, y + 12 * scale);
   }
 
   private startGame(mode: MapId): void {

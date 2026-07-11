@@ -32,11 +32,11 @@ describe("duel map", () => {
   it("dips through the sunken arena instead of cutting straight across", () => {
     setActiveMap(DUEL_MAP);
     const path = getLanePath("Mid");
-    const direct =
-      Math.abs(DUEL_MAP.end.x - DUEL_MAP.start.x) + Math.abs(DUEL_MAP.end.y - DUEL_MAP.start.y);
 
-    // The dip over the stairs into the arena must stay a real detour.
-    expect(path.length).toBeGreaterThan(direct * 1.2);
+    // Both doors sit at y=3 on the plateaus; the lane must descend into the
+    // sunken village arena (y >= 10) before climbing back up.
+    const deepestY = Math.max(...path.map((tile) => tile.y));
+    expect(deepestY).toBeGreaterThanOrEqual(10);
   });
 
   it("lets a red unit walk the whole lane to the player's door", () => {

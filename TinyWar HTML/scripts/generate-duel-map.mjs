@@ -26,31 +26,32 @@ const HEIGHTS = [
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
   "~2222222~~~~~~~~~~~~~~2222222~",
   "~2222222~~~~~~~~~~~~~~2222222~",
-  "~2222222~~~~~~~~~~~~~~2222222~",
-  "~2222221~~~~~~~~~~~~~~1222222~",
-  "~~111111~~~~~~~~~~~~~~111111~~",
+  "~22222221~~~~~~~~~~~~12222222~",
+  "~22222211~~~~~~~~~~~~11222222~",
   "~~11111111~~~~~~~~~~11111111~~",
-  "~~11111111~~~~~~~~~~11111111~~",
+  "~~1111111111~~~~~~1111111111~~",
+  "~~1111111111~~~~~~1111111111~~",
+  "~~00000000000000000000000000~~",
   "~~00000000000000000000000000~~",
   "~~00000000000000000000000000~~",
   "~~~000000000000000000000000~~~",
-  "~00~0000000000000000000000~00~",
   "~~~~0000000000000000000000~~~~",
-  "~~~~~~000000000000000000~~~~~~",
-  "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+  "~~~~0000000000000000000000~~~~",
+  "~~~~~~~0000000000000000~~~~~~~",
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 ];
 
 // Stair cascades: the top cell renders the diagonal grass tile (39 right /
 // 36 left), the cell below it the diagonal wall tile (48 / 45); both are
-// walkable so the lane visibly climbs the cliff.
+// walkable so the lane visibly climbs the cliff. Each upper plateau stair
+// lands on a small level-1 terrace (x8 / x21) instead of a cliff edge.
 const STAIRS = [
-  { x: 7, y: 3, side: "right" }, // blue plateau, upper step
+  { x: 7, y: 3, side: "right" }, // blue plateau, upper step onto the terrace
   { x: 6, y: 4, side: "right" }, // blue plateau, lower step
-  { x: 22, y: 3, side: "left" }, // red plateau, upper step
+  { x: 22, y: 3, side: "left" }, // red plateau, upper step onto the terrace
   { x: 23, y: 4, side: "left" }, // red plateau, lower step
-  { x: 9, y: 7, side: "right" }, // west road down into the arena (at the bay)
-  { x: 20, y: 7, side: "left" } // east road down into the arena
+  { x: 11, y: 7, side: "right" }, // west road down into the arena (at the bay)
+  { x: 18, y: 7, side: "left" } // east road down into the arena
 ];
 
 // Walkable corridor: door-to-door over the stair cascades, along the two
@@ -60,16 +61,16 @@ const WALKABLE = [
   "..............................",
   "...#......................#...",
   "...#......................#...",
-  "..######..............######..",
-  "..######..............######..",
-  "......##..............##......",
-  "..########..........########..",
-  "..########..........########..",
-  ".........############.........",
+  "..#######............#######..",
+  "..#######............#######..",
+  "......####..........####......",
+  "..##########......##########..",
+  "..##########......##########..",
+  "...........########...........",
+  "...########################...",
   "...########################...",
   "....######################....",
   ".....####################.....",
-  "......##################......",
   "..............................",
   "..............................",
   ".............................."
@@ -85,20 +86,22 @@ const PLAYER_ROOF = { x: 3, y: 2 };
 const OPPONENT_BASE_ANCHOR = { x: 26, y: 1 };
 const OPPONENT_DOOR = { x: 26, y: 3 };
 const OPPONENT_ROOF = { x: 26, y: 2 };
-// Door -> down the plateau stairs -> approach road -> arena stairs at the
-// bay -> village arena -> mirrored climb on the east side.
+// Door -> down the plateau stairs onto the terrace -> approach road ->
+// arena stairs at the bay -> village arena -> mirrored climb on the east.
 const LANE_WAYPOINTS = [
   { x: 6, y: 3 },
   { x: 7, y: 4 },
-  { x: 7, y: 6 },
-  { x: 9, y: 7 },
-  { x: 9, y: 8 },
-  { x: 11, y: 10 },
+  { x: 8, y: 5 },
+  { x: 10, y: 6 },
+  { x: 11, y: 7 },
+  { x: 11, y: 8 },
+  { x: 12, y: 9 },
   { x: 14, y: 11 },
-  { x: 18, y: 10 },
-  { x: 20, y: 8 },
-  { x: 20, y: 7 },
-  { x: 22, y: 6 },
+  { x: 17, y: 9 },
+  { x: 18, y: 8 },
+  { x: 18, y: 7 },
+  { x: 19, y: 6 },
+  { x: 21, y: 5 },
   { x: 22, y: 4 },
   { x: 23, y: 3 }
 ];
@@ -191,7 +194,7 @@ const BUILDING_SPOTS = [
   { gid: 400, x: 10, y: 13 }, // village houses
   { gid: 401, x: 12, y: 13 },
   { gid: 402, x: 16, y: 13 },
-  { gid: 403, x: 20, y: 13 } // monastery, east end of the shore
+  { gid: 403, x: 21, y: 13 } // monastery, east end of the shore
 ];
 
 const projectRoot = resolve(import.meta.dirname, "..");
