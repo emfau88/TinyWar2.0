@@ -8,9 +8,10 @@ interface ModeButton {
   subtitle: Phaser.GameObjects.Text;
 }
 
-// The banner art is 899x856; keep its parchment-scroll proportions.
-const BANNER_HEIGHT = 150;
-const BANNER_WIDTH = Math.round((BANNER_HEIGHT * 899) / 856);
+// The banner art is 899x856; stretched wider and flatter than its native
+// proportions so the subtitle lines get comfortable room on the parchment.
+const BANNER_HEIGHT = 128;
+const BANNER_WIDTH = 216;
 const BANNER_GAP = 44;
 
 export class MenuScene extends Phaser.Scene {
