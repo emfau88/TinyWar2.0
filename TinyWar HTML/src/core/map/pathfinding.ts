@@ -108,13 +108,12 @@ function neighbors(tile: TilePosition): TilePosition[] {
       return [];
     }
 
-    // Stair ramps are climbed, not cut across: no diagonal step may touch a
-    // stair cell, and the wall-side cell only connects vertically.
+    // Stair ramps are climbed head-on, not cut across: no diagonal step may
+    // touch a stair cell. That alone keeps units walking the steps straight
+    // up/down while still allowing a flat horizontal step at the foot, so the
+    // lane doesn't dip an extra tile and zig-zag when crossing past a stair.
     const kinds = [stairKind(tile), stairKind(next)];
     if (kinds.some((kind) => kind !== undefined) && dx !== 0 && dy !== 0) {
-      return [];
-    }
-    if (kinds.some((kind) => kind === "wall") && dx !== 0) {
       return [];
     }
 

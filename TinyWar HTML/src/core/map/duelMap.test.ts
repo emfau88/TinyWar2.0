@@ -30,14 +30,17 @@ describe("duel map", () => {
     }
   });
 
-  it("dips through the sunken arena instead of cutting straight across", () => {
+  it("descends onto the arena floor but stays above the village buildings", () => {
     setActiveMap(DUEL_MAP);
     const path = getLanePath("Mid");
 
-    // Both doors sit at y=3 on the plateaus; the lane must descend into the
-    // sunken village arena (y >= 10) before climbing back up.
+    // Both doors sit at y=3 on the plateaus; the lane must descend onto the
+    // sunken arena floor (level 0 starts at y=8) before climbing back up...
     const deepestY = Math.max(...path.map((tile) => tile.y));
-    expect(deepestY).toBeGreaterThanOrEqual(10);
+    expect(deepestY).toBeGreaterThanOrEqual(8);
+    // ...but never as deep as the village buildings (anchored at y=13, their
+    // roofs reach up to ~y=11), or units would walk over the rooftops.
+    expect(deepestY).toBeLessThanOrEqual(9);
   });
 
   it("lets a red unit walk the whole lane to the player's door", () => {
@@ -70,27 +73,35 @@ describe("duel map", () => {
     expect(arrival).toBeLessThan(64);
   }, 20000);
 
-  it("walks stairs vertically instead of cutting across them", () => {
+  it("climbs stairs head-on without cutting across them diagonally", () => {
     setActiveMap(DUEL_MAP);
     const path = getLanePath("Mid");
     const stairCells = [...(DUEL_MAP.stairTops ?? []), ...(DUEL_MAP.stairWalls ?? [])];
     const isStair = (tile: { x: number; y: number }) =>
       stairCells.some((stair) => stair.x === tile.x && stair.y === tile.y);
-    const isWall = (tile: { x: number; y: number }) =>
-      (DUEL_MAP.stairWalls ?? []).some((stair) => stair.x === tile.x && stair.y === tile.y);
 
-    // The lane must actually use a stair, and every step touching one is
-    // never diagonal; wall-side cells connect strictly vertically.
+    // The lane must actually use a stair, and no step touching one may be
+    // diagonal - that alone keeps the climb straight up/down the steps. A flat
+    // horizontal step at a stair foot is fine (it lets the lane cross the arena
+    // level instead of dipping an extra tile and zig-zagging).
     expect(path.some(isStair)).toBe(true);
     for (let index = 1; index < path.length; index += 1) {
       const from = path[index - 1];
       const to = path[index];
       if (isStair(from) || isStair(to)) {
-        expect(Math.abs(from.x - to.x) + Math.abs(from.y - to.y), `${from.x},${from.y} -> ${to.x},${to.y}`).toBe(1);
+        const diagonal = from.x !== to.x && from.y !== to.y;
+        expect(diagonal, `${from.x},${from.y} -> ${to.x},${to.y} must not be diagonal`).toBe(false);
       }
-      if (isWall(from) || isWall(to)) {
-        expect(from.x, `${from.x},${from.y} -> ${to.x},${to.y} must be vertical`).toBe(to.x);
-      }
+    }
+  });
+
+  it("crosses the arena floor without an extra dip past the stair feet", () => {
+    setActiveMap(DUEL_MAP);
+    const path = getLanePath("Mid");
+    // No tile may sit lower than both its neighbours (a V-shaped zig-zag).
+    for (let index = 1; index < path.length - 1; index += 1) {
+      const isDip = path[index].y > path[index - 1].y && path[index].y > path[index + 1].y;
+      expect(isDip, `zig-zag dip at ${path[index].x},${path[index].y}`).toBe(false);
     }
   });
 

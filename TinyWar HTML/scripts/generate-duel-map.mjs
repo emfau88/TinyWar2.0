@@ -26,7 +26,7 @@ const HEIGHTS = [
   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
   "~2222222~~~~~~~~~~~~~~2222222~",
   "~2222222~~~~~~~~~~~~~~2222222~",
-  "~22222221~~~~~~~~~~~~12222222~",
+  "~2222222~~~~~~~~~~~~~~2222222~",
   "~22222211~~~~~~~~~~~~11222222~",
   "~~11111111~~~~~~~~~~11111111~~",
   "~~1111111111~~~~~~1111111111~~",
@@ -43,13 +43,12 @@ const HEIGHTS = [
 
 // Stair cascades: the top cell renders the diagonal grass tile (39 right /
 // 36 left), the cell below it the diagonal wall tile (48 / 45); both are
-// walkable so the lane visibly climbs the cliff. Each upper plateau stair
-// lands on a small level-1 terrace (x8 / x21) instead of a cliff edge.
+// walkable so the lane visibly climbs the cliff. Each side has one straight
+// plateau stair (single column) down onto the level-1 terrace, then one
+// arena stair down into the sunken village.
 const STAIRS = [
-  { x: 7, y: 3, side: "right" }, // blue plateau, upper step onto the terrace
-  { x: 6, y: 4, side: "right" }, // blue plateau, lower step
-  { x: 22, y: 3, side: "left" }, // red plateau, upper step onto the terrace
-  { x: 23, y: 4, side: "left" }, // red plateau, lower step
+  { x: 6, y: 4, side: "right" }, // blue plateau stair onto the terrace
+  { x: 23, y: 4, side: "left" }, // red plateau stair onto the terrace
   { x: 11, y: 7, side: "right" }, // west road down into the arena (at the bay)
   { x: 18, y: 7, side: "left" } // east road down into the arena
 ];
@@ -61,8 +60,8 @@ const WALKABLE = [
   "..............................",
   "...#......................#...",
   "...#......................#...",
-  "..#######............#######..",
-  "..#######............#######..",
+  "..######..............######..",
+  "..#####.#............#.#####..",
   "......####..........####......",
   "..######.###......###.######..",
   "..##########......##########..",
@@ -86,30 +85,19 @@ const PLAYER_ROOF = { x: 3, y: 2 };
 const OPPONENT_BASE_ANCHOR = { x: 26, y: 1 };
 const OPPONENT_DOOR = { x: 26, y: 3 };
 const OPPONENT_ROOF = { x: 26, y: 2 };
-// Door -> down the two plateau stairs (each descended straight down its own
-// column) -> approach road -> arena stair at the bay (again straight down)
-// -> village arena -> mirrored climb on the east side. Every stair is
-// entered and left on the same column so units walk the steps head-on.
+// Minimal waypoints: one just above and below each stair so the pathfinder
+// descends it head-on, and the arena centre. A* draws the direct diagonals
+// between them, so the lane flows door -> plateau stair -> arena stair ->
+// arena -> mirrored climb without detours or backtracking.
 const LANE_WAYPOINTS = [
-  { x: 5, y: 3 }, // right along the blue plateau toward the stairs
-  { x: 7, y: 3 }, // onto the upper stair column
-  { x: 7, y: 4 }, // straight down the upper stair
-  { x: 6, y: 4 }, // step across to the lower stair column
-  { x: 6, y: 5 }, // straight down the lower stair onto the terrace
-  { x: 9, y: 6 }, // west along the approach road, around the tower
-  { x: 11, y: 6 }, // to the arena stair column
-  { x: 11, y: 8 }, // straight down the arena stair
-  { x: 12, y: 9 },
-  { x: 14, y: 11 }, // through the sunken village arena
-  { x: 17, y: 9 },
-  { x: 18, y: 8 }, // to the east arena stair column
-  { x: 18, y: 6 }, // straight up the arena stair onto the road
-  { x: 20, y: 6 }, // east along the approach road, around the tower
-  { x: 23, y: 5 }, // to the lower red stair column
-  { x: 23, y: 4 }, // straight up the lower stair
-  { x: 22, y: 4 }, // step across to the upper stair column
-  { x: 22, y: 3 }, // up onto the red plateau
-  { x: 24, y: 3 } // right toward the red base door
+  { x: 6, y: 4 }, // top of the blue plateau stair
+  { x: 6, y: 5 }, // foot of it, on the terrace
+  { x: 11, y: 7 }, // top of the west arena stair
+  { x: 11, y: 8 }, // foot of it, on the arena floor
+  { x: 18, y: 8 }, // straight across the arena floor to the east stair foot
+  { x: 18, y: 7 }, // top of the east arena stair, on the terrace
+  { x: 23, y: 5 }, // foot of the red plateau stair
+  { x: 23, y: 4 } // top of it, on the plateau
 ];
 
 // Destructible defense towers guarding each side's arena stairs; their
