@@ -27,12 +27,41 @@ const VOLUME: Record<AudioEvent, number> = {
   warning: 0.42
 };
 
+const MUSIC_VOLUME = 0.16;
+
 export class GameAudio {
   private unlocked = false;
   private muted = false;
 
   constructor(private readonly scene: Phaser.Scene) {
     this.unlockOnFirstGesture();
+    GameAudio.ensureMusic(scene);
+  }
+
+  /**
+   * Start the looping background music once, surviving scene switches (the
+   * sound manager is game-global). Waits for the browser's autoplay unlock.
+   */
+  static ensureMusic(scene: Phaser.Scene): void {
+    const key = ASSETS.audio.music.key;
+    if (!scene.cache.audio.exists(key)) {
+      return;
+    }
+
+    const start = () => {
+      if (!scene.sound.get(key)?.isPlaying) {
+        scene.sound.play(key, { loop: true, volume: MUSIC_VOLUME });
+      }
+    };
+
+    if (scene.sound.get(key)?.isPlaying) {
+      return;
+    }
+    if (scene.sound.locked) {
+      scene.sound.once(Phaser.Sound.Events.UNLOCKED, start);
+    } else {
+      start();
+    }
   }
 
   play(event: AudioEvent): void {

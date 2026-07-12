@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import type { MapId } from "../../core/map/mapDefinition";
 import { ASSETS } from "../../data/assetManifest";
+import { GameAudio } from "../systems/GameAudio";
 
 interface ModeButton {
   banner: Phaser.GameObjects.Image;
@@ -31,6 +32,7 @@ export class MenuScene extends Phaser.Scene {
     }
 
     this.cover = this.add.image(0, 0, ASSETS.background.cover.key);
+    GameAudio.ensureMusic(this);
 
     this.modeButtons = [
       this.createModeButton("Classic", "3 Lanes - Duell vs KI", () => this.startGame("classic")),

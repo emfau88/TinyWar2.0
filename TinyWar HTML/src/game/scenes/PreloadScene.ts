@@ -74,6 +74,7 @@ export class PreloadScene extends Phaser.Scene {
     this.load.audio(ASSETS.audio.horn.key, ASSETS.audio.horn.path);
     this.load.audio(ASSETS.audio.message.key, ASSETS.audio.message.path);
     this.load.audio(ASSETS.audio.warning.key, ASSETS.audio.warning.path);
+    this.load.audio(ASSETS.audio.music.key, ASSETS.audio.music.path);
 
     for (const animation of BASIC_UNIT_ANIMATIONS) {
       this.load.spritesheet(animation.key, animation.path, {

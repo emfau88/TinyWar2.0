@@ -525,7 +525,8 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     this.boosts = result.state;
-    this.audio?.play("button");
+    // Original parity: activating a boost sounds the war horn.
+    this.audio?.play("horn");
     if (result.instant) {
       this.applyInstantBoost(result.instant);
     }

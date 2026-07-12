@@ -215,6 +215,10 @@ export const ASSETS = {
       key: "audio-victory",
       path: `${ROOT}/audio/victory.ogg`
     },
+    music: {
+      key: "audio-music",
+      path: `${ROOT}/audio/music.ogg`
+    },
     defeat: {
       key: "audio-defeat",
       path: `${ROOT}/audio/defeat.ogg`
