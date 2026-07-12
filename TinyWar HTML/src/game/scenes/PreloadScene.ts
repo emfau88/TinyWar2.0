@@ -40,6 +40,8 @@ export class PreloadScene extends Phaser.Scene {
     this.load.image(ASSETS.buildings.blueBarracks.key, ASSETS.buildings.blueBarracks.path);
     this.load.image(ASSETS.buildings.redBarracks.key, ASSETS.buildings.redBarracks.path);
     this.load.image(ASSETS.buildings.blackCastle.key, ASSETS.buildings.blackCastle.path);
+    this.load.image(ASSETS.buildings.blueTower.key, ASSETS.buildings.blueTower.path);
+    this.load.image(ASSETS.buildings.redTower.key, ASSETS.buildings.redTower.path);
     this.load.image(ASSETS.units.blueWarrior.key, ASSETS.units.blueWarrior.path);
     this.load.image(ASSETS.units.blueLancer.key, ASSETS.units.blueLancer.path);
     this.load.image(ASSETS.units.blueArcher.key, ASSETS.units.blueArcher.path);
@@ -60,6 +62,12 @@ export class PreloadScene extends Phaser.Scene {
     });
     for (const portrait of Object.values(ASSETS.monsterPortraits)) {
       this.load.image(portrait.key, portrait.path);
+    }
+    for (const effect of [...ASSETS.effects.fires, ...ASSETS.effects.explosions]) {
+      this.load.spritesheet(effect.key, effect.path, {
+        frameWidth: effect.frameSize,
+        frameHeight: effect.frameSize
+      });
     }
     this.load.image(ASSETS.boostCards.frame.key, ASSETS.boostCards.frame.path);
     for (const art of Object.values(ASSETS.boostCards.art)) {
@@ -99,6 +107,30 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   create(): void {
+    for (const fire of ASSETS.effects.fires) {
+      if (!this.anims.exists(fire.key)) {
+        this.anims.create({
+          key: fire.key,
+          frames: this.anims.generateFrameNumbers(fire.key, { start: 0, end: fire.frames - 1 }),
+          frameRate: 10,
+          repeat: -1
+        });
+      }
+    }
+    for (const explosion of ASSETS.effects.explosions) {
+      if (!this.anims.exists(explosion.key)) {
+        this.anims.create({
+          key: explosion.key,
+          frames: this.anims.generateFrameNumbers(explosion.key, {
+            start: 0,
+            end: explosion.frames - 1
+          }),
+          frameRate: 14,
+          repeat: 0
+        });
+      }
+    }
+
     for (const projectile of [ASSETS.projectiles.bone, ASSETS.projectiles.magic]) {
       if (!this.anims.exists(projectile.key)) {
         this.anims.create({

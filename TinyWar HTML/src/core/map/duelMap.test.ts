@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { createInitialGameState } from "../game/createInitialGameState";
 import { createLaneUnit, updateMovingUnit } from "../movement/movementSystem";
 import { setActiveMap } from "./activeMap";
 import { tileToWorld } from "./mapGeometry";
@@ -90,6 +91,33 @@ describe("duel map", () => {
       if (isWall(from) || isWall(to)) {
         expect(from.x, `${from.x},${from.y} -> ${to.x},${to.y} must be vertical`).toBe(to.x);
       }
+    }
+  });
+
+  it("fields one destructible tower per side off the lane", () => {
+    setActiveMap(DUEL_MAP);
+    const outposts = DUEL_MAP.outposts ?? [];
+    expect(outposts).toHaveLength(2);
+    expect(outposts.map((outpost) => outpost.color).sort()).toEqual(["Blue", "Red"]);
+    for (const outpost of outposts) {
+      expect(outpost.building).toBe("Tower");
+      // Tower anchors block their cell so the lane flows around them.
+      expect(isWalkable(outpost.anchor)).toBe(false);
+    }
+  });
+
+  it("spawns towers with roof archers in the initial game state", () => {
+    setActiveMap(DUEL_MAP);
+    const state = createInitialGameState();
+
+    const towers = state.buildings.filter((building) => building.name === "Tower");
+    expect(towers).toHaveLength(2);
+    for (const tower of towers) {
+      expect(tower.isBase).toBe(false);
+      expect(tower.health).toBe(500);
+      const archers = state.units.filter((unit) => unit.onBuildingId === tower.id);
+      expect(archers).toHaveLength(1);
+      expect(archers[0].color).toBe(tower.color);
     }
   });
 

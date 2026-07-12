@@ -1,5 +1,6 @@
 import {
   DUEL_LANE_WAYPOINTS,
+  DUEL_OUTPOSTS,
   DUEL_OPPONENT_BASE_ANCHOR,
   DUEL_OPPONENT_DOOR,
   DUEL_OPPONENT_ROOF,
@@ -25,6 +26,7 @@ export const DUEL_MAP: MapDefinition = {
   availableLanes: ["Mid"],
   stairTops: DUEL_STAIR_TOPS,
   stairWalls: DUEL_STAIR_WALLS,
+  outposts: DUEL_OUTPOSTS,
   start: DUEL_PLAYER_DOOR,
   end: DUEL_OPPONENT_DOOR,
   bases: {

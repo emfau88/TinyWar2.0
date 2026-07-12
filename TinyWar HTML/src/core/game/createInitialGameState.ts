@@ -13,10 +13,22 @@ export interface GameState {
 }
 
 export function createInitialGameState(): GameState {
-  const { player, opponent } = getActiveMap().bases;
+  const map = getActiveMap();
+  const { player, opponent } = map.bases;
   const buildings = [
     createBuilding("left-base", player.building, player.color, true, tileToWorld(player.anchor)),
-    createBuilding("right-base", opponent.building, opponent.color, true, tileToWorld(opponent.anchor))
+    createBuilding("right-base", opponent.building, opponent.color, true, tileToWorld(opponent.anchor)),
+    // Destructible defense towers; their roof archers come from the same
+    // unit-slot machinery as the base defenders.
+    ...(map.outposts ?? []).map((outpost, index) =>
+      createBuilding(
+        `outpost-${index}`,
+        outpost.building,
+        outpost.color,
+        false,
+        tileToWorld(outpost.anchor)
+      )
+    )
   ];
 
   return {

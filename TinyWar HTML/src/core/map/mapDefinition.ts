@@ -16,6 +16,13 @@ export interface BaseSetup {
   roofDefenders: readonly TilePosition[];
 }
 
+/** A destructible non-base building (e.g. a defense tower with a roof archer). */
+export interface OutpostSetup {
+  building: "Tower";
+  color: BaseSetup["color"];
+  anchor: TilePosition;
+}
+
 export interface MapDefinition {
   id: MapId;
   size: { width: number; height: number };
@@ -35,6 +42,8 @@ export interface MapDefinition {
    */
   stairTops?: readonly TilePosition[];
   stairWalls?: readonly TilePosition[];
+  /** Destructible defense towers, spawned alongside the two bases. */
+  outposts?: readonly OutpostSetup[];
   /** Path endpoints (also the two base tiles: player first, opponent second). */
   start: TilePosition;
   end: TilePosition;

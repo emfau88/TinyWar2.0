@@ -106,6 +106,14 @@ export const ASSETS = {
     blackCastle: {
       key: "building-black-castle",
       path: `${ROOT}/images/buildings/Black/Castle.png`
+    },
+    blueTower: {
+      key: "building-blue-tower",
+      path: `${ROOT}/images/buildings/Blue/Tower.png`
+    },
+    redTower: {
+      key: "building-red-tower",
+      path: `${ROOT}/images/buildings/Red/Tower.png`
     }
   },
   units: {
@@ -183,6 +191,19 @@ export const ASSETS = {
       }),
       {} as Record<BoostName, { key: string; path: string }>
     )
+  },
+  effects: {
+    // Looping flames for damaged buildings (three variants) and the one-shot
+    // building explosion, straight from the original's effect sheets.
+    fires: [
+      { key: "effect-fire-1", path: `${ROOT}/images/effects/fire1.png`, frameSize: 64, frames: 8 },
+      { key: "effect-fire-2", path: `${ROOT}/images/effects/fire2.png`, frameSize: 64, frames: 10 },
+      { key: "effect-fire-3", path: `${ROOT}/images/effects/fire3.png`, frameSize: 64, frames: 12 }
+    ],
+    explosions: [
+      { key: "effect-explosion-1", path: `${ROOT}/images/effects/explosion1.png`, frameSize: 192, frames: 9 },
+      { key: "effect-explosion-2", path: `${ROOT}/images/effects/explosion2.png`, frameSize: 192, frames: 11 }
+    ]
   },
   monsterPortraits: MONSTER_UNITS.reduce(
     (portraits, name) => ({

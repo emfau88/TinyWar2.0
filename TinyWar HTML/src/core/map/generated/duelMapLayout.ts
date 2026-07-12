@@ -10,7 +10,7 @@ export const DUEL_WALKABLE: readonly string[] = [
   "..#######............#######..",
   "..#######............#######..",
   "......####..........####......",
-  "..##########......##########..",
+  "..########.#......#.########..",
   "..##########......##########..",
   "...........########...........",
   "...########################...",
@@ -28,7 +28,9 @@ export const DUEL_PLAYER_ROOF: TilePosition = {"x":3,"y":2};
 export const DUEL_OPPONENT_BASE_ANCHOR: TilePosition = {"x":26,"y":1};
 export const DUEL_OPPONENT_DOOR: TilePosition = {"x":26,"y":3};
 export const DUEL_OPPONENT_ROOF: TilePosition = {"x":26,"y":2};
-export const DUEL_LANE_WAYPOINTS: readonly TilePosition[] = [{"x":6,"y":3},{"x":7,"y":4},{"x":8,"y":5},{"x":10,"y":6},{"x":11,"y":7},{"x":11,"y":8},{"x":12,"y":9},{"x":14,"y":11},{"x":17,"y":9},{"x":18,"y":8},{"x":18,"y":7},{"x":19,"y":6},{"x":21,"y":5},{"x":22,"y":4},{"x":23,"y":3}];
+export const DUEL_LANE_WAYPOINTS: readonly TilePosition[] = [{"x":6,"y":3},{"x":7,"y":4},{"x":8,"y":5},{"x":10,"y":7},{"x":11,"y":7},{"x":11,"y":8},{"x":12,"y":9},{"x":14,"y":11},{"x":17,"y":9},{"x":18,"y":8},{"x":18,"y":7},{"x":19,"y":7},{"x":21,"y":5},{"x":22,"y":4},{"x":23,"y":3}];
 
 export const DUEL_STAIR_TOPS: readonly TilePosition[] = [{"x":7,"y":3},{"x":6,"y":4},{"x":22,"y":3},{"x":23,"y":4},{"x":11,"y":7},{"x":18,"y":7}];
 export const DUEL_STAIR_WALLS: readonly TilePosition[] = [{"x":7,"y":4},{"x":6,"y":5},{"x":22,"y":4},{"x":23,"y":5},{"x":11,"y":8},{"x":18,"y":8}];
+
+export const DUEL_OUTPOSTS = [{"building":"Tower","color":"Blue","anchor":{"x":10,"y":6}},{"building":"Tower","color":"Red","anchor":{"x":19,"y":6}}] as const;

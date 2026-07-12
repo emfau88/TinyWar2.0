@@ -64,7 +64,7 @@ const WALKABLE = [
   "..#######............#######..",
   "..#######............#######..",
   "......####..........####......",
-  "..##########......##########..",
+  "..########.#......#.########..",
   "..##########......##########..",
   "...........########...........",
   "...########################...",
@@ -92,7 +92,7 @@ const LANE_WAYPOINTS = [
   { x: 6, y: 3 },
   { x: 7, y: 4 },
   { x: 8, y: 5 },
-  { x: 10, y: 6 },
+  { x: 10, y: 7 },
   { x: 11, y: 7 },
   { x: 11, y: 8 },
   { x: 12, y: 9 },
@@ -100,10 +100,17 @@ const LANE_WAYPOINTS = [
   { x: 17, y: 9 },
   { x: 18, y: 8 },
   { x: 18, y: 7 },
-  { x: 19, y: 6 },
+  { x: 19, y: 7 },
   { x: 21, y: 5 },
   { x: 22, y: 4 },
   { x: 23, y: 3 }
+];
+
+// Destructible defense towers guarding each side's arena stairs; their
+// anchor cells are blocked so the lane flows around them on the road row.
+const OUTPOSTS = [
+  { building: "Tower", color: "Blue", anchor: { x: 10, y: 6 } },
+  { building: "Tower", color: "Red", anchor: { x: 19, y: 6 } }
 ];
 
 // Tile ids inside each 54-tile grass tileset (9 columns, 0-based), learned
@@ -251,6 +258,16 @@ for (let y = 0; y < HEIGHT; y += 1) {
         errors.push(`Walkable on cliff wall at ${x},${y}.`);
       }
     }
+  }
+}
+
+// Tower anchors must sit on blocked land, off stairs and building decor.
+for (const outpost of OUTPOSTS) {
+  const { x, y } = outpost.anchor;
+  if (!isLand(x, y)) errors.push(`Outpost at ${x},${y} is on water.`);
+  if (isWalkable(x, y)) errors.push(`Outpost at ${x},${y} must be on a blocked cell.`);
+  if (STAIRS.some((s) => (s.x === x && s.y === y) || (s.x === x && s.y + 1 === y))) {
+    errors.push(`Outpost at ${x},${y} overlaps a stair.`);
   }
 }
 
@@ -588,6 +605,8 @@ export const DUEL_LANE_WAYPOINTS: readonly TilePosition[] = ${JSON.stringify(LAN
 
 export const DUEL_STAIR_TOPS: readonly TilePosition[] = ${JSON.stringify(STAIRS.map(({ x, y }) => ({ x, y })))};
 export const DUEL_STAIR_WALLS: readonly TilePosition[] = ${JSON.stringify(STAIRS.map(({ x, y }) => ({ x, y: y + 1 })))};
+
+export const DUEL_OUTPOSTS = ${JSON.stringify(OUTPOSTS)} as const;
 `;
 
 mkdirSync(dirname(layoutOutPath), { recursive: true });
