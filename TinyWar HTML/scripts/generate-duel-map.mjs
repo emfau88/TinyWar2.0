@@ -64,7 +64,7 @@ const WALKABLE = [
   "..#######............#######..",
   "..#######............#######..",
   "......####..........####......",
-  "..########.#......#.########..",
+  "..######.###......###.######..",
   "..##########......##########..",
   "...........########...........",
   "...########################...",
@@ -86,31 +86,37 @@ const PLAYER_ROOF = { x: 3, y: 2 };
 const OPPONENT_BASE_ANCHOR = { x: 26, y: 1 };
 const OPPONENT_DOOR = { x: 26, y: 3 };
 const OPPONENT_ROOF = { x: 26, y: 2 };
-// Door -> down the plateau stairs onto the terrace -> approach road ->
-// arena stairs at the bay -> village arena -> mirrored climb on the east.
+// Door -> down the two plateau stairs (each descended straight down its own
+// column) -> approach road -> arena stair at the bay (again straight down)
+// -> village arena -> mirrored climb on the east side. Every stair is
+// entered and left on the same column so units walk the steps head-on.
 const LANE_WAYPOINTS = [
-  { x: 6, y: 3 },
-  { x: 7, y: 4 },
-  { x: 8, y: 5 },
-  { x: 10, y: 7 },
-  { x: 11, y: 7 },
-  { x: 11, y: 8 },
+  { x: 5, y: 3 }, // right along the blue plateau toward the stairs
+  { x: 7, y: 3 }, // onto the upper stair column
+  { x: 7, y: 4 }, // straight down the upper stair
+  { x: 6, y: 4 }, // step across to the lower stair column
+  { x: 6, y: 5 }, // straight down the lower stair onto the terrace
+  { x: 9, y: 6 }, // west along the approach road, around the tower
+  { x: 11, y: 6 }, // to the arena stair column
+  { x: 11, y: 8 }, // straight down the arena stair
   { x: 12, y: 9 },
-  { x: 14, y: 11 },
+  { x: 14, y: 11 }, // through the sunken village arena
   { x: 17, y: 9 },
-  { x: 18, y: 8 },
-  { x: 18, y: 7 },
-  { x: 19, y: 7 },
-  { x: 21, y: 5 },
-  { x: 22, y: 4 },
-  { x: 23, y: 3 }
+  { x: 18, y: 8 }, // to the east arena stair column
+  { x: 18, y: 6 }, // straight up the arena stair onto the road
+  { x: 20, y: 6 }, // east along the approach road, around the tower
+  { x: 23, y: 5 }, // to the lower red stair column
+  { x: 23, y: 4 }, // straight up the lower stair
+  { x: 22, y: 4 }, // step across to the upper stair column
+  { x: 22, y: 3 }, // up onto the red plateau
+  { x: 24, y: 3 } // right toward the red base door
 ];
 
 // Destructible defense towers guarding each side's arena stairs; their
 // anchor cells are blocked so the lane flows around them on the road row.
 const OUTPOSTS = [
-  { building: "Tower", color: "Blue", anchor: { x: 10, y: 6 } },
-  { building: "Tower", color: "Red", anchor: { x: 19, y: 6 } }
+  { building: "Tower", color: "Blue", anchor: { x: 8, y: 6 } },
+  { building: "Tower", color: "Red", anchor: { x: 21, y: 6 } }
 ];
 
 // Tile ids inside each 54-tile grass tileset (9 columns, 0-based), learned

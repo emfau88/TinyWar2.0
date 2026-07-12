@@ -237,9 +237,17 @@ export class GameScene extends Phaser.Scene {
       typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("zoo") : null;
     if (zoo !== null) {
       const blueUnits: readonly UnitName[] =
-        zoo === "ranged" ? ["Gnoll", "Gnoll", "Shaman", "Shaman", "Shark", "Shark"] : MONSTER_UNITS;
+        zoo === "sharks"
+          ? Array.from({ length: 8 }, () => "Shark" as UnitName)
+          : zoo === "ranged"
+            ? ["Gnoll", "Gnoll", "Shaman", "Shaman", "Shark", "Shark"]
+            : MONSTER_UNITS;
       const redUnits: readonly UnitName[] =
-        zoo === "ranged" ? Array.from({ length: 6 }, () => "Warrior" as UnitName) : MONSTER_UNITS;
+        zoo === "sharks"
+          ? Array.from({ length: 3 }, () => "Turtle" as UnitName)
+          : zoo === "ranged"
+            ? Array.from({ length: 6 }, () => "Warrior" as UnitName)
+            : MONSTER_UNITS;
       for (const unit of blueUnits) {
         this.spawnQueuedUnit(unit, "Blue");
       }

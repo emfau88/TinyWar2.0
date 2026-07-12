@@ -73,7 +73,9 @@ export const BUILDINGS: Record<BuildingName, BuildingDefinition> = {
     size: { width: 128, height: 256 },
     worldScale: BUILDING_SCALE,
     health: 500,
-    unitSlots: [{ x: 0, y: 30 }]
+    // The archer stands on the tower's open wooden platform. Screen y grows
+    // downward, so a negative offset lifts him from the stone base up onto it.
+    unitSlots: [{ x: 0, y: -40 }]
   }
 };
 

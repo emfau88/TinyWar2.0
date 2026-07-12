@@ -1,9 +1,6 @@
 import Phaser from "phaser";
-import {
-  projectileFacing,
-  type ProjectileInstance,
-  type ProjectileKind
-} from "../../core/combat/projectileSystem";
+import type { ProjectileInstance, ProjectileKind } from "../../core/combat/projectileSystem";
+import { projectileRotation } from "../../core/combat/projectileRotation";
 import { ASSETS } from "../../data/assetManifest";
 
 export interface ProjectileRenderHandle {
@@ -15,15 +12,6 @@ const PROJECTILE_TEXTURES: Record<ProjectileKind, string> = {
   Bone: ASSETS.projectiles.bone.key,
   Magic: ASSETS.projectiles.magic.key,
   Harpoon: ASSETS.projectiles.harpoon.key
-};
-
-// The harpoon sprite art points diagonally, so its rotation needs the
-// original's -45 degree offset to fly tip-first along the arc.
-const PROJECTILE_ANGLE_OFFSET: Record<ProjectileKind, number> = {
-  Arrow: 0,
-  Bone: 0,
-  Magic: 0,
-  Harpoon: -Math.PI / 4
 };
 
 export class ProjectileRenderer {
@@ -56,11 +44,9 @@ export class ProjectileRenderer {
     // Point the projectile along its actual arc velocity; straight projectiles
     // report no facing and keep their spawn rotation, and once a parabolic one
     // has landed the impact rotation is kept.
-    const facing = projectileFacing(projectile);
-    if (facing) {
-      handle.sprite.setRotation(
-        Math.atan2(facing.y, facing.x) + PROJECTILE_ANGLE_OFFSET[projectile.kind]
-      );
+    const rotation = projectileRotation(projectile);
+    if (rotation !== undefined) {
+      handle.sprite.setRotation(rotation);
     }
   }
 
